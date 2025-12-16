@@ -1,4 +1,3 @@
-```python
 import redis.asyncio as redis
 from app.core.config import settings
 from typing import Optional
