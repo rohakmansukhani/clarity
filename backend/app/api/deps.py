@@ -1,57 +1,59 @@
-from fastapi import Request, HTTPException, Depends
+from fastapi import Request, HTTPException, Depends, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from supabase import Client
 from app.core.supabase_client import get_supabase
 import logging
-
-# Setup Logging
-logger = logging.getLogger("auth_middleware")
-
-security = HTTPBearer()
-
-import jwt
 from app.core.config import settings
-from supabase import create_client, Client
+from supabase import create_client
 
-# Setup Logging
 logger = logging.getLogger("auth_middleware")
-
 security = HTTPBearer()
+
 
 def get_user_supabase_client(
-    creds: HTTPAuthorizationCredentials = Depends(security)
+    authorization: str = Header(...)
 ) -> Client:
     """
     Creates a Supabase client with the user's JWT token.
     This ensures RLS policies work correctly.
+    
+    Extracts token from Authorization header directly.
     """
-    token = creds.credentials
-    return create_client(
-        settings.SUPABASE_URL,
-        settings.SUPABASE_KEY,
-        options={
-            "headers": {
-                "Authorization": f"Bearer {token}"
-            }
-        }
-    )
+    try:
+        # Extract token from "Bearer <token>"
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Invalid authorization header")
+        
+        token = authorization.replace("Bearer ", "").strip()
+        
+        # Create a new Supabase client with the user's token
+        client = create_client(
+            supabase_url=settings.SUPABASE_URL,
+            supabase_key=settings.SUPABASE_KEY
+        )
+        
+        # Set the auth token for this client
+        client.auth.set_session(access_token=token, refresh_token="")
+        
+        return client
+        
+    except Exception as e:
+        logger.error(f"Error creating user Supabase client: {e}")
+        raise HTTPException(status_code=401, detail="Could not create authenticated client")
+
 
 async def verify_jwt(
     creds: HTTPAuthorizationCredentials = Depends(security),
-    supabase_client: Client = Depends(get_user_supabase_client)
+    supabase: Client = Depends(get_supabase)
 ):
     """
     Verifies the Supabase JWT token.
-    Uses the user-scoped client to Verify by fetching the user.
+    Uses Supabase auth to verify the token.
     """
     token = creds.credentials
     try:
         # Verify token by fetching user from Supabase Auth
-        # Note: If we had the JWT_SECRET locally, we could decode it using python-jose for speed
-        # But this ensures the token is valid on the server (revocations etc.)
-        
-        # Option 2: Use Supabase client properly
-        response = supabase_client.auth.get_user(token)
+        response = supabase.auth.get_user(token)
         
         if not response.user:
             raise HTTPException(status_code=401, detail="Invalid token")
@@ -61,6 +63,7 @@ async def verify_jwt(
     except Exception as e:
         logger.error(f"Auth Error: {e}")
         raise HTTPException(status_code=401, detail="Could not validate credentials")
+
 
 # Dependency aliases
 get_current_user = verify_jwt
