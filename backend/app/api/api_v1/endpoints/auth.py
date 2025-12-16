@@ -1,28 +1,16 @@
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, EmailStr
+from fastapi import APIRouter, HTTPException, Depends, Request
+from pydantic import BaseModel
 from app.core.supabase_client import get_supabase
 from supabase import Client
+from app.core.rate_limit import limiter
 
 router = APIRouter()
 
 class UserAuth(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 @router.post("/register", summary="Register a new user via Supabase")
-def register(user: UserAuth, supabase: Client = Depends(get_supabase)):
-    try:
-        # Supabase Auth Sign Up
-        # Returns an AuthResponse object
-        response = supabase.auth.sign_up({
-            "email": user.email, 
-            "password": user.password
-        })
-        
-        # Check if user is created (auto-confirm might be off)
-        if not response.user:
-             raise HTTPException(status_code=400, detail="Registration failed")
-             
         return {
             "message": "User registered successfully", 
             "user": {"id": response.user.id, "email": response.user.email}

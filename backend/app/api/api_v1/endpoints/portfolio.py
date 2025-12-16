@@ -1,10 +1,15 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from typing import List, Optional
 from app.api.deps import get_current_user, get_user_supabase
 from supabase import Client
+import logging
+from app.core.rate_limit import limiter
+from app.utils.formatters import format_inr, format_percent
 
 from app.services.market_service import MarketService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 market_service = MarketService()
@@ -27,7 +32,9 @@ class HoldingCreate(BaseModel):
     allocation_percent: float = 0.0
 
 @router.get("/", response_model=List[PortfolioResponse])
+@limiter.limit("30/minute")
 def list_portfolios(
+    request: Request,
     user = Depends(get_current_user),
     supabase: Client = Depends(get_user_supabase)
 ):
@@ -40,7 +47,9 @@ def list_portfolios(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/{portfolio_id}/holdings", summary="Add a holding to a portfolio")
+@limiter.limit("20/minute")
 def add_holding(
+    request: Request,
     portfolio_id: str,
     holding: HoldingCreate,
     user = Depends(get_current_user),
@@ -61,7 +70,9 @@ def add_holding(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{portfolio_id}/performance")
+@limiter.limit("30/minute")
 async def get_portfolio_performance(
+    request: Request,
     portfolio_id: str,
     user = Depends(get_current_user),
     supabase: Client = Depends(get_user_supabase)
@@ -140,22 +151,38 @@ async def get_portfolio_performance(
         return {
             "portfolio_id": portfolio_id,
             "total_value": round(total_curr_value, 2),
+            "total_value_formatted": format_inr(total_curr_value),
             "total_invested": round(total_invested, 2),
+            "total_invested_formatted": format_inr(total_invested),
             "total_gain": round(total_gain, 2),
+            "total_gain_formatted": format_inr(total_gain),
             "return_pct": round(total_return_pct, 2),
-            "holdings": detailed_holdings
+            "return_pct_formatted": format_percent(total_return_pct),
+            "holdings": [
+                {
+                    **h,
+                    "current_value_formatted": format_inr(h["current_value"]),
+                    "invested_value_formatted": format_inr(h["invested_value"]),
+                    "gain_formatted": format_inr(h["gain"]),
+                    "gain_pct_formatted": format_percent(h["gain_pct"])
+                }
+                for h in detailed_holdings
+            ]
         }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/", response_model=PortfolioResponse)
+@limiter.limit("10/minute")
 def create_portfolio(
+    request: Request,
     portfolio: PortfolioCreate,
     user = Depends(get_current_user),
     supabase: Client = Depends(get_user_supabase)
 ):
     """Create a new portfolio"""
+    try:
         # RLS will automatically set user_id from auth.uid() if default is set, 
         # but we explicit set it to ensure data integrity with the scoped client.
         data = {

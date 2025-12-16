@@ -62,7 +62,35 @@ async def root():
     """Root endpoint to check service status."""
     return {"message": "Clarity Consensus Engine is running", "env": settings.PROJECT_NAME}
 
+from app.core.redis_client import get_redis
+from app.core.supabase_client import get_supabase
+
 @app.get("/health", tags=["Health"])
 async def health_check():
-    """Health check endpoint for load balancers."""
-    return {"status": "ok"}
+    """Health check endpoint with dependency status."""
+    health_status = {
+        "status": "ok",
+        "redis": "unknown",
+        "supabase": "unknown"
+    }
+    
+    # Check Redis
+    try:
+        redis = await get_redis()
+        await redis.ping()
+        health_status["redis"] = "connected"
+    except Exception as e:
+        health_status["redis"] = f"error: {str(e)}"
+        health_status["status"] = "degraded"
+    
+    # Check Supabase
+    try:
+        supabase = get_supabase()
+        # Simple query to test connection (uses service role, won't fail RLS)
+        result = supabase.table("portfolios").select("id").limit(1).execute()
+        health_status["supabase"] = "connected"
+    except Exception as e:
+        health_status["supabase"] = f"error: {str(e)}"
+        health_status["status"] = "degraded"
+    
+    return health_status

@@ -1,12 +1,14 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from app.services.market_service import MarketService
 from typing import List, Any
+from app.core.rate_limit import limiter
 
 router = APIRouter()
 market_service = MarketService()
 
 @router.get("/status")
-async def get_market_status():
+@limiter.limit("60/minute")
+async def get_market_status(request: Request):
     """
     Get live status of major market indices (Nifty, Sensex).
     
@@ -21,7 +23,8 @@ async def get_market_status():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/sectors")
-async def get_sector_performance():
+@limiter.limit("60/minute")
+async def get_sector_performance(request: Request):
     """
     Get performance ranking of major sectors.
     """

@@ -1,12 +1,14 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from app.services.market_service import MarketService
 from typing import List, Any
+from app.core.rate_limit import limiter
 
 router = APIRouter()
 market_service = MarketService()
 
 @router.get("/search")
-async def search_stocks(q: str = Query(..., min_length=1)):
+@limiter.limit("100/minute")
+async def search_stocks(request: Request, q: str = Query(..., min_length=1)):
     """
     Search for stocks by symbol or company name.
     
@@ -20,7 +22,8 @@ async def search_stocks(q: str = Query(..., min_length=1)):
     return results
 
 @router.get("/{symbol}")
-async def get_stock_details(symbol: str):
+@limiter.limit("60/minute")
+async def get_stock_details(request: Request, symbol: str):
     """
     Get aggregated data (Price, Fundamentals, News) for a stock.
     
@@ -41,7 +44,8 @@ async def get_stock_details(symbol: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{symbol}/history")
-async def get_stock_history(symbol: str, period: str = "1mo"):
+@limiter.limit("30/minute")
+async def get_stock_history(request: Request, symbol: str, period: str = "1mo"):
     """
     Get historical OHLCV data. Period: 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
     """

@@ -7,6 +7,7 @@ from app.services.providers.yahoo_service import YahooProvider
 from app.core.cache import cache
 import logging
 from nselib import capital_market
+from app.utils.formatters import format_inr, format_percent
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,10 @@ class MarketService:
         
         return {
             "symbol": symbol,
-            "market_data": price_data,
+            "market_data": {
+                **price_data,
+                "price_formatted": format_inr(price_data.get("price", 0.0))
+            },
             "fundamentals": fund_data,
             "news": news_data.get("news", [])
         }
@@ -193,8 +197,11 @@ class MarketService:
                     result.append({
                         "index": name,
                         "current": round(current_price, 2),
+                        "current_formatted": format_inr(current_price),
                         "change": round(change, 2),
+                        "change_formatted": format_inr(change),
                         "percent_change": round(pct_change, 2),
+                        "percent_change_formatted": format_percent(pct_change),
                         "status": "OPEN" if is_open else "CLOSED"
                     })
                 except Exception as e:

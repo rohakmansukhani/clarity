@@ -32,5 +32,15 @@ class Settings(BaseSettings):
         case_sensitive = True
         env_file = ".env"
         extra = "ignore" # Ignore extra fields in .env
+    
+    def validate_required(self):
+        """Validate that required settings are present."""
+        if not self.SUPABASE_URL:
+            raise ValueError("SUPABASE_URL is required but not set")
+        if not self.SUPABASE_KEY:
+            raise ValueError("SUPABASE_KEY is required but not set")
+        if not self.REDIS_URL:
+            raise ValueError("REDIS_URL is required but not set")
 
 settings = Settings()
+settings.validate_required()

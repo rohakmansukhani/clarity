@@ -1,6 +1,10 @@
+```python
 import redis.asyncio as redis
 from app.core.config import settings
 from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 class RedisService:
     _pool: Optional[redis.Redis] = None
