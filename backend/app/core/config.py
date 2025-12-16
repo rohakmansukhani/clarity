@@ -13,8 +13,15 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # Supabase Settings
-    SUPABASE_URL: str | None = None
-    SUPABASE_KEY: str | None = None
+    SUPABASE_URL: str
+    SUPABASE_KEY: str
+    SUPABASE_JWT_SECRET: str | None = None
+    LOG_LEVEL: str = "INFO"
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
+
+    @property
+    def origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
     
     # Other Services
     GROQ_API_KEY: str | None = None

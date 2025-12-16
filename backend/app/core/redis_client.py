@@ -9,7 +9,23 @@ class RedisService:
     async def connect(cls):
         """Initialize the Redis connection pool."""
         if cls._pool is None:
-            cls._pool = redis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
+            try:
+                cls._pool = redis.from_url(
+                    settings.REDIS_URL,
+                    encoding="utf-8",
+                    decode_responses=True,
+                    socket_connect_timeout=5,
+                    socket_timeout=5
+                )
+
+                # Test connection
+                await cls._pool.ping()
+                logger.info("✅ Redis connected successfully")
+
+            except Exception as e:
+                logger.error(f"❌ Redis connection failed: {e}")
+                cls._pool = None
+                raise
 
     @classmethod
     async def disconnect(cls):

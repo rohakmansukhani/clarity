@@ -17,19 +17,32 @@ class NSELibProvider(BaseDataSource):
             loop = asyncio.get_event_loop()
             data = await loop.run_in_executor(None, lambda: capital_market.price_volume_and_deliverable_position_data(symbol=symbol, period='1D'))
             
-            # Data is usually a pandas dataframe
-            if data is not None and not data.empty:
-                # Get last close price
-                # Columns usually: Symbol, Series, Date, PrevClose, OpenPrice, HighPrice, LowPrice, LastPrice, ClosePrice...
-                # We want LastPrice
-                latest = data.iloc[-1]
-                price_val = latest['LastPrice']
-                if isinstance(price_val, str):
-                    price = float(price_val.replace(',', ''))
-                else:
-                    price = float(price_val)
-                return price
-            return 0.0
+            # Validate DataFrame
+            if data is None or data.empty:
+                logger.warning(f"NSELib returned empty data for {symbol}")
+                return 0.0
+            
+            # Check for required column
+            if 'LastPrice' not in data.columns:
+                logger.error(f"LastPrice column missing for {symbol}")
+                return 0.0
+            
+            # Get last row
+            latest = data.iloc[-1]
+            price_val = latest['LastPrice']
+            
+            # Handle string or float
+            if isinstance(price_val, str):
+                price = float(price_val.replace(',', '').strip())
+            else:
+                price = float(price_val)
+            
+            # Sanity check
+            if price <= 0 or price > 1_000_000:
+                logger.warning(f"Suspicious price for {symbol}: {price}")
+                return 0.0
+                
+            return price
         except Exception as e:
             logger.error(f"NSELib Error for {symbol}: {e}")
             return 0.0

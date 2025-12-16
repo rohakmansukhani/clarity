@@ -20,11 +20,32 @@ async def lifespan(app: FastAPI):
     await RedisService.disconnect()
 
 from app.core.errors import add_exception_handlers
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from app.core.rate_limit import limiter
+from app.core.logging_config import setup_logging
+
+# Call before creating FastAPI app
+setup_logging()
 
 app = FastAPI(
     title=settings.PROJECT_NAME, 
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan
+)
+
+# Attach Limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Add Global Exception Handlers (404, 500, etc.)

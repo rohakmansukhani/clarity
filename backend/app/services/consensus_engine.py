@@ -31,20 +31,26 @@ class ConsensusEngine:
     @cache(expire=60, key_prefix="consensus")
     async def get_consensus_price(self, symbol: str) -> Dict[str, Any]:
         """
-        Fetches prices from all providers in parallel and determines the consensus.
+        Fetches prices from all providers and determines consensus.
         
-        Logic:
-        1. Fetch Price from all sources.
-        2. Filter out invalid (0.00) or failed requests.
-        3. Simple Average if multiple sources agree (Variance < 0.5%).
-        4. Return 'VERIFIED' status if high confidence, else 'WARNING' or 'SINGLE_SOURCE'.
+        Weighting:
+        - NSELib: 1.0 (official, highest weight)
+        - YahooFinance: 0.8
+        - GoogleFinance: 0.6
         """
         results = []
         # Parallel fetch
         tasks = [p.get_latest_price(symbol) for p in self.providers]
         prices = await asyncio.gather(*tasks, return_exceptions=True)
         
-        valid_prices = []
+        # Weights for each provider
+        weights = {
+            "NSE_Lib": 1.0,
+            "YahooFinance": 0.8,
+            "GoogleFinance": 0.6
+        }
+        
+        weighted_prices = []
         source_map = {}
         
         for i, res in enumerate(prices):
@@ -53,37 +59,38 @@ class ConsensusEngine:
                 logger.error(f"{provider_name} failed: {res}")
                 continue
             if isinstance(res, (int, float)) and res > 0:
-                valid_prices.append(res)
-                source_map[res] = provider_name
+                weight = weights.get(provider_name, 0.5)
+                weighted_prices.append((res, weight, provider_name))
+                source_map[provider_name] = res
                 
-        if not valid_prices:
+        if not weighted_prices:
             return {"status": "ERROR", "price": 0.0, "message": "No data source available"}
             
-        # Sort prices to easily find Min/Max for variance check
-        valid_prices.sort()
+        # Weighted average
+        total_weight = sum(w for _, w, _ in weighted_prices)
+        final_price = sum(p * w for p, w, _ in weighted_prices) / total_weight
         
-        # Default Logic: simple average of avail sources
-        final_price = sum(valid_prices) / len(valid_prices)
-        status = "SINGLE_SOURCE"
+        # Calculate variance
+        prices_only = [p for p, _, _ in weighted_prices]
+        min_p = min(prices_only)
+        max_p = max(prices_only)
+        variance = (max_p - min_p) / min_p if min_p > 0 else 0
         
-        if len(valid_prices) >= 2:
-            # Check consistency metrics
-            min_p = min(valid_prices)
-            max_p = max(valid_prices)
-            variance = (max_p - min_p) / min_p
-            
-            if variance < 0.005: # < 0.5% variance (Sources agree)
+        # Determine status
+        if len(weighted_prices) >= 2:
+            if variance < 0.005: # < 0.5% variance
                 status = "VERIFIED"
-            elif variance < 0.01: # < 1% variance (Minor diff)
+            elif variance < 0.01: # < 1% variance
                 status = "WARNING"
             else:
-                status = "UNSTABLE" # > 1% diff (Sources disagree significantly)
+                status = "UNSTABLE"
         else:
             status = "SINGLE_SOURCE"
 
         return {
             "price": round(final_price, 2),
             "status": status,
-            "variance_pct": round(((max(valid_prices) - min(valid_prices)) / min(valid_prices) * 100), 2) if len(valid_prices) > 1 else 0,
-            "sources": source_map
+            "variance_pct": round(variance * 100, 2),
+            "sources": source_map,
+            "primary_source": weighted_prices[0][2] if weighted_prices else None
         }

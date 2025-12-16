@@ -18,3 +18,13 @@ beautifulsoup4
 lxml
 requests
 fake-useragent
+
+# Security & Auth
+python-jose[cryptography]
+passlib[bcrypt]
+email-validator
+python-multipart
+
+# Utilities
+slowapi
+aiofiles

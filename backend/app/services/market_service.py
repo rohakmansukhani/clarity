@@ -153,7 +153,7 @@ class MarketService:
         return await loop.run_in_executor(None, _fetch)
 
     @cache(expire=60, key_prefix="market_status")
-    async def get_market_status(self) -> Dict[str, Any]:
+    async def get_market_status(self) -> List[Dict[str, Any]]:
         """
         Fetches status of major indices (Nifty 50, Sensex).
         """
@@ -166,29 +166,43 @@ class MarketService:
         }
         
         def _fetch_indices():
-            data = yf.Tickers(" ".join(indices.values()))
             result = []
             for name, ticker in indices.items():
-                info = data.tickers[ticker].fast_info
-                # fallback to info if fast_info missing key data
                 try:
-                    last_price = info.last_price
-                    prev_close = info.previous_close
-                    change = last_price - prev_close
-                    pct_change = (change / prev_close) * 100
+                    stock = yf.Ticker(ticker)
+                    
+                    # Use history for reliable data
+                    hist = stock.history(period="1d")
+                    if hist.empty:
+                        result.append({"index": name, "error": "No data"})
+                        continue
+                    
+                    current_price = hist['Close'].iloc[-1]
+                    
+                    # Get previous close from info
+                    info = stock.info
+                    prev_close = info.get('previousClose', info.get('regularMarketPreviousClose', current_price))
+                    
+                    change = current_price - prev_close
+                    pct_change = (change / prev_close * 100) if prev_close > 0 else 0
+                    
+                    # Market state
+                    market_state = info.get('marketState', 'CLOSED')
+                    is_open = market_state in ['REGULAR', 'PRE', 'POST']
                     
                     result.append({
                         "index": name,
-                        "current": round(last_price, 2),
+                        "current": round(current_price, 2),
                         "change": round(change, 2),
                         "percent_change": round(pct_change, 2),
-                        "status": "OPEN" if getattr(data.tickers[ticker].info, 'marketState', '') == 'REGULAR' else "CLOSED" # Approximated
+                        "status": "OPEN" if is_open else "CLOSED"
                     })
-                except:
-                    # Fallback for error
+                except Exception as e:
+                    logger.error(f"Error fetching {name}: {e}")
                     result.append({"index": name, "error": "Data Unavailable"})
+            
             return result
-
+    
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _fetch_indices)
 
