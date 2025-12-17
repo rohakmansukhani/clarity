@@ -8,6 +8,9 @@ from app.core.cache import cache
 import logging
 from nselib import capital_market
 from app.utils.formatters import format_inr, format_percent
+from app.services.analysis.technical_analyzer import TechnicalAnalyzer
+from app.services.analysis.fundamental_analyzer import FundamentalAnalyzer
+from app.services.analysis.news_analyzer import NewsAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +35,10 @@ class MarketService:
         self.screener = ScreenerProvider()
         self.news_provider = MoneyControlProvider()
         self.yahoo = YahooProvider()
+        # NEW: Analysis engines
+        self.technical_analyzer = TechnicalAnalyzer()
+        self.fundamental_analyzer = FundamentalAnalyzer()
+        self.news_analyzer = NewsAnalyzer()
 
     @cache(expire=300, key_prefix="stock_details")
     async def get_aggregated_details(self, symbol: str) -> Dict[str, Any]:
@@ -256,3 +263,123 @@ class MarketService:
 
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _fetch_sectors)
+
+    @cache(expire=300, key_prefix="stock_analysis_full")
+    async def get_comprehensive_analysis(self, symbol: str) -> Dict[str, Any]:
+        """
+        Full 360-degree analysis: Technical + Fundamental + News + Scores.
+        This is the MAIN function called by AI for recommendations.
+        """
+        try:
+            # 1. Get base data with Yahoo fallback for fundamentals
+            base_data = await self.get_aggregated_details(symbol)
+            if not base_data:
+                return {"error": "Stock not found"}
+                
+            fundamentals = base_data.get('fundamentals', {})
+            if not fundamentals:
+                 logger.info(f"Screener fundamentals failed for {symbol}, trying Yahoo")
+                 fundamentals = await self.yahoo.get_stock_details(symbol)
+                 base_data['fundamentals'] = fundamentals # Update base_data with Yahoo data
+            
+            history = await self.get_history(symbol, period="1y")
+            
+            # 2. Run all analyzers
+            technical = self.technical_analyzer.analyze(history)
+            fundamental = self.fundamental_analyzer.analyze(fundamentals)
+            news = self.news_analyzer.analyze(base_data.get('news', []))
+            
+            # 3. Calculate scores
+            from app.services.scoring.stability_scorer import StabilityScoreEngine
+            from app.services.scoring.timing_scorer import TimingScoreEngine
+            from app.services.scoring.risk_profiler import RiskProfileEngine
+            
+            market_data_for_scoring = {
+                "history": history,
+                "fundamentals": fundamentals # Use the potentially updated fundamentals
+            }
+            
+            stability = StabilityScoreEngine().calculate_score(symbol, market_data_for_scoring)
+            timing = TimingScoreEngine().calculate_score(symbol, market_data_for_scoring)
+            risk = RiskProfileEngine().calculate_risk(symbol, market_data_for_scoring)
+            
+            # 4. Generate recommendation
+            recommendation = self._generate_recommendation(stability, timing, risk, fundamental)
+            
+            return {
+                "symbol": symbol,
+                "price": base_data.get("market_data", {}).get("price_formatted"),
+                "price_raw": base_data.get("market_data", {}).get("price"),
+                "recommendation": recommendation,
+                "scores": {
+                    "stability": stability,
+                    "timing": timing,
+                    "risk": risk
+                },
+                "analysis": {
+                    "technical": technical,
+                    "fundamental": fundamental,
+                    "news": news
+                },
+                "raw_data": {
+                    "fundamentals": base_data.get("fundamentals", {}),
+                    "news_items": base_data.get("news", [])[:5]
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Comprehensive Analysis Error for {symbol}: {e}")
+            return {"error": str(e)}
+
+    def _generate_recommendation(self, stability, timing, risk, fundamental) -> Dict[str, Any]:
+        """
+        Generate final BUY/HOLD/SELL recommendation based on all scores.
+        """
+        stability_score = stability.get('score', 0)
+        timing_score = timing.get('score', 0)
+        timing_signal = timing.get('signal', 'NEUTRAL')
+        risk_score = risk.get('risk_score', 50)
+        fund_health = fundamental.get('health_score', 50)
+        
+        # Composite Score (weighted)
+        composite = (
+            stability_score * 0.3 +
+            timing_score * 0.3 +
+            (100 - risk_score) * 0.2 +  # Lower risk = higher score
+            fund_health * 0.2
+        )
+        
+        # Determine Action
+        if composite >= 70 and timing_signal == 'BUY':
+            action = "STRONG BUY"
+            confidence = "HIGH"
+            reason = "Excellent fundamentals, good entry timing, manageable risk"
+        elif composite >= 60:
+            action = "BUY"
+            confidence = "MEDIUM"
+            reason = "Solid fundamentals with favorable risk-reward"
+        elif composite >= 50:
+            action = "HOLD"
+            confidence = "MEDIUM"
+            reason = "Mixed signals, wait for better entry point"
+        elif composite >= 40:
+            action = "HOLD"
+            confidence = "LOW"
+            reason = "Some concerns present, monitor closely"
+        else:
+            action = "AVOID"
+            confidence = "HIGH"
+            reason = "Multiple red flags detected"
+        
+        return {
+            "action": action,
+            "confidence": confidence,
+            "composite_score": round(composite),
+            "reasoning": reason,
+            "key_factors": {
+                "stability": f"{stability_score}/100",
+                "timing": timing_signal,
+                "risk": risk.get('risk_level'),
+                "fundamentals": fundamental.get('valuation', {}).get('level')
+            }
+        }

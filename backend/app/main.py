@@ -4,6 +4,7 @@ from app.api.api_v1.api import api_router
 from app.core.config import settings
 from app.core.redis_client import RedisService
 from app.services.consensus_engine import ConsensusEngine
+from app.core.scheduler import scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,6 +16,7 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     await RedisService.connect()
+    scheduler.start()
     yield
     # Shutdown
     await RedisService.disconnect()
@@ -91,6 +93,19 @@ async def health_check():
         health_status["supabase"] = "connected"
     except Exception as e:
         health_status["supabase"] = f"error: {str(e)}"
+        health_status["status"] = "degraded"
+
+    # Check Clarity AI (Groq)
+    try:
+        from app.services.ai_service import AIService
+        ai = AIService()
+        if ai.client:
+            health_status["clarity_ai"] = "connected"
+        else:
+            health_status["clarity_ai"] = "disconnected (missing key)"
+            health_status["status"] = "degraded"
+    except Exception as e:
+        health_status["clarity_ai"] = f"error: {str(e)}"
         health_status["status"] = "degraded"
     
     return health_status
