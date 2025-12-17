@@ -88,7 +88,7 @@ export default function FloatingAdvisor() {
                         animate={{ opacity: 1, y: 0, x: '-50%' }}
                         exit={{ opacity: 0, y: 100, x: '-50%' }}
                         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        className="fixed bottom-10 left-1/2 md:left-[calc(50%+40px)] -translate-x-1/2 z-50 w-[90%] max-w-[700px] hidden md:flex flex-col gap-3"
+                        className="fixed bottom-10 left-1/2 md:left-[calc(50%+364px)] -translate-x-1/2 z-50 w-[90%] max-w-[700px] hidden md:flex flex-col gap-3"
                     >
                         {/* Messages Area (appears above input) */}
                         {quickChatMessages.length > 0 && (
