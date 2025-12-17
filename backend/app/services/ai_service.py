@@ -21,7 +21,7 @@ class AIService:
             
         prompt = f"""
         You are a financial analyst. Analyze this data for {symbol} and provide 3 concise sentences.
-        Focus on: price action, fundamental strength, and investment outlook.
+        Focus on: price action, fundamental strength, news sentiment, and investment outlook.
         Be direct - no preambles like "based on the data" or "the analysis shows".
         
         Data: {json.dumps(data, default=str)}

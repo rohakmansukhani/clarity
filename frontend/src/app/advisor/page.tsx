@@ -18,21 +18,7 @@ interface Message {
     isThinking?: boolean;
 }
 
-// --- Mock AI Logic (Temporary until Backend Connection) ---
-const simulateAIResponse = async (query: string): Promise<string> => {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const lowerQ = query.toLowerCase();
-            if (lowerQ.includes('explain')) {
-                resolve(`**${query.replace('Explain', '').replace('explain', '').trim()}** is a critical concept in finance.\n\nHere's a breakdown:\n1. **Definition**: It represents the core value driver of the asset.\n2. **Impact**: Higher values typically correspond to bullish market sentiment.\n3. **Example**: If Reliance reports higher EBITDA, it means operational efficiency is improving.\n\n*Would you like to analyze related stocks?*`);
-            } else if (lowerQ.includes('reliance')) {
-                resolve(`**Reliance Industries (RELIANCE)** is showing strong momentum.\n\n- **Price**: ₹2,985.40 (+1.2%)\n- **Sector**: Energy & Digital Services\n- **Verdict**: **BUY** detailed on strong retail growth.\n\n> "Reliance is effectively a proxy for the Indian growth story." - *Clarity AI*`);
-            } else {
-                resolve(`I've analyzed your query: "${query}".\n\nBased on current market data, the outlook remains **positive**. Institutional flows are steady, and the Nifty 50 is consolidating near all-time highs.\n\nKey sectors to watch:\n- **Banking** (Undervalued)\n- **IT** (Recovery phase)`);
-            }
-        }, 1500);
-    });
-};
+import { marketService } from '@/services/marketService';
 
 const SUGGESTED_PROMPTS = [
     { icon: TrendingUp, text: "Analyze Reliance Industries" },
@@ -98,8 +84,8 @@ export default function AdvisorPage() {
         setIsTyping(true);
 
         try {
-            // Simulate API Call
-            const responseText = await simulateAIResponse(text);
+            // Call Backend AI
+            const responseText = await marketService.chatWithAI(text);
 
             const newAiMsg: Message = {
                 id: (Date.now() + 1).toString(),

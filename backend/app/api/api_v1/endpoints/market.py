@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
+# Trigger Reload
 from app.services.market_service import MarketService
 from typing import List, Any
 from app.core.rate_limit import limiter
@@ -30,5 +31,16 @@ async def get_sector_performance(request: Request):
     """
     try:
         return await market_service.get_sector_performance()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/movers")
+@limiter.limit("60/minute")
+async def get_top_movers(request: Request):
+    """
+    Get Top Gainers and Losers.
+    """
+    try:
+        return await market_service.get_top_movers()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -69,6 +69,20 @@ class ScreenerProvider(BaseDataSource):
                         except:
                             ratios[key] = val
                             
+                            ratios[key] = val
+                            
+            # Normalize Keys for Frontend
+            if "stock_p/e" in ratios:
+                ratios["pe_ratio"] = ratios["stock_p/e"]
+            if "high_/_low" in ratios:
+                hl = str(ratios["high_/_low"]).split("/")
+                if len(hl) == 2:
+                    try:
+                        ratios["high_52w"] = float(hl[0].strip().replace(",", ""))
+                        ratios["low_52w"] = float(hl[1].strip().replace(",", ""))
+                    except:
+                        pass
+            
             return ratios
         except Exception as e:
             logger.error(f"Screener scrape failed: {e}")

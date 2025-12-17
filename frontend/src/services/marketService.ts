@@ -29,13 +29,47 @@ export const marketService = {
         return response.data;
     },
 
+    // Get Market Status (Nifty/Sensex)
+    getMarketStatus: async () => {
+        // Changed to /market/status to avoid conflict
+        const response = await api.get('/market/status');
+        return response.data;
+    },
+
+    // Get Top Top Gainers/Losers
+    getTopMovers: async () => {
+        const response = await api.get('/market/movers');
+        return response.data;
+    },
+
     // Get AI Analysis (The Brain)
     getAIAnalysis: async (symbol: string) => {
-        // We use the chat endpoint for comprehensive analysis for now
         const response = await api.post('/ai/chat', {
             query: `Analyze ${symbol}`,
             context: { type: 'stock_analysis', symbol: symbol }
         });
         return response.data;
+    },
+
+    // Get Optimized AI Summary (Faster)
+    getAggregatedStockAnalysis: async (symbol: string) => {
+        const response = await api.get(`/ai/stock/${symbol}/summary`);
+        return response.data;
+    },
+
+    // Explain Financial Term
+    explainFinancialTerm: async (term: string) => {
+        const response = await api.post('/ai/explain', { term });
+        return response.data;
+    },
+
+    // Generic Chat with AI Advisor
+    chatWithAI: async (query: string, context?: any) => {
+        const response = await api.post('/ai/chat', {
+            query,
+            context
+        });
+        // Backend returns { response: "string" }
+        return response.data.response;
     }
 };

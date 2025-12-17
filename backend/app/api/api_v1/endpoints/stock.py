@@ -21,6 +21,8 @@ async def search_stocks(request: Request, q: str = Query(..., min_length=1)):
     results = await market_service.search_stocks(q)
     return results
 
+
+
 @router.get("/{symbol}")
 @limiter.limit("60/minute")
 async def get_stock_details(request: Request, symbol: str):

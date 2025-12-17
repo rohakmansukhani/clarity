@@ -1,104 +1,65 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Box, Typography, Grid, Chip, CircularProgress, Button, Tab, Tabs, Tooltip, Menu, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
 import { ArrowUpRight, ArrowDownRight, Zap, TrendingUp, Activity, Newspaper, Brain, Info } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
-
-// MOCK DATA FOR RELIANCE
-const MOCK_DATA = {
-    symbol: "RELIANCE",
-    name: "Reliance Industries Ltd.",
-    price: "2,985.40",
-    change: "+45.20",
-    changePercent: "1.54",
-    marketCap: "19.8T",
-    pe: "28.5",
-    high52: "3,000.00",
-    low52: "2,200.00",
-    score: 8.5,
-    verdict: "STRONG BUY",
-    summary: "Reliance is showing strong bullish momentum breaking past critical resistance levels. AI analysis detects significant institutional accumulation and positive sentiment from recent renewable energy investments."
-};
-
-const MOCK_CHART_DATA: Record<string, any[]> = {
-    '5M': [
-        { time: '10:00', price: 2940 }, { time: '10:05', price: 2942 }, { time: '10:10', price: 2945 },
-        { time: '10:15', price: 2943 }, { time: '10:20', price: 2948 }, { time: '10:25', price: 2950 },
-        { time: '10:30', price: 2955 }
-    ],
-    '1D': [
-        { time: '10:00', price: 2940 }, { time: '11:00', price: 2955 }, { time: '12:00', price: 2948 },
-        { time: '13:00', price: 2965 }, { time: '14:00', price: 2980 }, { time: '15:00', price: 2985.40 }
-    ],
-    '1W': [
-        { time: 'Mon', price: 2890 }, { time: 'Tue', price: 2910 }, { time: 'Wed', price: 2905 },
-        { time: 'Thu', price: 2940 }, { time: 'Fri', price: 2985.40 }
-    ],
-    '1M': [
-        { time: 'Week 1', price: 2800 }, { time: 'Week 2', price: 2850 },
-        { time: 'Week 3', price: 2820 }, { time: 'Week 4', price: 2985.40 }
-    ],
-    '1Y': [
-        { time: 'Jan', price: 2400 }, { time: 'Mar', price: 2500 }, { time: 'Jun', price: 2450 },
-        { time: 'Sep', price: 2700 }, { time: 'Dec', price: 2985.40 }
-    ],
-    '5Y': [
-        { time: '2020', price: 1500 }, { time: '2021', price: 2000 }, { time: '2022', price: 2400 },
-        { time: '2023', price: 2300 }, { time: '2024', price: 2985.40 }
-    ],
-    'ALL': [
-        { time: '2015', price: 500 }, { time: '2018', price: 1200 }, { time: '2021', price: 2000 },
-        { time: '2024', price: 2985.40 }
-    ]
-};
-
-const MOCK_NEWS = [
-    {
-        id: 1,
-        title: "Reliance's Green Energy Push: A Game Changer?",
-        source: "Financial Express",
-        time: "2h ago",
-        image: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=800&q=80",
-        summary: "Reliance Industries accelerates its transition to green energy with a massive ₹75,000 Cr investment plan."
-    },
-    {
-        id: 2,
-        title: "Retail Arm Custom: Q3 Revenue Soars 18%",
-        source: "Bloomberg",
-        time: "4h ago",
-        image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80",
-        summary: "Record footfall and digital integration drive Reliance Retail's quarterly growth beyond analyst estimates."
-    },
-    {
-        id: 3,
-        title: "Jio Financial Services: The Next Big thing?",
-        source: "Mint",
-        time: "6h ago",
-        image: "https://images.unsplash.com/photo-1611974765270-ca12588265b6?w=800&q=80",
-        summary: "Market experts weigh in on the potential demerger and listing of Jio Financial Services."
-    }
-];
+import { marketService } from '@/services/marketService';
 
 export default function StockPage() {
     const params = useParams();
     const symbol = (params.symbol as string).toUpperCase();
+
+    // State
     const [loading, setLoading] = useState(true);
-    const [tabValue, setTabValue] = useState(0);
-    const [timeRange, setTimeRange] = useState('1D');
+    const [error, setError] = useState<string | null>(null);
+    const [data, setData] = useState<any>(null);
+    const [chartData, setChartData] = useState<any[]>([]);
+    const [aiSummary, setAiSummary] = useState<string>('');
+    const [news, setNews] = useState<any[]>([]);
+
+    // UI State
+    const [timeRange, setTimeRange] = useState('1mo');
     const [configOpen, setConfigOpen] = useState(false);
     const [fastReload, setFastReload] = useState(false);
     const [updateInterval, setUpdateInterval] = useState(5); // Minutes
     const [portfolioModalOpen, setPortfolioModalOpen] = useState(false);
     const [buyListModalOpen, setBuyListModalOpen] = useState(false);
 
-    // Simulate loading for effect
-    useEffect(() => {
-        setTimeout(() => setLoading(false), 800);
-    }, []);
+    // Fetch Data
+    const fetchData = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
 
-    // ... (existing mock data logic) ...
+            // Parallel fetching for speed
+            const [details, history, summaryData] = await Promise.all([
+                marketService.getStockDetails(symbol),
+                marketService.getStockHistory(symbol, timeRange),
+                marketService.getAggregatedStockAnalysis(symbol).catch(() => ({ summary: "AI Analysis unavailable." }))
+            ]);
+
+            setData(details);
+            setChartData(history);
+            setAiSummary(summaryData.summary);
+            // Assuming details contains news, or we fetch it separately. 
+            // For now, let's map details.news if available, or fall back to empty.
+            if (details.news) {
+                setNews(details.news);
+            }
+
+        } catch (err: any) {
+            console.error("Failed to load stock data:", err);
+            setError("Failed to load stock data. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    }, [symbol, timeRange]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     if (loading) {
         return (
@@ -108,9 +69,24 @@ export default function StockPage() {
         );
     }
 
-    // Use Mock Data if Symbol is RELIANCE, else Generic fallback
-    const isMock = symbol === 'RELIANCE';
-    const data = isMock ? MOCK_DATA : { ...MOCK_DATA, symbol: symbol, name: `${symbol} Corp.` };
+    if (error || !data) {
+        return (
+            <Box sx={{ display: 'flex', height: '80vh', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+                <Typography color="error" gutterBottom>{error || 'Stock not found'}</Typography>
+                <Button variant="outlined" onClick={() => window.location.href = '/analysis'}>Go Back</Button>
+            </Box>
+        );
+    }
+
+    // Use Real Data
+    // Fallback if API returns partial data
+    const price = data.market_data?.price_formatted || `₹${data.market_data?.price?.toFixed(2) || '0.00'}`;
+    const change = data.market_data?.change || 0;
+    const changePercent = data.market_data?.changePercent || 0; // Assuming backend sends this, or we calc it? 
+    // Wait, backend consensus doesn't send changePercent explicitly in top level market_data sometimes?
+    // Let's check: market_service.py says: "price_formatted": format_inr(price_data.get("price", 0.0)).
+    // It does NOT seem to send change/changePercent in market_data unless consensus engine does valid lookup.
+    // We should be safe with optionals.
 
     return (
         <Box sx={{ maxWidth: 1600, mx: 'auto', pb: 10 }}>
@@ -121,16 +97,18 @@ export default function StockPage() {
                         {data.symbol}
                     </Typography>
                     <Typography variant="h4" sx={{ color: '#666', fontWeight: 400 }}>
-                        {data.name}
+                        {data.name || data.symbol}
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                     <Typography variant="h2" sx={{ fontWeight: 600, fontSize: { xs: '2rem', md: '3rem' } }}>
-                        ₹{data.price}
+                        {price}
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', color: '#10B981', bgcolor: 'rgba(16, 185, 129, 0.1)', px: 1.5, py: 0.5, borderRadius: 1 }}>
-                        <ArrowUpRight size={24} />
-                        <Typography variant="h6" sx={{ fontWeight: 600, ml: 0.5 }}>{data.change} ({data.changePercent}%)</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', color: change >= 0 ? '#10B981' : '#EF4444', bgcolor: change >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', px: 1.5, py: 0.5, borderRadius: 1 }}>
+                        {change >= 0 ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />}
+                        <Typography variant="h6" sx={{ fontWeight: 600, ml: 0.5 }}>
+                            {change > 0 ? '+' : ''}{change} ({changePercent}%)
+                        </Typography>
                     </Box>
                 </Box>
             </Box>
@@ -142,7 +120,7 @@ export default function StockPage() {
                     <Box sx={{ height: 450, bgcolor: '#111', borderRadius: 4, p: 3, border: '1px solid #222', mb: 6, position: 'relative' }}>
                         {/* Time Range Selectors */}
                         <Box sx={{ position: 'absolute', top: 20, right: 24, zIndex: 10, display: 'flex', gap: 1 }}>
-                            {['5M', '1D', '1W', '1M', '1Y', '5Y', 'ALL'].map((range) => (
+                            {['1d', '5d', '1mo', '3mo', '6mo', '1y', 'ytd', 'max'].map((range) => (
                                 <Button
                                     key={range}
                                     size="small"
@@ -156,7 +134,7 @@ export default function StockPage() {
                                         '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }
                                     }}
                                 >
-                                    {range}
+                                    {range.toUpperCase()}
                                 </Button>
                             ))}
                             {/* Config Icon for 5M/Fast Reload */}
@@ -172,31 +150,50 @@ export default function StockPage() {
                         </Box>
 
                         <Box sx={{ width: '100%', height: '100%', pt: 4 }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={MOCK_CHART_DATA[timeRange] || MOCK_CHART_DATA['1D']} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#00E5FF" stopOpacity={0.2} />
-                                            <stop offset="95%" stopColor="#00E5FF" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#444' }} dy={10} />
-                                    <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fill: '#444' }} width={45} />
-                                    <RechartsTooltip
-                                        contentStyle={{ backgroundColor: '#000', borderColor: '#333', borderRadius: '8px' }}
-                                        itemStyle={{ color: '#00E5FF' }}
-                                    />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="price"
-                                        stroke="#00E5FF"
-                                        strokeWidth={3}
-                                        fillOpacity={1}
-                                        fill="url(#colorPrice)"
-                                        animationDuration={1500}
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                            {/* Chart uses chartData state which matches backend format (date, open, close...) */}
+                            {chartData && chartData.length > 0 ? (
+                                (() => {
+                                    // Check if data spans multiple years
+                                    const years = new Set(chartData.map(d => new Date(d.date).getFullYear()));
+                                    const showYear = years.size > 1;
+
+                                    return (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                                <defs>
+                                                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#00E5FF" stopOpacity={0.2} />
+                                                        <stop offset="95%" stopColor="#00E5FF" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <XAxis
+                                                    dataKey="date"
+                                                    tickFormatter={(val) => {
+                                                        const d = new Date(val);
+                                                        return timeRange === '1d' ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                                                    }}
+                                                    axisLine={false} tickLine={false} tick={{ fill: '#444' }} dy={10}
+                                                />
+                                                <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fill: '#444' }} width={45} />
+                                                <RechartsTooltip content={<CustomTooltip timeRange={timeRange} showYear={showYear} />} cursor={{ stroke: 'rgba(255, 255, 255, 0.1)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="close"
+                                                    stroke="#00E5FF"
+                                                    strokeWidth={3}
+                                                    fillOpacity={1}
+                                                    fill="url(#colorPrice)"
+                                                    animationDuration={1000}
+                                                />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    );
+                                })()
+                            ) : (
+                                <Box sx={{ display: 'flex', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                                    <Typography color="text.secondary">No chart data for this period</Typography>
+                                </Box>
+                            )}
                         </Box>
                     </Box>
 
@@ -205,10 +202,10 @@ export default function StockPage() {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                             <Brain size={28} color="#00E5FF" />
                             <Typography variant="h5" sx={{ fontWeight: 700, color: '#fff' }}>The Clarity Verdict</Typography>
-                            <Chip label={data.verdict} sx={{ bgcolor: '#10B981', color: '#000', fontWeight: 700, borderRadius: 1 }} />
+                            <Chip label={data.scores?.recommendation?.action || "AI ANALYZING"} sx={{ bgcolor: '#10B981', color: '#000', fontWeight: 700, borderRadius: 1 }} />
                         </Box>
                         <Typography variant="body1" sx={{ color: '#ccc', fontSize: '1.1rem', lineHeight: 1.6, maxWidth: '90%' }}>
-                            {data.summary}
+                            {aiSummary || data.scores?.recommendation?.reasoning || "Generating real-time analysis..."}
                         </Typography>
                     </Box>
                 </Grid>
@@ -217,10 +214,10 @@ export default function StockPage() {
                 <Grid size={{ xs: 12, md: 4 }}>
                     <Typography variant="caption" sx={{ color: '#666', letterSpacing: '0.1em', fontWeight: 600, mb: 3, display: 'block' }}>KEY STATISTICS</Typography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 6 }}>
-                        <StatRow label="Market Cap" value={data.marketCap} />
-                        <StatRow label="P/E Ratio" value={data.pe} />
-                        <StatRow label="52W High" value={data.high52} />
-                        <StatRow label="52W Low" value={data.low52} />
+                        <StatRow label="Market Cap" value={formatMarketCap(data.fundamentals?.market_cap)} />
+                        <StatRow label="P/E Ratio" value={getPE(data.fundamentals)} />
+                        <StatRow label="52W High" value={getHighLow(data.fundamentals).high} />
+                        <StatRow label="52W Low" value={getHighLow(data.fundamentals).low} />
                     </Box>
 
                     <Typography variant="caption" sx={{ color: '#666', letterSpacing: '0.1em', fontWeight: 600, mb: 3, display: 'block' }}>ACTIONS</Typography>
@@ -254,7 +251,8 @@ export default function StockPage() {
                                 border: '1px solid #333',
                                 borderRadius: 4,
                                 minWidth: 500,
-                                p: 2
+                                p: 2,
+                                backgroundImage: 'none'
                             }
                         }}
                     >
@@ -335,7 +333,8 @@ export default function StockPage() {
                                 border: '1px solid #333',
                                 borderRadius: 4,
                                 minWidth: 500,
-                                p: 2
+                                p: 2,
+                                backgroundImage: 'none'
                             }
                         }}
                     >
@@ -425,8 +424,7 @@ export default function StockPage() {
                                 <Chip label="AI GENERATED" size="small" sx={{ bgcolor: 'rgba(0, 229, 255, 0.1)', color: '#00E5FF', fontSize: '0.65rem', fontWeight: 800, height: 20 }} />
                             </Typography>
                             <Typography variant="body1" sx={{ color: '#ccc', lineHeight: 1.6 }}>
-                                Institutional interest is peaking as <strong style={{ color: '#fff' }}>Reliance's Green Energy</strong> pivot begins to materialize with tangible investments.
-                                However, retail sector growth remains the primary short-term driver. Sentiment is <strong style={{ color: '#10B981' }}>Bullish</strong> but cautious on global oil volatility.
+                                {aiSummary || data.summary || "Analyzing latest market news..."}
                             </Typography>
                         </Box>
                     </Box>
@@ -434,52 +432,55 @@ export default function StockPage() {
 
                 {/* 2. News Grid */}
                 <Grid container spacing={4}>
-                    {MOCK_NEWS.map((news) => (
-                        <Grid size={{ xs: 12, md: 4 }} key={news.id}>
-                            <Box sx={{
-                                group: 'true',
-                                cursor: 'pointer',
-                                '&:hover .news-img': { transform: 'scale(1.05)' },
-                                '&:hover .news-title': { color: '#00E5FF' }
-                            }}>
-                                {/* Thumbnail */}
-                                <Box sx={{ height: 200, borderRadius: 3, overflow: 'hidden', mb: 2, bgcolor: '#111' }}>
-                                    <Box
-                                        className="news-img"
-                                        component="img"
-                                        src={news.image}
-                                        alt={news.title}
+                    {news.map((item: any, index: number) => (
+                        <Grid size={{ xs: 12, md: 4 }} key={index}>
+                            <Box
+                                onClick={() => item.link && window.open(item.link, '_blank')}
+                                sx={{
+                                    group: 'true',
+                                    cursor: 'pointer',
+                                    '&:hover .news-img': { transform: 'scale(1.05)' },
+                                    '&:hover .news-title': { color: '#00E5FF' }
+                                }}>
+                                <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                                    {/* Header: Logo + Source + Time */}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                        {/* Logo */}
+                                        <Box sx={{
+                                            width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', bgcolor: '#fff',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <img
+                                                src={`https://www.google.com/s2/favicons?domain=${item.link || item.source}&sz=64`}
+                                                alt={item.source}
+                                                style={{ width: '20px', height: '20px', objectFit: 'contain' }}
+                                                onError={(e: any) => { e.target.style.display = 'none'; }}
+                                            />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: '#00E5FF', fontWeight: 700, display: 'block', lineHeight: 1 }}>{item.source || 'Market News'}</Typography>
+                                            <Typography variant="caption" sx={{ color: '#666', fontSize: '0.7rem' }}>{item.time || 'Today'}</Typography>
+                                        </Box>
+                                    </Box>
+
+                                    {/* Title */}
+                                    <Typography
+                                        className="news-title"
+                                        variant="h6"
                                         sx={{
-                                            width: '100%', height: '100%', objectFit: 'cover',
-                                            transition: 'transform 0.4s ease-out',
-                                            opacity: 0.8
+                                            fontWeight: 700, lineHeight: 1.3, mb: 1, color: '#eee',
+                                            transition: 'color 0.2s',
+                                            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
                                         }}
-                                    />
+                                    >
+                                        {item.title}
+                                    </Typography>
+
+                                    {/* Summary */}
+                                    <Typography variant="body2" sx={{ color: '#888', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                        {item.summary || item.description}
+                                    </Typography>
                                 </Box>
-
-                                {/* Meta */}
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                    <Typography variant="caption" sx={{ color: '#00E5FF', fontWeight: 700 }}>{news.source}</Typography>
-                                    <Typography variant="caption" sx={{ color: '#666' }}>{news.time}</Typography>
-                                </Box>
-
-                                {/* Title */}
-                                <Typography
-                                    className="news-title"
-                                    variant="h6"
-                                    sx={{
-                                        fontWeight: 700, lineHeight: 1.3, mb: 1, color: '#eee',
-                                        transition: 'color 0.2s',
-                                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                                    }}
-                                >
-                                    {news.title}
-                                </Typography>
-
-                                {/* Summary */}
-                                <Typography variant="body2" sx={{ color: '#888', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                    {news.summary}
-                                </Typography>
                             </Box>
                         </Grid>
                     ))}
@@ -581,11 +582,107 @@ export default function StockPage() {
     );
 }
 
-function StatRow({ label, value }: { label: string, value: string }) {
+// Format Market Cap Helper
+function formatMarketCap(val: any) {
+    if (!val) return 'N/A';
+    // Clean string: remove ₹, Cr, commas, newlines, spaces
+    const cleanStr = String(val).replace(/[₹,Cr.\n\s]/g, '');
+    const num = parseFloat(cleanStr);
+
+    if (isNaN(num)) return 'N/A';
+
+    // Check if original string contained "Cr" or "Tr" to decide output unit
+    // But commonly just formatting nicely is enough.
+    // If num is huge (e.g. 2000000), treat as Cr if standard.
+    // Given the example "276061 Cr", the number IS in Crores already.
+
+    return `₹${num.toLocaleString('en-IN')} Cr`;
+}
+
+// Helper to get P/E
+function getPE(fundamentals: any) {
+    if (!fundamentals) return 'N/A';
+    return fundamentals.pe_ratio || fundamentals['stock_p/e'] || 'N/A';
+}
+
+// Helper to get High/Low
+function getHighLow(fundamentals: any) {
+    if (!fundamentals) return { high: 'N/A', low: 'N/A' };
+
+    // Check normalized keys first
+    if (fundamentals.high_52w && fundamentals.low_52w) {
+        return { high: `₹${fundamentals.high_52w}`, low: `₹${fundamentals.low_52w}` };
+    }
+
+    // Parse "high_/_low": "₹ 2613 / 1965"
+    if (fundamentals['high_/_low']) {
+        const parts = String(fundamentals['high_/_low']).replace(/[₹,]/g, '').split('/');
+        if (parts.length === 2) {
+            return {
+                high: `₹${parts[0].trim()}`,
+                low: `₹${parts[1].trim()}`
+            };
+        }
+    }
+
+    return { high: 'N/A', low: 'N/A' };
+}
+
+function StatRow({ label, value }: { label: string, value: string | number }) {
     return (
         <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 2, borderBottom: '1px solid #222' }}>
             <Typography variant="body1" sx={{ color: '#888' }}>{label}</Typography>
             <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>{value}</Typography>
         </Box>
     );
+}
+
+function CustomTooltip({ active, payload, label, timeRange, showYear }: any) {
+    if (active && payload && payload.length) {
+        let dateStr = '';
+        const dateObj = new Date(label);
+
+        // Tooltip Logic:
+        // If timeRange > 1d, hide time (show nothing for time).
+        // If two diff years (showYear=true), include year.
+
+        const isOneDay = timeRange === '1d' || timeRange === '5m';
+
+        if (isOneDay) {
+            // Show Time
+            dateStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else {
+            // Show Date Only
+            const options: any = { month: 'short', day: 'numeric' };
+            if (showYear) {
+                options.year = 'numeric';
+            }
+            dateStr = dateObj.toLocaleDateString([], options);
+        }
+
+        return (
+            <Box sx={{
+                bgcolor: 'rgba(10, 10, 10, 0.8)',
+                border: '1px solid #333',
+                borderRadius: 2,
+                p: 1.5,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                backdropFilter: 'blur(10px)',
+                minWidth: 140
+            }}>
+                <Typography variant="body2" sx={{ color: '#888', mb: 0.5, fontWeight: 500, fontSize: '0.75rem' }}>
+                    {dateStr}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                    <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+                        ₹{parseFloat(payload[0].value).toFixed(2)}
+                    </Typography>
+                </Box>
+                <Typography variant="caption" sx={{ color: '#00E5FF', fontWeight: 600, fontSize: '0.7rem' }}>
+                    Market Price
+                </Typography>
+            </Box>
+        );
+    }
+    return null;
 }

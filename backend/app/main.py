@@ -57,6 +57,7 @@ add_exception_handlers(app)
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 # Global consensus engine instance (can also be dependent)
+# Force Reload
 consensus_engine = ConsensusEngine()
 
 @app.get("/", tags=["Health"])

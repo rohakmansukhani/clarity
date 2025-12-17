@@ -54,7 +54,7 @@ async def explain_term(request: Request, body: ExplainRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/stock/{symbol}/summary")
-@limiter.limit("5/minute")
+@limiter.limit("30/minute")
 async def get_stock_ai_summary(request: Request, symbol: str):
     """
     Get an AI-generated summary for a stock based on real-time data.

@@ -1,12 +1,74 @@
 'use client';
 
-import { Box, Typography, Grid, Paper, IconButton, TextField, InputAdornment, Button, Tooltip } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Box, Typography, Grid, Paper, IconButton, TextField, InputAdornment, Button, Tooltip, CircularProgress, Autocomplete } from '@mui/material';
 import { Search, Bell, Settings, TrendingUp, ArrowUpRight, ArrowDownRight, Zap, MessageSquare, PieChart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { marketService } from '@/services/marketService';
 
 export default function DashboardPage() {
     const router = useRouter();
+    const [greeting, setGreeting] = useState('Good Evening');
+    const [marketStatus, setMarketStatus] = useState<any[]>([]);
+    const [topMovers, setTopMovers] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchOptions, setSearchOptions] = useState<any[]>([]); // Search Suggestions State
+
+    useEffect(() => {
+        // 1. Time-based Greeting
+        const hour = new Date().getHours();
+        if (hour < 12) setGreeting('Good Morning');
+        else if (hour < 18) setGreeting('Good Afternoon');
+        else setGreeting('Good Evening');
+
+        // 2. Fetch Market Data (Status + Movers)
+        const fetchMarket = async () => {
+            // Fetch Status
+            try {
+                const statusData = await marketService.getMarketStatus();
+                setMarketStatus(statusData);
+            } catch (e) {
+                console.error("Failed to fetch market status", e);
+            }
+
+            // Fetch Movers
+            try {
+                const moversData = await marketService.getTopMovers();
+                setTopMovers(moversData);
+            } catch (e) {
+                console.error("Failed to fetch top movers", e);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchMarket();
+    }, []);
+
+    // Dynamic Market Status Logic
+    const getMarketStatusMessage = () => {
+        const now = new Date();
+        const day = now.getDay();
+        const hour = now.getHours();
+        const minute = now.getMinutes();
+
+        // Weekend Check
+        if (day === 0 || day === 6) return { text: 'Closed', color: '#EF4444', sub: 'Weekend' };
+
+        // Market Hours: 09:15 - 15:30
+        const totalMinutes = hour * 60 + minute;
+        const start = 9 * 60 + 15;
+        const end = 15 * 60 + 30;
+
+        if (totalMinutes >= start && totalMinutes <= end) {
+            return { text: 'Active', color: '#10B981', sub: 'Live' };
+        }
+
+        return { text: 'Closed', color: '#EF4444', sub: 'After Hours' };
+    };
+
+    const statusObj = getMarketStatusMessage();
 
     return (
         <Box sx={{ maxWidth: 1600, mx: 'auto', px: { xs: 2, md: 6 }, pb: 4 }}>
@@ -14,41 +76,71 @@ export default function DashboardPage() {
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: { xs: 4, md: 8 }, gap: { xs: 3, md: 0 } }}>
                 <Box>
                     <Typography variant="h3" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 0.5, color: '#fff', fontSize: { xs: '2rem', md: '3rem' } }}>
-                        Good Evening, Rohak
+                        {greeting}, Rohak
                     </Typography>
                     <Typography variant="body1" sx={{ color: '#666', fontWeight: 500 }}>
-                        Market is <span style={{ color: '#10B981' }}>Bullish</span> today.
+                        Market is <span style={{ color: statusObj.color, fontWeight: 700 }}>{statusObj.text}</span> ({statusObj.sub}).
                     </Typography>
                 </Box>
 
-                <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', width: { xs: '100%', md: 'auto' } }}>
-                    <TextField
-                        id="dashboard-search"
-                        variant="standard"
-                        placeholder="Search stocks..."
-                        fullWidth
-                        InputProps={{
-                            disableUnderline: true,
-                            startAdornment: <Search size={20} color="#666" style={{ marginRight: 10 }} />,
-                            sx: {
-                                fontSize: '1rem',
-                                color: '#fff',
-                                borderBottom: '1px solid #333',
-                                pb: 0.5,
-                                width: { xs: '100%', md: 250 },
-                                transition: 'all 0.2s',
-                                '&:hover': { borderBottom: '1px solid #666' },
-                                '&.Mui-focused': { borderBottom: '1px solid #00E5FF', width: { xs: '100%', md: 300 } }
+                <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', width: { xs: '100%', md: 400 } }}>
+                    <Autocomplete
+                        freeSolo
+                        id="dashboard-search-autocomplete"
+                        options={searchOptions}
+                        getOptionLabel={(option: any) => typeof option === 'string' ? option : `${option.symbol} - ${option.name}`}
+                        filterOptions={(x) => x} // Disable built-in filter, we use backend search
+                        sx={{ width: '100%' }}
+                        onInputChange={async (event, newInputValue) => {
+                            if (newInputValue.length > 1) {
+                                try {
+                                    const results = await marketService.searchStocks(newInputValue);
+                                    setSearchOptions(results || []);
+                                } catch (e) {
+                                    console.error(e);
+                                }
+                            } else {
+                                setSearchOptions([]);
                             }
                         }}
-                        onKeyDown={(e: any) => {
-                            if (e.key === 'Enter' && e.target.value.trim()) {
-                                router.push(`/market/${e.target.value.trim().toUpperCase()}`);
+                        onChange={(event, value: any) => {
+                            if (value) {
+                                const symbol = typeof value === 'string' ? value : value.symbol;
+                                router.push(`/market/${symbol}`);
                             }
                         }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                variant="standard"
+                                placeholder="Search stocks..."
+                                fullWidth
+                                InputProps={{
+                                    ...params.InputProps,
+                                    disableUnderline: true,
+                                    startAdornment: <Search size={20} color="#666" style={{ marginRight: 10 }} />,
+                                    sx: {
+                                        fontSize: '1rem',
+                                        color: '#fff',
+                                        borderBottom: '1px solid #333',
+                                        pb: 0.5,
+                                        transition: 'all 0.2s',
+                                        '&:hover': { borderBottom: '1px solid #666' },
+                                        '&.Mui-focused': { borderBottom: '1px solid #00E5FF' }
+                                    }
+                                }}
+                            />
+                        )}
+                        renderOption={(props, option: any) => (
+                            <li {...props} style={{ backgroundColor: '#111', color: '#fff', borderBottom: '1px solid #222' }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    <Typography variant="body1" sx={{ fontWeight: 600 }}>{option.symbol}</Typography>
+                                    <Typography variant="caption" sx={{ color: '#888' }}>{option.name}</Typography>
+                                </Box>
+                            </li>
+                        )}
                     />
                     <IconButton sx={{ color: '#666', '&:hover': { color: '#fff' } }}><Bell size={20} /></IconButton>
-
                     <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: '#333', border: '1px solid #444', flexShrink: 0 }} />
                 </Box>
             </Box>
@@ -58,26 +150,31 @@ export default function DashboardPage() {
                 <Grid size={{ xs: 12, md: 8 }}>
                     <Box sx={{ mb: 6 }}>
                         <Typography variant="h5" sx={{ color: '#fff', fontWeight: 700, mb: 3 }}>Market Overview</Typography>
-                        <Grid container spacing={4}>
-                            {[
-                                { name: 'NIFTY 50', value: '21,817.45', change: '+0.5%', isUp: true },
-                                { name: 'SENSEX', value: '72,400.10', change: '+0.3%', isUp: true },
-                                { name: 'BANK NIFTY', value: '46,300.20', change: '-0.1%', isUp: false }
-                            ].map((index) => (
-                                <Grid size={{ xs: 12, sm: 4 }} key={index.name}>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: '#888', fontWeight: 600, letterSpacing: '0.05em' }}>{index.name}</Typography>
-                                        <Typography variant="h3" sx={{ fontWeight: 700, my: 0.5, fontSize: '2.5rem' }}>{index.value}</Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                            {index.isUp ? <ArrowUpRight size={20} color="#10B981" /> : <ArrowDownRight size={20} color="#EF4444" />}
-                                            <Typography variant="body1" sx={{ color: index.isUp ? '#10B981' : '#EF4444', fontWeight: 600 }}>
-                                                {index.change}
-                                            </Typography>
+                        {loading ? (
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <CircularProgress size={20} sx={{ color: '#444' }} />
+                                <Typography sx={{ color: '#666' }}>Loading market data...</Typography>
+                            </Box>
+                        ) : (
+                            <Grid container spacing={4}>
+                                {marketStatus.length > 0 ? marketStatus.map((index) => (
+                                    <Grid size={{ xs: 12, sm: 4 }} key={index.index}>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: '#888', fontWeight: 600, letterSpacing: '0.05em' }}>{index.index}</Typography>
+                                            <Typography variant="h3" sx={{ fontWeight: 700, my: 0.5, fontSize: '2.5rem' }}>{index.current_formatted}</Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                {index.change >= 0 ? <ArrowUpRight size={20} color="#10B981" /> : <ArrowDownRight size={20} color="#EF4444" />}
+                                                <Typography variant="body1" sx={{ color: index.change >= 0 ? '#10B981' : '#EF4444', fontWeight: 600 }}>
+                                                    {index.change >= 0 ? '+' : ''}{index.change_formatted} ({index.percent_change_formatted})
+                                                </Typography>
+                                            </Box>
                                         </Box>
-                                    </Box>
-                                </Grid>
-                            ))}
-                        </Grid>
+                                    </Grid>
+                                )) : (
+                                    <Typography sx={{ color: '#666' }}>Market data unavailable.</Typography>
+                                )}
+                            </Grid>
+                        )}
                     </Box>
 
                     {/* Quick Actions Grid */}
@@ -101,7 +198,7 @@ export default function DashboardPage() {
                             icon={PieChart}
                             title="Sector Heatmap"
                             desc="Identify leading & lagging sectors"
-                            onClick={() => router.push('/market')} // Placeholder for now, or dedicated sector page
+                            onClick={() => router.push('/market')} // Placeholder
                             delay={0.3}
                         />
                     </Grid>
@@ -129,26 +226,23 @@ export default function DashboardPage() {
                                 <TrendingUp size={20} className="text-[#00E5FF]" />
                                 Top Movers
                             </Typography>
-                            <Button size="small" sx={{ color: '#666', textTransform: 'none', '&:hover': { color: '#fff' } }}>View All</Button>
                         </Box>
 
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {[
-                                { s: 'ADANIENT', p: '3,150.00', c: '+4.2%', u: true },
-                                { s: 'TATAMOTORS', p: '945.50', c: '+2.8%', u: true },
-                                { s: 'INFY', p: '1,650.20', c: '-1.5%', u: false },
-                                { s: 'HDFCBANK', p: '1,420.00', c: '+0.8%', u: true },
-                                { s: 'BAJFINANCE', p: '6,800.00', c: '-2.1%', u: false },
-                            ].map((stock) => (
+                            {topMovers.length > 0 ? topMovers.map((stock) => (
                                 <MoverRow
-                                    key={stock.s}
-                                    symbol={stock.s}
-                                    price={stock.p}
-                                    change={stock.c}
-                                    isUp={stock.u}
-                                    onClick={() => router.push(`/market/${stock.s}`)}
+                                    key={stock.symbol}
+                                    symbol={stock.symbol}
+                                    price={stock.price}
+                                    change={stock.change}
+                                    isUp={stock.isUp}
+                                    onClick={() => router.push(`/market/${stock.symbol}`)}
                                 />
-                            ))}
+                            )) : (
+                                <Box sx={{ py: 4, textAlign: 'center' }}>
+                                    <CircularProgress size={20} color="inherit" sx={{ color: '#444' }} />
+                                </Box>
+                            )}
                         </Box>
                     </Paper>
                 </Grid>

@@ -32,6 +32,14 @@ class YahooProvider(BaseDataSource):
             ticker = f"{symbol}.NS"
             loop = asyncio.get_event_loop()
             info = await loop.run_in_executor(None, lambda: yf.Ticker(ticker).info)
+            
+            # Normalize Keys
+            if info:
+                info['market_cap'] = info.get('marketCap')
+                info['pe_ratio'] = info.get('trailingPE')
+                info['high_52w'] = info.get('fiftyTwoWeekHigh')
+                info['low_52w'] = info.get('fiftyTwoWeekLow')
+                
             return info
         except Exception as e:
             logger.error(f"Yahoo Details Error for {symbol}: {e}")

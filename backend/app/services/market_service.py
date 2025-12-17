@@ -62,6 +62,15 @@ class MarketService:
         fund_data = results[1] if not isinstance(results[1], Exception) else {}
         news_data = results[2] if not isinstance(results[2], Exception) else {"news": []}
         
+        # Fallback to Yahoo if Screener fails
+        if not fund_data:
+             logger.info(f"Screener failed for {symbol}, falling back to Yahoo")
+             try:
+                 fund_data = await self.yahoo.get_stock_details(symbol)
+             except Exception as e:
+                 logger.error(f"Yahoo fallback failed: {e}")
+                 fund_data = {}
+        
         return {
             "symbol": symbol,
             "market_data": {
@@ -263,6 +272,77 @@ class MarketService:
 
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _fetch_sectors)
+
+    @cache(expire=300, key_prefix="top_movers_v2")
+    async def get_top_movers(self) -> List[Dict[str, Any]]:
+        """
+        Fetches Top Gainers and Losers (Calculated via Yahoo Finance).
+        """
+        import yfinance as yf
+        
+        # Major Nifty 50 Stocks for fast movers calculation
+        # Fetching all 50 might be slow, so we take the top weighted ones (~15)
+        # This provides a good approximation for "Top Movers" widget
+        tickers_list = [
+            "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS", 
+            "HINDUNILVR.NS", "ITC.NS", "SBIN.NS", "BHARTIARTL.NS", "KOTAKBANK.NS", 
+            "LT.NS", "AXISBANK.NS", "BAJFINANCE.NS", "MARUTI.NS", "ULTRACEMCO.NS",
+            "SUNPHARMA.NS", "TITAN.NS", "TATAMOTORS.NS"
+        ]
+        
+        def _fetch():
+            try:
+                # Batch fetch is faster
+                data = yf.Tickers(" ".join(tickers_list))
+                
+                movers = []
+                for ticker_symbol in tickers_list:
+                    try:
+                        # Access via data.tickers[ticker_symbol]
+                        # fast_info is fastest for current price and prev close
+                        info = data.tickers[ticker_symbol].fast_info
+                        
+                        last = info.last_price
+                        prev = info.previous_close
+                        
+                        if prev == 0: continue
+                        
+                        change_amt = last - prev
+                        change_pct = ((last - prev) / prev) * 100
+                        
+                        movers.append({
+                            "symbol": ticker_symbol.replace(".NS", ""),
+                            "price": format_inr(last),
+                            "change": f"{change_pct:+.2f}%",
+                            "change_val": change_pct,
+                            "isUp": change_pct >= 0
+                        })
+                    except Exception as e:
+                        continue
+                
+                # Sort by change_pct
+                movers.sort(key=lambda x: x['change_val'], reverse=True)
+                
+                # Top 3 Gainers
+                top_gainers = movers[:3]
+                
+                # Top 2 Losers (from end)
+                top_losers = movers[-2:]
+                top_losers.reverse() # Show worst first? Or just list them.
+                
+                # Combine
+                # Ensure we only return if we have data
+                if not movers:
+                     return []
+                     
+                return top_gainers + top_losers
+                
+            except Exception as e:
+                logger.error(f"Top Movers Calc Error: {e}")
+                return []
+        
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _fetch)
 
     @cache(expire=300, key_prefix="stock_analysis_full")
     async def get_comprehensive_analysis(self, symbol: str) -> Dict[str, Any]:
