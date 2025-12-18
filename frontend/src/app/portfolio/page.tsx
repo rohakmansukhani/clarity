@@ -1,12 +1,19 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Box, Typography, Grid, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, LinearProgress, Chip, IconButton, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, InputAdornment, Menu, ListItemIcon, Divider, Card, CardContent, CardActionArea } from '@mui/material';
+import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
+import { Box, Typography, Grid, Button, LinearProgress, Chip, IconButton, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, InputAdornment, Menu, ListItemIcon, Divider, Card, CardContent, CardActionArea, Autocomplete, Paper, Tooltip } from '@mui/material';
 import { TrendingUp, TrendingDown, Plus, Wallet, PieChart as PieChartIcon, X, Search, ChevronDown, FolderPlus, Folder, Trash2, ArrowLeft, ArrowRight, MoreVertical } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/layout/Sidebar';
 import { portfolioService } from '@/services/portfolioService';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
+import HoldingsTable from '@/components/portfolio/HoldingsTable';
+import PortfolioChart from '@/components/portfolio/PortfolioChart';
+import AddTransactionModal from '@/components/portfolio/AddTransactionModal';
+import { formatIndianCurrencyDynamic } from '@/utils/currency';
+import CreatePortfolioModal from '@/components/portfolio/CreatePortfolioModal';
+
 
 // --- Interfaces ---
 interface Holding {
@@ -47,6 +54,8 @@ export default function PortfolioPage() {
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [portfolioMenuAnchor, setPortfolioMenuAnchor] = useState<null | HTMLElement>(null);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [portfolioToDelete, setPortfolioToDelete] = useState<string | null>(null);
 
     // --- Simulation Init ---
     // --- Actions ---
@@ -126,17 +135,25 @@ export default function PortfolioPage() {
 
     const handleDeletePortfolio = async (id: string, e?: React.MouseEvent) => {
         e?.stopPropagation();
-        if (!confirm("Are you sure you want to delete this portfolio?")) return;
+        setPortfolioToDelete(id);
+        setDeleteConfirmOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!portfolioToDelete) return;
 
         try {
-            await portfolioService.deletePortfolio(id);
-            setPortfolios(prev => prev.filter(p => p.id !== id));
-            if (activeId === id) {
+            await portfolioService.deletePortfolio(portfolioToDelete);
+            setPortfolios(prev => prev.filter(p => p.id !== portfolioToDelete));
+            if (activeId === portfolioToDelete) {
                 setActiveId('');
                 setViewMode('list');
             }
         } catch (err) {
             console.error("Delete failed", err);
+        } finally {
+            setDeleteConfirmOpen(false);
+            setPortfolioToDelete(null);
         }
     };
 
@@ -272,7 +289,17 @@ export default function PortfolioPage() {
                                                     </Box>
                                                     <Typography variant="h6" sx={{ color: '#fff', fontWeight: 600 }}>{p.name}</Typography>
                                                 </Box>
-                                                <IconButton size="small" onClick={(e) => handleDeletePortfolio(p.id, e)} sx={{ color: '#333', '&:hover': { color: '#EF4444' } }}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => handleDeletePortfolio(p.id, e)}
+                                                    sx={{
+                                                        color: '#333',
+                                                        width: 32,
+                                                        height: 32,
+                                                        flexShrink: 0,
+                                                        '&:hover': { color: '#EF4444', bgcolor: 'rgba(239, 68, 68, 0.1)' }
+                                                    }}
+                                                >
                                                     <Trash2 size={18} />
                                                 </IconButton>
                                             </Box>
@@ -404,104 +431,10 @@ export default function PortfolioPage() {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                     >
-                                        <TableContainer sx={{ bgcolor: 'transparent', boxShadow: 'none' }}>
-                                            <Table>
-                                                <TableHead>
-                                                    <TableRow sx={{ '& th': { borderBottom: '1px solid #222', color: '#666', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.05em', py: 2 } }}>
-                                                        <TableCell>ASSET</TableCell>
-                                                        <TableCell align="right">SHARES</TableCell>
-                                                        <TableCell align="right">AVG PRICE</TableCell>
-                                                        <TableCell align="right">LTP</TableCell>
-                                                        <TableCell align="right">INVESTED</TableCell>
-                                                        <TableCell align="right">CURRENT</TableCell>
-                                                        <TableCell align="right">RETURN</TableCell>
-                                                    </TableRow>
-                                                </TableHead>
-                                                <TableBody>
-                                                    {activePortfolio.holdings.map((stock, i) => (
-                                                        <TableRow
-                                                            key={`${stock.ticker}-${i}`}
-                                                            component={motion.tr}
-                                                            initial={{ opacity: 0, y: 10 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            transition={{ delay: i * 0.05 }}
-                                                            sx={{
-                                                                '& td': { borderBottom: '1px solid rgba(255,255,255,0.05)', py: 3, color: '#ddd', fontSize: '1.05rem' },
-                                                                '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' },
-                                                                transition: 'background-color 0.2s'
-                                                            }}
-                                                        >
-                                                            <TableCell>
-                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                                    <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #222', fontWeight: 700, color: '#666' }}>
-                                                                        {stock.ticker[0]}
-                                                                    </Box>
-                                                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#fff' }}>{stock.ticker}</Typography>
-                                                                </Box>
-                                                            </TableCell>
-                                                            <TableCell align="right">
-                                                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#888' }}>{stock.shares}</Typography>
-                                                            </TableCell>
-                                                            <TableCell align="right">
-                                                                <Typography variant="body1" sx={{ color: '#666' }}>₹{stock.avg_price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Typography>
-                                                            </TableCell>
-                                                            <TableCell align="right">
-                                                                <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>₹{stock.current_price.toLocaleString()}</Typography>
-                                                            </TableCell>
-                                                            <TableCell align="right">
-                                                                <Typography variant="body1" sx={{ color: '#666' }}>₹{stock.invested_value.toLocaleString()}</Typography>
-                                                            </TableCell>
-                                                            <TableCell align="right">
-                                                                <Typography variant="body1" sx={{ fontWeight: 700, fontSize: '1.1rem' }}>₹{stock.current_value.toLocaleString()}</Typography>
-                                                            </TableCell>
-                                                            <TableCell align="right">
-                                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                                    <Typography variant="body1" sx={{ color: stock.gain >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>
-                                                                        {stock.gain >= 0 ? '+' : ''}₹{stock.gain.toLocaleString()}
-                                                                    </Typography>
-                                                                    <Typography variant="caption" sx={{ color: stock.gain >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)', fontWeight: 600 }}>
-                                                                        {stock.gain_pct.toFixed(2)}%
-                                                                    </Typography>
-                                                                </Box>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    ))}
-                                                    {activePortfolio.holdings.length === 0 && (
-                                                        <TableRow>
-                                                            <TableCell colSpan={7} align="center" sx={{ py: 8, color: '#666' }}>
-                                                                No holdings in {activePortfolio.name}. Click "Add Transaction" to start.
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    )}
-                                                </TableBody>
-                                            </Table>
-                                        </TableContainer>
+                                        <HoldingsTable portfolio={activePortfolio} />
                                     </motion.div>
                                 ) : (
-                                    <Box component={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }} sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart>
-                                                <Pie
-                                                    data={allocationData}
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    innerRadius={100}
-                                                    outerRadius={140}
-                                                    paddingAngle={5}
-                                                    dataKey="value"
-                                                    stroke="none"
-                                                >
-                                                    {allocationData.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                                    ))}
-                                                </Pie>
-                                                <RechartsTooltip
-                                                    contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: 8 }}
-                                                    itemStyle={{ color: '#fff' }}
-                                                />
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                    </Box>
+                                    <PortfolioChart data={allocationData} />
                                 )}
                             </Grid>
 
@@ -519,14 +452,22 @@ export default function PortfolioPage() {
                                     <Box sx={{ borderTop: '1px solid #222', pt: 4 }}>
                                         <Typography variant="overline" sx={{ color: '#666', fontWeight: 700, letterSpacing: '0.1em' }}>KEY METRICS</Typography>
                                         <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                                            <Box sx={{ p: 3, bgcolor: '#050505', borderRadius: 3, border: '1px solid #222' }}>
-                                                <Typography variant="caption" sx={{ color: '#888' }}>Total Invested</Typography>
-                                                <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>₹{(activePortfolio.total_invested / 100000).toFixed(2)}L</Typography>
-                                            </Box>
-                                            <Box sx={{ p: 3, bgcolor: '#050505', borderRadius: 3, border: '1px solid #222' }}>
-                                                <Typography variant="caption" sx={{ color: '#888' }}>Total Gain</Typography>
-                                                <Typography variant="h6" sx={{ color: '#10B981', fontWeight: 700 }}>+₹{(activePortfolio.total_gain / 100000).toFixed(2)}L</Typography>
-                                            </Box>
+                                            <Tooltip title={activePortfolio.total_invested.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} arrow>
+                                                <Box sx={{ p: 3, bgcolor: '#050505', borderRadius: 3, border: '1px solid #222' }}>
+                                                    <Typography variant="caption" sx={{ color: '#888' }}>Total Invested</Typography>
+                                                    <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
+                                                        {formatIndianCurrencyDynamic(activePortfolio.total_invested)}
+                                                    </Typography>
+                                                </Box>
+                                            </Tooltip>
+                                            <Tooltip title={activePortfolio.total_gain.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} arrow>
+                                                <Box sx={{ p: 3, bgcolor: '#050505', borderRadius: 3, border: '1px solid #222' }}>
+                                                    <Typography variant="caption" sx={{ color: '#888' }}>Total Gain</Typography>
+                                                    <Typography variant="h6" sx={{ color: activePortfolio.total_gain >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>
+                                                        {activePortfolio.total_gain >= 0 ? '+' : ''}{formatIndianCurrencyDynamic(activePortfolio.total_gain)}
+                                                    </Typography>
+                                                </Box>
+                                            </Tooltip>
                                         </Box>
                                     </Box>
                                 </Box>
@@ -545,8 +486,23 @@ export default function PortfolioPage() {
                 <CreatePortfolioModal
                     open={isCreateModalOpen}
                     onClose={() => setIsCreateModalOpen(false)}
-                    onSubmit={handleCreatePortfolio}
+                    onCreate={handleCreatePortfolio}
                 />
+
+                <ConfirmDialog
+                    open={deleteConfirmOpen}
+                    title="Delete Portfolio"
+                    message="Are you sure you want to delete this portfolio? This action cannot be undone."
+                    confirmText="Delete"
+                    cancelText="Cancel"
+                    confirmColor="error"
+                    onConfirm={confirmDelete}
+                    onCancel={() => {
+                        setDeleteConfirmOpen(false);
+                        setPortfolioToDelete(null);
+                    }}
+                />
+                <DisclaimerFooter />
             </Box>
         </>
     );
@@ -554,178 +510,7 @@ export default function PortfolioPage() {
 
 // --- Subcomponents ---
 
-function AddTransactionModal({ open, onClose, onSubmit }: { open: boolean, onClose: () => void, onSubmit: (t: string, s: number, p: number, type: 'BUY' | 'SELL') => void }) {
-    const [ticker, setTicker] = useState('');
-    const [shares, setShares] = useState('');
-    const [price, setPrice] = useState('');
-    const [type, setType] = useState<'BUY' | 'SELL'>('BUY');
-
-    const handleSubmit = () => {
-        if (ticker && shares && price && Number(shares) > 0 && Number(price) > 0) {
-            onSubmit(ticker.toUpperCase(), Number(shares), Number(price), type);
-            // Reset
-            setTicker('');
-            setShares('');
-            setPrice('');
-            setType('BUY');
-        }
-    };
-
-    return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            PaperProps={{
-                sx: {
-                    bgcolor: '#050505',
-                    border: '1px solid #222',
-                    borderRadius: 4,
-                    minWidth: 400,
-                    p: 2
-                }
-            }}
-        >
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', fontWeight: 700 }}>
-                Add Transaction
-                <IconButton onClick={onClose} size="small" sx={{ color: '#666' }}><X size={20} /></IconButton>
-            </DialogTitle>
-            <DialogContent>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
-                    {/* Buy/Sell buttons */}
-                    <Box sx={{ display: 'flex', gap: 1, bgcolor: '#111', p: 0.5, borderRadius: 2 }}>
-                        {['BUY', 'SELL'].map((t) => (
-                            <Button
-                                key={t}
-                                fullWidth
-                                onClick={() => setType(t as any)}
-                                sx={{
-                                    bgcolor: type === t ? (t === 'BUY' ? '#10B981' : '#EF4444') : 'transparent',
-                                    color: type === t ? '#000' : '#666',
-                                    fontWeight: 700,
-                                    borderRadius: 1.5,
-                                    '&:hover': { bgcolor: type === t ? (t === 'BUY' ? '#059669' : '#DC2626') : 'rgba(255,255,255,0.05)' }
-                                }}
-                            >
-                                {t}
-                            </Button>
-                        ))}
-                    </Box>
-                    <TextField
-                        label="Ticker Symbol"
-                        fullWidth
-                        value={ticker}
-                        onChange={(e) => setTicker(e.target.value)}
-                        placeholder="e.g. RELIANCE"
-                        InputProps={{
-                            startAdornment: <InputAdornment position="start"><Search size={18} color="#666" /></InputAdornment>,
-                            sx: { color: '#fff', bgcolor: '#111', borderRadius: 2, '& fieldset': { borderColor: '#333' } }
-                        }}
-                        InputLabelProps={{ sx: { color: '#666' } }}
-                    />
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                        <TextField
-                            label="Quantity"
-                            type="number"
-                            fullWidth
-                            value={shares}
-                            onChange={(e) => setShares(e.target.value)}
-                            InputProps={{ sx: { color: '#fff', bgcolor: '#111', borderRadius: 2, '& fieldset': { borderColor: '#333' } } }}
-                            InputLabelProps={{ sx: { color: '#666' } }}
-                        />
-                        <TextField
-                            label="Price"
-                            type="number"
-                            fullWidth
-                            value={price}
-                            onChange={(e) => setPrice(e.target.value)}
-                            InputProps={{
-                                startAdornment: <InputAdornment position="start"><Typography sx={{ color: '#666' }}>₹</Typography></InputAdornment>,
-                                sx: { color: '#fff', bgcolor: '#111', borderRadius: 2, '& fieldset': { borderColor: '#333' } }
-                            }}
-                            InputLabelProps={{ sx: { color: '#666' } }}
-                        />
-                    </Box>
-                </Box>
-            </DialogContent>
-            <DialogActions sx={{ p: 3 }}>
-                <Button
-                    fullWidth
-                    variant="contained"
-                    onClick={handleSubmit}
-                    disabled={!ticker || !shares || !price || Number(shares) <= 0 || Number(price) <= 0}
-                    sx={{
-                        bgcolor: '#fff', color: '#000', fontWeight: 700, py: 1.5, borderRadius: 3,
-                        '&:hover': { bgcolor: '#e0e0e0' },
-                        '&:disabled': { bgcolor: '#333', color: '#666' }
-                    }}
-                >
-                    Confirm Transaction
-                </Button>
-            </DialogActions>
-        </Dialog>
-    );
-}
-
-function CreatePortfolioModal({ open, onClose, onSubmit }: { open: boolean, onClose: () => void, onSubmit: (name: string) => void }) {
-    const [name, setName] = useState('');
-
-    const handleSubmit = () => {
-        if (name) {
-            onSubmit(name);
-            setName('');
-        }
-    };
-
-    return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            PaperProps={{
-                sx: {
-                    bgcolor: '#050505',
-                    border: '1px solid #222',
-                    borderRadius: 4,
-                    minWidth: 400,
-                    p: 2
-                }
-            }}
-        >
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', fontWeight: 700 }}>
-                Create New Portfolio
-                <IconButton onClick={onClose} size="small" sx={{ color: '#666' }}><X size={20} /></IconButton>
-            </DialogTitle>
-            <DialogContent>
-                <TextField
-                    autoFocus
-                    margin="dense"
-                    label="Portfolio Name"
-                    fullWidth
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Retirement Fund, Tech Stocks"
-                    InputProps={{ sx: { color: '#fff', bgcolor: '#111', borderRadius: 2, '& fieldset': { borderColor: '#333' } } }}
-                    InputLabelProps={{ sx: { color: '#666' } }}
-                    sx={{ mt: 2 }}
-                />
-            </DialogContent>
-            <DialogActions sx={{ p: 3 }}>
-                <Button
-                    fullWidth
-                    variant="contained"
-                    onClick={handleSubmit}
-                    disabled={!name}
-                    sx={{
-                        bgcolor: '#00E5FF', color: '#000', fontWeight: 700, py: 1.5, borderRadius: 3,
-                        '&:hover': { bgcolor: '#00B2CC' },
-                        '&:disabled': { bgcolor: '#333', color: '#666' }
-                    }}
-                >
-                    Create Portfolio
-                </Button>
-            </DialogActions>
-        </Dialog>
-    );
-}
+// --- Subcomponents ---
 
 interface TabButtonProps {
     active: boolean;

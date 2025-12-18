@@ -5,7 +5,8 @@ import { Box, Typography, TextField, Button, Container, Grid, Alert } from '@mui
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import axios from 'axios';
+import api from '@/services/api';
+import { ErrorBanner } from '@/components/common/ErrorBanner';
 
 export default function SignupPage() {
     const router = useRouter();
@@ -21,7 +22,7 @@ export default function SignupPage() {
         setError(null);
 
         try {
-            await axios.post('http://localhost:8000/api/v1/auth/register', {
+            await api.post('/auth/register', {
                 email,
                 password
             });
@@ -93,9 +94,7 @@ export default function SignupPage() {
                         >
                             <Box component="form" onSubmit={handleSignup} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 {error && (
-                                    <Alert severity="error" sx={{ bgcolor: 'rgba(211, 47, 47, 0.1)', color: '#ffcdd2', border: '1px solid rgba(211, 47, 47, 0.3)' }}>
-                                        {error}
-                                    </Alert>
+                                    <ErrorBanner error={error} onRetry={() => setError(null)} />
                                 )}
 
                                 <MinimalInput

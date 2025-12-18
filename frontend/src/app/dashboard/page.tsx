@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { marketService } from '@/services/marketService';
 
+
 export default function DashboardPage() {
     const router = useRouter();
     const [greeting, setGreeting] = useState('Good Evening');
@@ -258,6 +259,8 @@ export default function DashboardPage() {
                     </Paper>
                 </Grid>
             </Grid>
+
+
         </Box>
     );
 }

@@ -6,13 +6,17 @@ import { marketService } from '@/services/marketService';
 import { Trash2, TrendingUp, ArrowUpRight, ArrowDownRight, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { motion } from 'framer-motion';
+import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
 
 export default function WatchlistPage() {
     const router = useRouter();
     const [watchlist, setWatchlist] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [prices, setPrices] = useState<Record<string, any>>({});
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [tickerToDelete, setTickerToDelete] = useState<string | null>(null);
 
     const fetchWatchlist = async () => {
         try {
@@ -47,12 +51,21 @@ export default function WatchlistPage() {
 
     const handleRemove = async (ticker: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!confirm(`Remove ${ticker} from watchlist?`)) return;
+        setTickerToDelete(ticker);
+        setDeleteConfirmOpen(true);
+    };
+
+    const confirmRemove = async () => {
+        if (!tickerToDelete) return;
+
         try {
-            await marketService.removeFromWatchlist(ticker);
-            setWatchlist(prev => prev.filter(i => i.ticker !== ticker));
+            await marketService.removeFromWatchlist(tickerToDelete);
+            setWatchlist(prev => prev.filter(i => i.ticker !== tickerToDelete));
         } catch (err) {
             console.error(err);
+        } finally {
+            setDeleteConfirmOpen(false);
+            setTickerToDelete(null);
         }
     };
 
@@ -180,6 +193,20 @@ export default function WatchlistPage() {
                     </Grid>
                 )}
             </Box>
+
+            <ConfirmDialog
+                open={deleteConfirmOpen}
+                title="Remove from Watchlist"
+                message={`Are you sure you want to remove ${tickerToDelete} from your watchlist?`}
+                confirmText="Remove"
+                cancelText="Cancel"
+                confirmColor="error"
+                onConfirm={confirmRemove}
+                onCancel={() => {
+                    setDeleteConfirmOpen(false);
+                    setTickerToDelete(null);
+                }}
+            />
         </Box>
     );
 }

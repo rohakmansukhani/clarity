@@ -5,8 +5,11 @@ import { Box, Typography, TextField, Button, Container, Grid, CircularProgress }
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import axios from 'axios';
-import { Lock, User, AlertCircle } from 'lucide-react';
+import { Lock, User } from 'lucide-react';
+import api from '@/services/api';
+import { ErrorBanner } from '@/components/common/ErrorBanner';
+
+// ... imports ...
 
 export default function LoginPage() {
     const router = useRouter();
@@ -18,12 +21,9 @@ export default function LoginPage() {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-        setError(null);
-
         try {
-            // Call Backend API
-            const response = await axios.post('http://localhost:8000/api/v1/auth/login', {
+            // Call Backend API using configured instance
+            const response = await api.post('/auth/login', {
                 email,
                 password
             });
@@ -113,33 +113,9 @@ export default function LoginPage() {
                         >
 
                             <Box component="form" onSubmit={handleLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                <AnimatePresence mode='wait'>
-                                    {error && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: -10, height: 0 }}
-                                            animate={{ opacity: 1, y: 0, height: 'auto' }}
-                                            exit={{ opacity: 0, y: -10, height: 0 }}
-                                            transition={{ duration: 0.3 }}
-                                            style={{ overflow: 'hidden' }}
-                                        >
-                                            <Box sx={{
-                                                bgcolor: 'rgba(255, 59, 48, 0.15)', // Apple System Red low opacity
-                                                border: '1px solid rgba(255, 59, 48, 0.3)',
-                                                borderRadius: '12px',
-                                                p: 2,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 2,
-                                                color: '#FF453A'
-                                            }}>
-                                                <AlertCircle size={20} />
-                                                <Typography variant="body2" sx={{ fontWeight: 500, letterSpacing: '-0.01em' }}>
-                                                    {error}
-                                                </Typography>
-                                            </Box>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                {error && (
+                                    <ErrorBanner error={error} onRetry={() => setError(null)} />
+                                )}
 
                                 <motion.div
                                     animate={controls}
@@ -233,14 +209,8 @@ function MarketMetrics() {
     useEffect(() => {
         const fetchStatus = async () => {
             try {
-                // Determine API URL based on environment or hardcode for now
-                // Since this is client component, we can use axios directly or marketService if imported
-                // But marketService might use a different axios instance. 
-                // Let's use axios direct to ensure public access if marketService adds tokens?
-                // Actually marketService is safe. I'll import it at top.
-                // Wait, I can't easily import 'marketService' if I don't add the import line.
-                // I will add import in next step or use axios here.
-                const res = await axios.get('http://localhost:8000/api/v1/market/status');
+                // Use configured api instance
+                const res = await api.get('/market/status');
                 setStatus(res.data);
             } catch (e) {
                 console.error("Market Status Error", e);
@@ -280,7 +250,8 @@ function MarketMetrics() {
             {/* 2. Nifty */}
             <Metric
                 label="NIFTY"
-                value={typeof nifty?.current === 'number' ? nifty.current.toLocaleString() : "..."}
+                value={nifty?.current && typeof nifty.current === 'number' ? nifty.current.toLocaleString() : (nifty?.error ? "N/A" : "...")}
+                color={nifty?.percent_change && nifty.percent_change >= 0 ? '#10B981' : (nifty?.percent_change < 0 ? '#EF4444' : '#fff')}
             />
 
             {/* 3. Sensex */}

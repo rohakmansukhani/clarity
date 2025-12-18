@@ -74,6 +74,24 @@ export const marketService = {
         return response.data;
     },
 
+    // Compare multiple stocks
+    compareStocks: async (symbols: string[]) => {
+        const response = await api.post('/market/compare', { symbols });
+        return response.data;
+    },
+
+    // Get comparison history for chart
+    getComparisonHistory: async (symbols: string[], period: string = '1y') => {
+        // Fetch history for all stocks in parallel
+        const historyPromises = symbols.map(symbol =>
+            api.get(`/stocks/${symbol}/history?period=${period}`)
+                .then(res => ({ symbol, data: res.data }))
+                .catch(err => ({ symbol, data: [] }))
+        );
+        const results = await Promise.all(historyPromises);
+        return results;
+    },
+
     // --- Chat History API ---
     getChatSessions: async (type?: 'advisor' | 'discovery_hub') => {
         const response = await api.get('/history/sessions', {
@@ -96,8 +114,8 @@ export const marketService = {
         return response.data;
     },
 
-    addMessageToSession: async (sessionId: string, role: string, content: string) => {
-        const response = await api.post(`/history/sessions/${sessionId}/messages`, { role, content });
+    addMessageToSession: async (sessionId: string, role: string, content: string, metadata?: any) => {
+        const response = await api.post(`/history/sessions/${sessionId}/messages`, { role, content, metadata });
         return response.data;
     },
 
@@ -187,12 +205,12 @@ export const marketService = {
     },
 
     getListingDate: async (ticker: string) => {
-        const response = await api.get(`/market/listing-date/${ticker}`);
+        const response = await api.get(`/stocks/listing-date/${ticker}`);
         return response.data.listing_date;
     },
 
     getPriceAtDate: async (ticker: string, date: string) => {
-        const response = await api.get(`/market/price/${ticker}/${date}`);
+        const response = await api.get(`/stocks/price/${ticker}/${date}`);
         return response.data.price;
     },
 

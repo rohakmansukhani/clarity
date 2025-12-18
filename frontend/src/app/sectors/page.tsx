@@ -1,18 +1,22 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, Typography, TextField, IconButton, Paper, CircularProgress, Avatar, Grid, Button, Drawer, List, ListItem, ListItemButton, Divider, Menu, MenuItem } from '@mui/material';
+import { Box, Typography, IconButton, CircularProgress, Button, TextField, Paper, Grid } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Lightbulb, ArrowRight, Sparkles, History, MoreVertical, Pin, Trash2, Plus } from 'lucide-react';
+import { Send, Lightbulb, ArrowRight, History, FolderPlus, Scale, ChevronRight, Check } from 'lucide-react';
 import Sidebar from '@/components/layout/Sidebar';
 import { marketService } from '@/services/marketService';
 import { useRouter } from 'next/navigation';
+import { useUIStore } from '@/lib/ui-store';
+import CreatePortfolioModal from '@/components/portfolio/CreatePortfolioModal';
 import QuestionnaireFlow, { QuestionnaireData } from '@/components/sectors/QuestionnaireFlow';
 import StockQuickCard from '@/components/sectors/StockQuickCard';
 import SelectionBar from '@/components/sectors/SelectionBar';
 import PortfolioBuilder from '@/components/sectors/PortfolioBuilder';
-import SwitchAIButton from '@/components/common/SwitchAIButton';
-import ReactMarkdown from 'react-markdown';
+import DiscoveryHistory from '@/components/sectors/DiscoveryHistory';
+import DiscoveryChat from '@/components/sectors/DiscoveryChat';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
+
 
 interface Message {
     id: string;
@@ -43,62 +47,129 @@ const STARTER_PROMPTS = [
     "What's happening in the EV battery sector?",
 ];
 
+type ViewMode = 'chat' | 'questionnaire' | 'recommendations' | 'builder';
+
 export default function DiscoveryHubPage() {
     const router = useRouter();
+    const { isSidebarOpen, closeSidebar } = useUIStore();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [isInitial, setIsInitial] = useState(true);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
-    // History Sidebar State
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    // History State
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [sessions, setSessions] = useState<any[]>([]);
-    const [isSessionsLoading, setIsSessionsLoading] = useState(false);
 
-    // Initial Load & Query Param Handling
-    useEffect(() => {
-        // Load sessions
-        loadSessions();
-    }, []);
+    // Flow State
+    const [viewMode, setViewMode] = useState<ViewMode>('chat');
+
+    // Data State
+    const [userPreferences, setUserPreferences] = useState<QuestionnaireData | null>(null);
+    const [recommendations, setRecommendations] = useState<StockRecommendation[]>([]);
+    const [selectedStocks, setSelectedStocks] = useState<string[]>([]);
+    const [expandedStock, setExpandedStock] = useState<string | null>(null);
+    const [portfolioAllocations, setPortfolioAllocations] = useState<any[]>([]); // For builder
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+
+    const toggleHistory = () => {
+        if (!isHistoryOpen) {
+            closeSidebar();
+        }
+        setIsHistoryOpen(!isHistoryOpen);
+    };
+
+    const closeHistory = () => setIsHistoryOpen(false);
 
     const loadSessions = async () => {
-        setIsSessionsLoading(true);
         try {
             const data = await marketService.getChatSessions('discovery_hub');
             setSessions(data);
-        } catch (error) {
-            console.error("Failed to load sessions:", error);
-        } finally {
-            setIsSessionsLoading(false);
+        } catch (e) {
+            console.error("Failed to load sessions", e);
         }
     };
 
-    const handleCreateNewChat = () => {
+    useEffect(() => {
+        loadSessions();
+    }, []);
+
+    useEffect(() => {
+        if (isSidebarOpen && isHistoryOpen) {
+            setIsHistoryOpen(false);
+        }
+    }, [isSidebarOpen, isHistoryOpen]);
+
+    const handleNewChat = () => {
         setCurrentSessionId(null);
         setMessages([]);
-        setRecommendations([]);
-        setShowQuestionnaire(false);
         setIsInitial(true);
-        setIsSidebarOpen(false);
+        setIsHistoryOpen(false);
+        setViewMode('chat');
+        setRecommendations([]);
+        setSelectedStocks([]);
+        setUserPreferences(null);
     };
 
-    const handleLoadSession = async (sessionId: string) => {
-        setLoading(true);
+    const handlePinSession = async (sessionId: string, currentPinStatus: boolean) => {
         try {
+            await marketService.togglePinSession(sessionId, !currentPinStatus);
+            setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, is_pinned: !currentPinStatus } : s).sort((a, b) => {
+                if (a.is_pinned === b.is_pinned) return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+                return (a.is_pinned ? -1 : 1);
+            }));
+            loadSessions();
+        } catch (e) {
+            console.error("Pin failed", e);
+        }
+    };
+
+    const handleDeleteSession = async (sessionId: string) => {
+        setSessionToDelete(sessionId);
+        setDeleteConfirmOpen(true);
+    };
+
+    const confirmDeleteSession = async () => {
+        if (!sessionToDelete) return;
+        try {
+            await marketService.deleteSession(sessionToDelete);
+            setSessions(prev => prev.filter(s => s.id !== sessionToDelete));
+            if (currentSessionId === sessionToDelete) {
+                handleNewChat();
+            }
+        } catch (e) {
+            console.error("Delete failed", e);
+        } finally {
+            setDeleteConfirmOpen(false);
+            setSessionToDelete(null);
+        }
+    };
+
+    const handleSessionClick = async (sessionId: string) => {
+        try {
+            setLoading(true);
+            setCurrentSessionId(sessionId);
+            setIsHistoryOpen(false);
+            setMessages([]);
+
             const msgs = await marketService.getSessionMessages(sessionId);
-            const formattedMsgs = msgs.map((m: any) => ({
+            const formattedMsgs: Message[] = msgs.map((m: any) => ({
                 id: m.id,
                 role: m.role,
                 content: m.content,
-                timestamp: new Date(m.created_at)
+                timestamp: new Date(m.created_at),
+                suggest_switch: m.metadata?.suggest_switch
             }));
-
             setMessages(formattedMsgs);
-            setCurrentSessionId(sessionId);
             setIsInitial(false);
-            setIsSidebarOpen(false);
+            setViewMode('chat');
+            setRecommendations([]);
+            setSelectedStocks([]);
+            setUserPreferences(null);
         } catch (error) {
             console.error("Failed to load session:", error);
         } finally {
@@ -106,89 +177,40 @@ export default function DiscoveryHubPage() {
         }
     };
 
-    const handleDeleteSession = async (e: React.MouseEvent, sessionId: string) => {
-        e.stopPropagation();
-        if (confirm("Delete this chat?")) {
-            await marketService.deleteSession(sessionId);
-            await loadSessions();
-            if (currentSessionId === sessionId) {
-                handleCreateNewChat();
-            }
-        }
-    };
-
-    // Questionnaire & Stock Selection State
-    const [showQuestionnaire, setShowQuestionnaire] = useState(false);
-    const [userPreferences, setUserPreferences] = useState<QuestionnaireData | null>(null);
-    const [recommendations, setRecommendations] = useState<StockRecommendation[]>([]);
-    const [selectedStocks, setSelectedStocks] = useState<string[]>([]);
-    const [expandedStock, setExpandedStock] = useState<string | null>(null);
-    const [showPortfolio, setShowPortfolio] = useState(false);
-    const [portfolioAllocations, setPortfolioAllocations] = useState<any[]>([]);
-    const [currentSectorQuery, setCurrentSectorQuery] = useState('');
-    const [showPortfolioButton, setShowPortfolioButton] = useState(false);
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
+    // Context State
+    const [portfolioContext, setPortfolioContext] = useState<any>(null);
 
     useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
-
-    const detectStockRecommendations = (response: string): boolean => {
-        // Check if response contains stock recommendations
-        const indicators = [
-            'top picks',
-            'recommendations',
-            'stocks analyzed',
-            'composite score',
-            'recommendation is to',
-            'current price is'
-        ];
-        return indicators.some(indicator => response.toLowerCase().includes(indicator));
-    };
-
-    const parseStockRecommendations = (response: string): StockRecommendation[] => {
-        const stocks: StockRecommendation[] = [];
-        const lines = response.split('\n');
-
-        lines.forEach(line => {
-            // Look for patterns like "**SYMBOL**: Current price is **₹XXX**"
-            const symbolMatch = line.match(/\*\*([A-Z]+)\*\*/);
-            const priceMatch = line.match(/₹([0-9,]+)/);
-            const scoreMatch = line.match(/composite score of \*\*(\d+)\*\*/);
-            const actionMatch = line.match(/recommendation is to \*\*([A-Z]+)\*\*/);
-
-            if (symbolMatch && priceMatch) {
-                const symbol = symbolMatch[1];
-                const price = parseInt(priceMatch[1].replace(/,/g, ''));
-                const score = scoreMatch ? parseInt(scoreMatch[1]) : 50;
-                const action = (actionMatch ? actionMatch[1] : 'HOLD') as 'BUY' | 'HOLD' | 'SELL';
-
-                stocks.push({
-                    symbol,
-                    name: symbol, // We'll use symbol as name for now
-                    price,
-                    score,
-                    action,
-                    reasoning: line.substring(0, 100) + '...'
-                });
+        const fetchContext = async () => {
+            try {
+                const portfolios = await marketService.getPortfolios();
+                if (portfolios && portfolios.length > 0) {
+                    // Simplified context logic
+                    setPortfolioContext({
+                        type: 'discovery_hub',
+                        portfolio_summary: {
+                            total_portfolios: portfolios.length
+                        }
+                    });
+                } else {
+                    setPortfolioContext({ type: 'discovery_hub' });
+                }
+            } catch (error) {
+                console.error("Failed to fetch portfolio context:", error);
+                setPortfolioContext({ type: 'discovery_hub' });
             }
-        });
-
-        return stocks;
-    };
+        };
+        fetchContext();
+    }, []);
 
     const handleSend = async (message?: string) => {
         const userMessage = message || input.trim();
         if (!userMessage || loading) return;
 
         setIsInitial(false);
-        setCurrentSectorQuery(userMessage);
-
+        const tempId = Date.now().toString();
         const newUserMessage: Message = {
-            id: Date.now().toString(),
+            id: tempId,
             role: 'user',
             content: userMessage,
             timestamp: new Date()
@@ -199,152 +221,48 @@ export default function DiscoveryHubPage() {
         setLoading(true);
 
         try {
-            // 1. Create Session if New
-            let activeSessionId = currentSessionId;
-            if (!activeSessionId) {
-                const newSession = await marketService.createSession(
-                    userMessage.slice(0, 30) || "New Research",
-                    [],
-                    'discovery_hub'
-                );
-                activeSessionId = newSession.id;
-                setCurrentSessionId(newSession.id);
+            let sessionId = currentSessionId;
+            if (!sessionId) {
+                const newSession = await marketService.createSession(userMessage, [], 'discovery_hub');
+                sessionId = newSession.id;
+                setCurrentSessionId(sessionId);
                 loadSessions();
             }
 
-            // Prepare conversation history (convert messages to API format)
             const conversationHistory = messages.map(msg => ({
                 role: msg.role,
                 content: msg.content
             }));
+            const contextToSend = portfolioContext || { type: 'discovery_hub' };
 
-            // Pass Discovery Hub context
-            const responseData = await marketService.chatWithAI(
-                userMessage,
-                { type: 'discovery_hub' },
-                conversationHistory
-            );
+            const response = await marketService.chatWithAI(userMessage, contextToSend, conversationHistory);
 
             const aiMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: responseData.response,
-                suggest_switch: responseData.suggest_switch,
-                timestamp: new Date()
+                content: response.response,
+                timestamp: new Date(),
+                suggest_switch: response.suggest_switch
             };
 
             setMessages(prev => [...prev, aiMessage]);
 
-            // Check if response contains stock recommendations (only if not switching)
-            if (!responseData.suggest_switch && detectStockRecommendations(responseData.response)) {
-                setShowPortfolioButton(true);
+            if (sessionId) {
+                await marketService.addMessageToSession(sessionId, 'user', newUserMessage.content);
+                const metadata = response.suggest_switch ? { suggest_switch: response.suggest_switch } : undefined;
+                await marketService.addMessageToSession(sessionId, 'assistant', aiMessage.content, metadata);
             }
-
         } catch (error) {
-            console.error('AI chat error:', error);
+            console.error('Chat error:', error);
             const errorMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: "I apologize, but I'm having trouble connecting right now. Please try again in a moment.",
+                content: 'Sorry, I encountered an error. Please try again.',
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleStartPortfolioFlow = () => {
-        setShowPortfolioButton(false);
-        setShowQuestionnaire(true);
-    };
-
-    const handleQuestionnaireComplete = async (data: QuestionnaireData) => {
-        setShowQuestionnaire(false);
-        setUserPreferences(data);
-        setLoading(true);
-
-        try {
-            // Get the last AI response to parse stocks from
-            const lastAIMessage = messages.filter(m => m.role === 'assistant').pop();
-            if (lastAIMessage) {
-                const parsedStocks = parseStockRecommendations(lastAIMessage.content);
-                setRecommendations(parsedStocks);
-            }
-        } catch (error) {
-            console.error('Failed to parse recommendations:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleToggleSelect = (symbol: string) => {
-        if (selectedStocks.includes(symbol)) {
-            setSelectedStocks(selectedStocks.filter(s => s !== symbol));
-        } else if (selectedStocks.length < 5) {
-            setSelectedStocks([...selectedStocks, symbol]);
-        }
-    };
-
-    const handleToggleExpand = (symbol: string) => {
-        setExpandedStock(expandedStock === symbol ? null : symbol);
-    };
-
-    const handleBuildPortfolio = () => {
-        if (!userPreferences || selectedStocks.length < 2) return;
-
-        const selectedRecs = recommendations.filter(r => selectedStocks.includes(r.symbol));
-        const totalScore = selectedRecs.reduce((sum, r) => sum + r.score, 0);
-
-        const allocations = selectedRecs.map(stock => {
-            const baseAllocation = (stock.score / totalScore);
-            const amount = Math.floor(userPreferences.budget * baseAllocation);
-            const shares = Math.floor(amount / stock.price);
-            const actualAmount = shares * stock.price;
-
-            return {
-                symbol: stock.symbol,
-                allocation_percent: Math.round(baseAllocation * 100),
-                amount: actualAmount,
-                shares,
-                price_per_share: stock.price
-            };
-        });
-
-        setPortfolioAllocations(allocations);
-        setShowPortfolio(true);
-
-        setTimeout(() => {
-            document.getElementById('portfolio-section')?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-    };
-
-    const handleCompare = () => {
-        router.push(`/analysis?stocks=${selectedStocks.join(',')}&source=discovery`);
-    };
-
-    const handleBacktrack = () => {
-        if (selectedStocks.length > 0) {
-            router.push(`/backtrack?stock=${selectedStocks[0]}`);
-        }
-    };
-
-    const handleCreatePortfolio = async () => {
-        if (!userPreferences || portfolioAllocations.length === 0) return;
-
-        try {
-            const portfolioName = `${currentSectorQuery.substring(0, 30)} Portfolio`;
-            const totalInvestment = portfolioAllocations.reduce((sum, a) => sum + a.amount, 0);
-
-            await marketService.createPortfolioWithHoldings(
-                portfolioName,
-                portfolioAllocations
-            );
-
-            alert('Portfolio created successfully!');
-        } catch (error) {
-            console.error('Failed to create portfolio:', error);
-            alert('Failed to create portfolio. Please try again.');
         }
     };
 
@@ -355,464 +273,326 @@ export default function DiscoveryHubPage() {
         }
     };
 
+    const handleQuestionnaireComplete = async (data: QuestionnaireData) => {
+        console.log("Questionnaire data:", data);
+        setUserPreferences(data);
+        setViewMode('recommendations');
+
+        // MOCK: Fetch recommendations based on preferences
+        // In reality, this would be an API call
+        setLoading(true);
+        setTimeout(() => {
+            const mockRecommendations: StockRecommendation[] = [
+                { symbol: 'TCS', name: 'Tata Consultancy Services', price: 3450.20, change: 1.25, score: 88, action: 'BUY', reasoning: 'Strong order book and market leadership position in IT sector.' },
+                { symbol: 'INFY', name: 'Infosys Ltd', price: 1450.80, change: -0.45, score: 82, action: 'BUY', reasoning: 'Attractive valuation after recent correction with solid fundamentals.' },
+                { symbol: 'HCLTECH', name: 'HCL Technologies', price: 1240.50, change: 2.10, score: 79, action: 'BUY', reasoning: 'Best-in-class dividend yield and strong digital growth.' },
+                { symbol: 'WIPRO', name: 'Wipro Limited', price: 445.30, change: 0.15, score: 72, action: 'HOLD', reasoning: 'Turnaround in progress, wait for stable margin improvement.' },
+                { symbol: 'TECHM', name: 'Tech Mahindra', price: 1120.90, change: -1.20, score: 68, action: 'HOLD', reasoning: 'Telecom vertical weakness persists, watch for 5G recovery.' },
+                { symbol: 'LTIM', name: 'LTIMindtree', price: 5234.00, change: 1.80, score: 75, action: 'BUY', reasoning: 'Synergy benefits kicking in, strong growth potential in BFSI.' },
+                { symbol: 'KPITTECH', name: 'KPIT Technologies', price: 1560.40, change: 3.45, score: 91, action: 'BUY', reasoning: 'Pure-play auto ER&D leader with massive growth runway.' },
+            ];
+            setRecommendations(mockRecommendations);
+            setLoading(false);
+        }, 1500);
+    };
+
+    const toggleStockSelection = (symbol: string) => {
+        setSelectedStocks(prev => {
+            if (prev.includes(symbol)) {
+                return prev.filter(s => s !== symbol);
+            } else {
+                if (prev.length >= 5) return prev; // Max 5
+                return [...prev, symbol];
+            }
+        });
+    };
+
+    const handleCompareStocks = () => {
+        router.push(`/analysis?stocks=${selectedStocks.join(',')}`);
+    };
+
+    const handleProceedToBuilder = () => {
+        // Calculate allocations (Simple logic mostly equal weight for now)
+        if (!userPreferences) return;
+
+        const count = selectedStocks.length;
+        const budget = userPreferences.budget;
+
+        // MOCK Allocation Logic
+        const newAllocations = selectedStocks.map(symbol => {
+            const stock = recommendations.find(r => r.symbol === symbol);
+            const price = stock?.price || 100;
+            const weight = 1 / count; // Equal weight for now
+            const amount = budget * weight;
+            return {
+                symbol,
+                allocation_percent: Math.round(weight * 100),
+                amount: Math.round(amount),
+                shares: Math.floor(amount / price),
+                price_per_share: price
+            };
+        });
+
+        setPortfolioAllocations(newAllocations);
+        setViewMode('builder');
+    };
+
+    const handleCreatePortfolio = async (name: string) => {
+        try {
+            const portfolio = await marketService.createPortfolio(name);
+            setIsCreateModalOpen(false);
+
+            // In a real app, we would save the allocations here
+            // For now, redirect to portfolio page or show success
+
+            router.push('/portfolio'); // Or wherever the user wants
+
+        } catch (e) {
+            console.error("Create failed", e);
+        }
+    };
+
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#000' }}>
             <Sidebar />
 
-            <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', ml: { md: '140px' }, position: 'relative' }}>
-
-                {/* History Sidebar */}
-                <Drawer
-                    anchor="left"
-                    open={isSidebarOpen}
-                    onClose={() => setIsSidebarOpen(false)}
-                    PaperProps={{
-                        sx: { width: 320, bgcolor: '#0A0A0A', borderRight: '1px solid rgba(139, 92, 246, 0.2)' }
-                    }}
-                >
-                    <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Typography variant="h6" sx={{ color: '#fff', fontWeight: 600 }}>History</Typography>
-                        <Button
-                            startIcon={<Plus size={18} />}
-                            onClick={handleCreateNewChat}
-                            sx={{ color: '#fff', bgcolor: '#9C27B0', '&:hover': { bgcolor: '#7B1FA2' }, textTransform: 'none', px: 2 }}
-                        >
-                            New Chat
-                        </Button>
-                    </Box>
-                    <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-                    <List>
-                        {sessions.map((session) => (
-                            <ListItem key={session.id} disablePadding>
-                                <ListItemButton
-                                    selected={currentSessionId === session.id}
-                                    onClick={() => handleLoadSession(session.id)}
-                                    sx={{
-                                        '&.Mui-selected': { bgcolor: 'rgba(139, 92, 246, 0.15)', borderLeft: '3px solid #D500F9' },
-                                        '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' }
-                                    }}
-                                >
-                                    <Box sx={{ overflow: 'hidden', width: '100%' }}>
-                                        <Typography variant="subtitle2" noWrap sx={{ color: '#fff' }}>
-                                            {session.title || 'New Research'}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
-                                            {new Date(session.created_at).toLocaleDateString()}
-                                        </Typography>
-                                    </Box>
-                                    <IconButton
-                                        size="small"
-                                        onClick={(e) => handleDeleteSession(e, session.id)}
-                                        sx={{ color: 'rgba(255,255,255,0.3)', '&:hover': { color: '#ef4444' } }}
-                                    >
-                                        <Trash2 size={14} />
-                                    </IconButton>
-                                </ListItemButton>
-                            </ListItem>
-                        ))}
-                    </List>
-                </Drawer>
-
-                {/* History Toggle Button */}
-                <Box sx={{ position: 'absolute', top: 24, left: 24, zIndex: 10 }}>
+            <Box sx={{
+                flexGrow: 1,
+                height: '100vh',
+                bgcolor: '#000',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+                overflow: 'hidden',
+                background: 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #000 70%)'
+            }}>
+                {/* Header */}
+                <Box sx={{
+                    p: 3,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 2,
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 10,
+                    pl: { xs: 2, md: '120px' }
+                }}>
                     <IconButton
-                        onClick={() => setIsSidebarOpen(true)}
+                        onClick={toggleHistory}
                         sx={{
-                            bgcolor: 'rgba(139, 92, 246, 0.1)',
-                            color: '#D500F9',
-                            border: '1px solid rgba(139, 92, 246, 0.2)',
+                            width: 44,
+                            height: 44,
+                            borderRadius: '50%',
+                            color: '#fff',
+                            bgcolor: isHistoryOpen ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255,255,255,0.05)',
+                            border: isHistoryOpen ? '1px solid rgba(139, 92, 246, 0.4)' : '1px solid rgba(255,255,255,0.1)',
                             backdropFilter: 'blur(10px)',
-                            '&:hover': { bgcolor: 'rgba(139, 92, 246, 0.2)' }
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                                bgcolor: 'rgba(255,255,255,0.1)',
+                                transform: 'scale(1.05)'
+                            }
                         }}
                     >
                         <History size={20} />
                     </IconButton>
-                </Box>
 
-                {/* Content Area */}
-                <Box sx={{
-                    flexGrow: 1,
-                    overflowY: 'auto',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'relative'
-                }}>
-                    {/* Initial State - Centered */}
-                    {isInitial && messages.length === 0 && !loading && (
-                        <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexGrow: 1,
-                            p: { xs: 3, md: 6 }
-                        }}>
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+                    {/* Breadcrumbs / View Indicator */}
+                    {(viewMode !== 'chat' || !isInitial) && (
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <Button
+                                onClick={() => setViewMode('chat')}
+                                sx={{ color: viewMode === 'chat' ? '#fff' : '#666', textTransform: 'none' }}
                             >
-                                <Box sx={{ maxWidth: 600, textAlign: 'center' }}>
-                                    <Box sx={{
-                                        width: 80,
-                                        height: 80,
-                                        borderRadius: 4,
-                                        background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        mx: 'auto',
-                                        mb: 4,
-                                        boxShadow: '0 20px 60px rgba(139, 92, 246, 0.3)'
-                                    }}>
-                                        <Lightbulb size={40} color="#fff" strokeWidth={2} />
-                                    </Box>
-
-                                    <Typography variant="h4" sx={{
-                                        fontWeight: 600,
-                                        letterSpacing: '-0.03em',
-                                        color: '#fff',
-                                        mb: 2
-                                    }}>
-                                        Research any sector
-                                    </Typography>
-
-                                    <Typography sx={{
-                                        color: 'rgba(255, 255, 255, 0.5)',
-                                        fontSize: '1rem',
-                                        lineHeight: 1.6,
-                                        mb: 5,
-                                        fontWeight: 400
-                                    }}>
-                                        Get AI-powered insights, latest news, and investment opportunities for any sector or commodity
-                                    </Typography>
-
-                                    <Box sx={{
-                                        display: 'grid',
-                                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                                        gap: 1.5,
-                                        mb: 3
-                                    }}>
-                                        {STARTER_PROMPTS.map((prompt, index) => (
-                                            <motion.div
-                                                key={index}
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{
-                                                    delay: 0.3 + index * 0.08,
-                                                    duration: 0.5,
-                                                    ease: [0.25, 0.1, 0.25, 1]
-                                                }}
-                                            >
-                                                <Paper
-                                                    onClick={() => handleSend(prompt)}
-                                                    sx={{
-                                                        p: 2,
-                                                        borderRadius: 2,
-                                                        bgcolor: 'rgba(255, 255, 255, 0.03)',
-                                                        border: '1px solid rgba(255, 255, 255, 0.06)',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 1.5,
-                                                        textAlign: 'left',
-                                                        '&:hover': {
-                                                            bgcolor: 'rgba(139, 92, 246, 0.08)',
-                                                            borderColor: 'rgba(139, 92, 246, 0.3)',
-                                                            transform: 'translateY(-2px)',
-                                                            '& .arrow': {
-                                                                transform: 'translateX(4px)',
-                                                                opacity: 1
-                                                            }
-                                                        }
-                                                    }}
-                                                >
-                                                    <Typography variant="body2" sx={{
-                                                        color: 'rgba(255, 255, 255, 0.85)',
-                                                        fontSize: '0.875rem',
-                                                        fontWeight: 400,
-                                                        flex: 1,
-                                                        lineHeight: 1.5
-                                                    }}>
-                                                        {prompt}
-                                                    </Typography>
-                                                    <ArrowRight
-                                                        className="arrow"
-                                                        size={16}
-                                                        color="rgba(139, 92, 246, 0.6)"
-                                                        style={{
-                                                            transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
-                                                            opacity: 0.5
-                                                        }}
-                                                    />
-                                                </Paper>
-                                            </motion.div>
-                                        ))}
-                                    </Box>
-                                </Box>
-                            </motion.div>
+                                Discovery
+                            </Button>
+                            {viewMode !== 'chat' && <ChevronRight size={16} color="#666" />}
+                            {viewMode !== 'chat' && (
+                                <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
+                                    {viewMode === 'questionnaire' ? 'Preferences' :
+                                        viewMode === 'recommendations' ? 'Selection' : 'Builder'}
+                                </Typography>
+                            )}
                         </Box>
                     )}
+                </Box>
 
-                    {/* Chat Messages */}
-                    {!isInitial && !showQuestionnaire && recommendations.length === 0 && (
-                        <Box sx={{
-                            p: { xs: 3, md: 4 },
-                            pt: 8,
-                            maxWidth: 800,
-                            mx: 'auto',
-                            width: '100%'
-                        }}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                <AnimatePresence>
-                                    {messages.map((message, index) => (
-                                        <motion.div
-                                            key={message.id}
-                                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            exit={{ opacity: 0, scale: 0.95 }}
-                                            transition={{
-                                                duration: 0.4,
-                                                ease: [0.4, 0, 0.2, 1]
-                                            }}
-                                        >
-                                            <Box sx={{
-                                                display: 'flex',
-                                                gap: 2,
-                                                alignItems: 'flex-start',
-                                                flexDirection: message.role === 'user' ? 'row-reverse' : 'row'
-                                            }}>
-                                                <Avatar
-                                                    sx={{
-                                                        width: 40,
-                                                        height: 40,
-                                                        bgcolor: message.role === 'assistant'
-                                                            ? 'transparent'
-                                                            : 'rgba(255, 255, 255, 0.1)',
-                                                        background: message.role === 'assistant'
-                                                            ? 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)'
-                                                            : 'rgba(255, 255, 255, 0.1)',
-                                                        fontSize: '1.2rem',
-                                                        flexShrink: 0
-                                                    }}
-                                                >
-                                                    {message.role === 'assistant' ? (
-                                                        <Sparkles size={20} color="#fff" />
-                                                    ) : (
-                                                        '👤'
-                                                    )}
-                                                </Avatar>
+                {/* History Panel */}
+                <DiscoveryHistory
+                    isOpen={isHistoryOpen}
+                    sessions={sessions}
+                    currentSessionId={currentSessionId}
+                    onClose={closeHistory}
+                    onSessionClick={handleSessionClick}
+                    onNewChat={handleNewChat}
+                    onPinSession={handlePinSession}
+                    onDeleteSession={handleDeleteSession}
+                />
 
-                                                <Paper
-                                                    elevation={0}
-                                                    sx={{
-                                                        p: 2.5,
-                                                        maxWidth: '75%',
-                                                        bgcolor: message.role === 'user'
-                                                            ? 'rgba(255, 255, 255, 0.05)'
-                                                            : 'rgba(139, 92, 246, 0.08)',
-                                                        border: message.role === 'user'
-                                                            ? '1px solid rgba(255, 255, 255, 0.1)'
-                                                            : '1px solid rgba(139, 92, 246, 0.2)',
-                                                        borderRadius: 3,
-                                                        backdropFilter: 'blur(10px)'
-                                                    }}
-                                                >
-                                                    <Box
-                                                        sx={{
-                                                            color: '#fff',
-                                                            fontSize: '0.9375rem',
-                                                            lineHeight: 1.7,
-                                                            '& h1, & h2, & h3': {
-                                                                color: '#A78BFA',
-                                                                fontWeight: 600,
-                                                                mt: 2,
-                                                                mb: 1,
-                                                                '&:first-of-type': { mt: 0 }
-                                                            },
-                                                            '& h2': { fontSize: '1.125rem' },
-                                                            '& h3': { fontSize: '1rem' },
-                                                            '& p': {
-                                                                mb: 1.5,
-                                                                '&:last-child': { mb: 0 }
-                                                            },
-                                                            '& ul, & ol': {
-                                                                pl: 3,
-                                                                mb: 1.5,
-                                                                '& li': {
-                                                                    mb: 0.5,
-                                                                    '& ul, & ol': {
-                                                                        mt: 0.5,
-                                                                        mb: 0
-                                                                    }
-                                                                }
-                                                            },
-                                                            '& strong': {
-                                                                color: '#A78BFA',
-                                                                fontWeight: 600
-                                                            },
-                                                            '& code': {
-                                                                bgcolor: 'rgba(255, 255, 255, 0.1)',
-                                                                px: 0.5,
-                                                                py: 0.25,
-                                                                borderRadius: 0.5,
-                                                                fontSize: '0.875rem'
-                                                            }
-                                                        }}
-                                                    >
-                                                        <ReactMarkdown>{message.content}</ReactMarkdown>
-                                                    </Box>
-                                                    <Typography
-                                                        variant="caption"
-                                                        sx={{
-                                                            display: 'block',
-                                                            mt: 1,
-                                                            color: 'rgba(255, 255, 255, 0.4)',
-                                                            fontSize: '0.75rem'
-                                                        }}
-                                                    >
-                                                        {message.timestamp.toLocaleTimeString([], {
-                                                            hour: '2-digit',
-                                                            minute: '2-digit'
-                                                        })}
-                                                    </Typography>
-                                                </Paper>
-                                            </Box>
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
+                {/* Content Area - Scrollable */}
+                <Box sx={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    pt: 10, // Space for header
+                    pb: viewMode === 'chat' ? 0 : 4,
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
 
-                                {/* Create Portfolio Button */}
-                                {showPortfolioButton && !loading && (
+                    {/* VIEW: CHAT & INITIAL */}
+                    {viewMode === 'chat' && (
+                        <>
+                            {isInitial && messages.length === 0 ? (
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexGrow: 1,
+                                    p: { xs: 3, md: 6 }
+                                }}>
                                     <motion.div
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.4 }}
+                                        transition={{ duration: 0.6 }}
                                     >
-                                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                                            <Button
-                                                variant="contained"
-                                                size="large"
-                                                onClick={handleStartPortfolioFlow}
-                                                sx={{
-                                                    background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
-                                                    color: '#fff',
-                                                    px: 4,
-                                                    py: 1.5,
-                                                    borderRadius: 3,
-                                                    fontWeight: 600,
-                                                    fontSize: '1rem',
-                                                    textTransform: 'none',
-                                                    boxShadow: '0 8px 32px rgba(139, 92, 246, 0.3)',
-                                                    '&:hover': {
-                                                        background: 'linear-gradient(135deg, #7C3AED 0%, #9333EA 100%)',
-                                                        transform: 'translateY(-2px)',
-                                                        boxShadow: '0 12px 40px rgba(139, 92, 246, 0.4)'
-                                                    },
-                                                    transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)'
-                                                }}
-                                            >
-                                                💼 Create Portfolio from These Stocks
-                                            </Button>
+                                        <Box sx={{ maxWidth: 600, textAlign: 'center' }}>
+                                            <Typography variant="h3" sx={{ fontWeight: 700, mb: 2, background: 'linear-gradient(135deg, #fff 0%, #A78BFA 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                                                Research any sector
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.6)', mb: 4 }}>
+                                                AI-powered insights, latest news, and investment opportunities.
+                                            </Typography>
+                                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                                {STARTER_PROMPTS.map((prompt, idx) => (
+                                                    <Button
+                                                        key={idx}
+                                                        fullWidth
+                                                        onClick={() => handleSend(prompt)}
+                                                        sx={{
+                                                            textAlign: 'left',
+                                                            p: 2,
+                                                            bgcolor: 'rgba(255, 255, 255, 0.03)',
+                                                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                            color: 'rgba(255, 255, 255, 0.7)',
+                                                            textTransform: 'none',
+                                                            '&:hover': { bgcolor: 'rgba(139, 92, 246, 0.08)', borderColor: '#8B5CF6' }
+                                                        }}
+                                                    >
+                                                        {prompt}
+                                                    </Button>
+                                                ))}
+                                            </Box>
                                         </Box>
                                     </motion.div>
-                                )}
-
-                                {loading && (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                    >
-                                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-                                            <Avatar
-                                                sx={{
-                                                    width: 40,
-                                                    height: 40,
-                                                    background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)'
-                                                }}
-                                            >
-                                                <CircularProgress size={20} sx={{ color: '#fff' }} />
-                                            </Avatar>
-                                            <Paper
-                                                elevation={0}
-                                                sx={{
-                                                    p: 2.5,
-                                                    bgcolor: 'rgba(139, 92, 246, 0.08)',
-                                                    border: '1px solid rgba(139, 92, 246, 0.2)',
-                                                    borderRadius: 3,
-                                                    backdropFilter: 'blur(10px)'
-                                                }}
-                                            >
-                                                <Typography sx={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.9375rem' }}>
-                                                    Researching and analyzing...
-                                                </Typography>
-                                            </Paper>
-                                        </Box>
-                                    </motion.div>
-                                )}
-
-                                <div ref={messagesEndRef} />
-                            </Box>
-                        </Box>
+                                </Box>
+                            ) : (
+                                <DiscoveryChat
+                                    messages={messages}
+                                    input={input}
+                                    loading={loading}
+                                    onInputChange={setInput}
+                                    onSend={handleSend}
+                                    onKeyPress={handleKeyPress}
+                                    onCreatePortfolio={() => setViewMode('questionnaire')}
+                                />
+                            )}
+                        </>
                     )}
 
-                    {/* Questionnaire Flow */}
-                    {showQuestionnaire && (
+                    {/* VIEW: QUESTIONNAIRE */}
+                    {viewMode === 'questionnaire' && (
                         <Box sx={{ p: { xs: 3, md: 6 }, maxWidth: 800, mx: 'auto', width: '100%' }}>
-                            <QuestionnaireFlow sector="Discovery" onComplete={handleQuestionnaireComplete} />
+                            <Button startIcon={<ArrowRight className="rotate-180" />} onClick={() => setViewMode('chat')} sx={{ mb: 2, color: '#666' }}>
+                                Back to Chat
+                            </Button>
+                            <QuestionnaireFlow
+                                sector={input || "General"} // Or pass last sector topic
+                                onComplete={handleQuestionnaireComplete}
+                            />
                         </Box>
                     )}
 
-                    {/* Stock Recommendations */}
-                    {recommendations.length > 0 && !showPortfolio && (
-                        <Box sx={{ p: { xs: 3, md: 6 }, maxWidth: 1200, mx: 'auto', width: '100%' }}>
-                            <Typography variant="h5" sx={{ color: '#fff', mb: 3, fontWeight: 600 }}>
-                                Select 2-5 stocks for your portfolio
-                            </Typography>
-                            <Grid container spacing={3}>
-                                {recommendations.map((stock, index) => (
-                                    <Grid key={stock.symbol} size={{ xs: 12, md: 6 }}>
-                                        <StockQuickCard
-                                            stock={stock}
-                                            index={index}
-                                            isSelected={selectedStocks.includes(stock.symbol)}
-                                            isExpanded={expandedStock === stock.symbol}
-                                            onToggleSelect={() => handleToggleSelect(stock.symbol)}
-                                            onToggleExpand={() => handleToggleExpand(stock.symbol)}
-                                        />
-                                    </Grid>
-                                ))}
-                            </Grid>
+                    {/* VIEW: RECOMMENDATIONS */}
+                    {viewMode === 'recommendations' && (
+                        <Box sx={{ p: { xs: 2, md: 6 }, maxWidth: 1200, mx: 'auto', width: '100%' }}>
+                            <Box sx={{ mb: 4 }}>
+                                <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>
+                                    Top Picks for You
+                                </Typography>
+                                <Typography variant="body1" sx={{ color: '#888' }}>
+                                    Based on your preferences: {userPreferences?.riskProfile} Risk • {userPreferences?.horizon} Horizon
+                                </Typography>
+                            </Box>
+
+                            {loading ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+                                    <CircularProgress sx={{ color: '#00E5FF' }} />
+                                </Box>
+                            ) : (
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
+                                    {recommendations.map((stock, index) => (
+                                        <Box key={stock.symbol}>
+                                            <StockQuickCard
+                                                stock={stock}
+                                                index={index}
+                                                isSelected={selectedStocks.includes(stock.symbol)}
+                                                isExpanded={expandedStock === stock.symbol}
+                                                onToggleExpand={() => setExpandedStock((prev) => prev === stock.symbol ? null : stock.symbol)}
+                                                onToggleSelect={() => toggleStockSelection(stock.symbol)}
+                                            />
+                                        </Box>
+                                    ))}
+                                </Box>
+                            )}
+
+                            {/* Sticky Selection Bar */}
+                            <SelectionBar
+                                selectedStocks={selectedStocks}
+                                onRemove={(symbol) => toggleStockSelection(symbol)}
+                                onCompare={handleCompareStocks}
+                                onContinue={handleProceedToBuilder}
+                                onBacktrack={() => setViewMode('questionnaire')}
+                            />
                         </Box>
                     )}
 
-                    {/* Portfolio Builder */}
-                    {showPortfolio && userPreferences && (
-                        <Box id="portfolio-section" sx={{ p: { xs: 3, md: 6 }, maxWidth: 1200, mx: 'auto', width: '100%' }}>
+                    {/* VIEW: BUILDER */}
+                    {viewMode === 'builder' && userPreferences && (
+                        <Box sx={{ p: { xs: 2, md: 6 }, maxWidth: 1200, mx: 'auto', width: '100%' }}>
+                            <Button startIcon={<ArrowRight className="rotate-180" />} onClick={() => setViewMode('recommendations')} sx={{ mb: 2, color: '#666' }}>
+                                Back to Selection
+                            </Button>
                             <PortfolioBuilder
                                 allocations={portfolioAllocations}
-                                totalBudget={userPreferences.budget}
-                                riskLevel="Moderate"
-                                estimatedReturn={12}
+                                totalBudget={userPreferences.budget || 0}
+                                riskLevel={userPreferences.riskProfile || 'Moderate'}
+                                estimatedReturn={14.2} // Mock return
                             />
-                            <Box sx={{ mt: 4, display: 'flex', gap: 2, justifyContent: 'center' }}>
+
+                            {/* Action Buttons */}
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4, pb: 10 }}>
                                 <Button
                                     variant="outlined"
-                                    onClick={() => setShowPortfolio(false)}
-                                    sx={{
-                                        borderColor: '#666',
-                                        color: '#666',
-                                        '&:hover': { borderColor: '#fff', color: '#fff' }
-                                    }}
+                                    onClick={() => setViewMode('recommendations')}
+                                    sx={{ borderColor: '#333', color: '#fff', px: 4, py: 1.5, borderRadius: 3 }}
                                 >
                                     Modify Selection
                                 </Button>
                                 <Button
                                     variant="contained"
-                                    onClick={handleCreatePortfolio}
+                                    onClick={() => setIsCreateModalOpen(true)}
+                                    startIcon={<Check />}
                                     sx={{
-                                        bgcolor: '#8B5CF6',
-                                        '&:hover': { bgcolor: '#7C3AED' }
+                                        bgcolor: '#10B981',
+                                        color: '#000',
+                                        px: 4,
+                                        py: 1.5,
+                                        borderRadius: 3,
+                                        fontWeight: 700,
+                                        '&:hover': { bgcolor: '#059669' }
                                     }}
                                 >
                                     Create Portfolio
@@ -822,19 +602,8 @@ export default function DiscoveryHubPage() {
                     )}
                 </Box>
 
-                {/* Selection Bar */}
-                {selectedStocks.length > 0 && !showPortfolio && (
-                    <SelectionBar
-                        selectedStocks={selectedStocks}
-                        onRemove={(symbol) => setSelectedStocks(selectedStocks.filter(s => s !== symbol))}
-                        onContinue={handleBuildPortfolio}
-                        onCompare={handleCompare}
-                        onBacktrack={handleBacktrack}
-                    />
-                )}
-
-                {/* Input Area */}
-                {!showQuestionnaire && recommendations.length === 0 && (
+                {/* Fixed Input Area - Outside Scrollable Content */}
+                {viewMode === 'chat' && (
                     <Box sx={{
                         p: { xs: 3, md: 4 },
                         backdropFilter: 'blur(20px)',
@@ -849,78 +618,51 @@ export default function DiscoveryHubPage() {
                                 borderRadius: 3,
                                 bgcolor: 'rgba(255, 255, 255, 0.05)',
                                 border: '1px solid rgba(255, 255, 255, 0.08)',
-                                transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
-                                '&:focus-within': {
-                                    borderColor: 'rgba(139, 92, 246, 0.5)',
-                                    bgcolor: 'rgba(255, 255, 255, 0.06)',
-                                    boxShadow: '0 0 0 3px rgba(139, 92, 246, 0.1)'
-                                }
                             }}>
                                 <TextField
                                     fullWidth
                                     multiline
                                     maxRows={6}
-                                    placeholder="Ask about any sector, commodity, or industry..."
+                                    placeholder="Ask about any sector..."
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
-                                    onKeyPress={handleKeyPress}
+                                    onKeyDown={handleKeyPress}
                                     disabled={loading}
                                     variant="standard"
-                                    InputProps={{
-                                        disableUnderline: true,
-                                        sx: {
-                                            color: 'rgba(255, 255, 255, 0.92)',
-                                            fontSize: '0.9375rem',
-                                            fontWeight: 400,
-                                            letterSpacing: '-0.01em',
-                                            px: 1.5,
-                                            py: 0.5,
-                                            '&::placeholder': {
-                                                color: 'rgba(255, 255, 255, 0.35)',
-                                                opacity: 1
-                                            }
-                                        }
-                                    }}
+                                    InputProps={{ disableUnderline: true, sx: { color: '#fff' } }}
                                 />
                                 <IconButton
                                     onClick={() => handleSend()}
                                     disabled={!input.trim() || loading}
-                                    sx={{
-                                        ml: 1,
-                                        width: 36,
-                                        height: 36,
-                                        background: input.trim() && !loading
-                                            ? 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)'
-                                            : 'rgba(255, 255, 255, 0.08)',
-                                        transition: 'all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1)',
-                                        '&:hover': {
-                                            background: input.trim() && !loading
-                                                ? 'linear-gradient(135deg, #7C3AED 0%, #9333EA 100%)'
-                                                : 'rgba(255, 255, 255, 0.08)',
-                                            transform: input.trim() && !loading ? 'scale(1.05)' : 'none'
-                                        },
-                                        '&:disabled': {
-                                            background: 'rgba(255, 255, 255, 0.04)'
-                                        }
-                                    }}
+                                    sx={{ ml: 1, bgcolor: input.trim() ? '#8B5CF6' : 'transparent' }}
                                 >
-                                    <Send size={16} color={input.trim() && !loading ? '#fff' : 'rgba(255, 255, 255, 0.3)'} />
+                                    <Send size={16} color={input.trim() ? '#fff' : '#666'} />
                                 </IconButton>
                             </Paper>
-                            <Typography variant="caption" sx={{
-                                color: 'rgba(255, 255, 255, 0.25)',
-                                mt: 1.5,
-                                display: 'block',
-                                textAlign: 'center',
-                                fontSize: '0.75rem',
-                                fontWeight: 400
-                            }}>
-                                Press Enter to send • Shift+Enter for new line
-                            </Typography>
                         </Box>
                     </Box>
                 )}
             </Box>
+
+            <ConfirmDialog
+                open={deleteConfirmOpen}
+                title="Delete Chat"
+                message="Are you sure you want to delete this chat? This action cannot be undone."
+                confirmText="Delete"
+                cancelText="Cancel"
+                confirmColor="error"
+                onConfirm={confirmDeleteSession}
+                onCancel={() => {
+                    setDeleteConfirmOpen(false);
+                    setSessionToDelete(null);
+                }}
+            />
+
+            <CreatePortfolioModal
+                open={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onCreate={handleCreatePortfolio}
+            />
         </Box>
     );
 }

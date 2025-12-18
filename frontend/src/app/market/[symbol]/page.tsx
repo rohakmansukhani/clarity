@@ -6,6 +6,7 @@ import { ArrowUpRight, ArrowDownRight, Zap, TrendingUp, Activity, Newspaper, Bra
 import { useParams } from 'next/navigation';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { marketService } from '@/services/marketService';
+import AddTransactionModal from '@/components/portfolio/AddTransactionModal';
 
 export default function StockPage() {
     const params = useParams();
@@ -26,6 +27,10 @@ export default function StockPage() {
     const [updateInterval, setUpdateInterval] = useState(5); // Minutes
     const [portfolioModalOpen, setPortfolioModalOpen] = useState(false);
     const [buyListModalOpen, setBuyListModalOpen] = useState(false);
+
+    // Transaction Modal State
+    const [transactionModalOpen, setTransactionModalOpen] = useState(false);
+    const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
 
     // Watchlist Form State
     const [buyTarget, setBuyTarget] = useState('');
@@ -389,18 +394,10 @@ export default function StockPage() {
                                 {userPortfolios.length > 0 ? userPortfolios.map((portfolio: any) => (
                                     <Button
                                         key={portfolio.id}
-                                        onClick={async () => {
-                                            try {
-                                                const currentPrice = data.market_data?.price || 0;
-                                                await marketService.addToPortfolio(portfolio.id, {
-                                                    ticker: symbol,
-                                                    shares: 1,
-                                                    avg_price: currentPrice
-                                                });
-                                                setPortfolioModalOpen(false);
-                                            } catch (e) {
-                                                console.error(e);
-                                            }
+                                        onClick={() => {
+                                            setSelectedPortfolioId(portfolio.id);
+                                            setPortfolioModalOpen(false);
+                                            setTransactionModalOpen(true);
                                         }}
                                         sx={{
                                             justifyContent: 'space-between',
@@ -427,18 +424,7 @@ export default function StockPage() {
                                         const name = prompt("Enter new portfolio name:");
                                         if (name) {
                                             try {
-                                                // Create portfolio
-                                                // We need to import portfolioService or access creation logic.
-                                                // Since we are in StockPage using marketService, we can add a createPortfolio method there or just use fetch directly for now to save imports?
-                                                // Actually, let's use marketService (we need to add the method).
-                                                // Or better, redirect to portfolio page? User wants "option to create".
-                                                // Inline is better.
-                                                // Adding createPortfolio to marketService is cleanest.
-                                                // But wait, I can just use `window.location.href` to Portfolio page if too complex, 
-                                                // BUT user said "create new portfolio button HERE".
-                                                // I will add `createPortfolio` to `marketService` after this.
                                                 await marketService.createPortfolio(name);
-                                                // Refresh list
                                                 const res = await marketService.getPortfolios();
                                                 setUserPortfolios(res);
                                             } catch (e) {
@@ -465,6 +451,28 @@ export default function StockPage() {
                             </Box>
                         </DialogContent>
                     </Dialog>
+
+                    {/* Reused Transaction Modal for Adding to Portfolio */}
+                    <AddTransactionModal
+                        open={transactionModalOpen}
+                        onClose={() => setTransactionModalOpen(false)}
+                        initialTicker={symbol} // Lock the ticker
+                        onSubmit={async (ticker: string, shares: number, price: number, type: 'BUY' | 'SELL') => {
+                            if (!selectedPortfolioId) return;
+                            try {
+                                await marketService.addToPortfolio(selectedPortfolioId, {
+                                    ticker,
+                                    shares,
+                                    avg_price: price
+                                });
+                                setTransactionModalOpen(false);
+                                alert(`Successfully added ${ticker} to portfolio`);
+                            } catch (e) {
+                                console.error("Failed to add transaction:", e);
+                                alert("Failed to add transaction");
+                            }
+                        }}
+                    />
                 </Grid>
             </Grid>
 
@@ -564,10 +572,10 @@ export default function StockPage() {
                         </Grid>
                     ))}
                 </Grid>
-            </Box>
+            </Box >
 
             {/* Configuration Modal */}
-            <Dialog
+            < Dialog
                 open={configOpen}
                 onClose={() => setConfigOpen(false)}
                 PaperProps={{
@@ -656,8 +664,8 @@ export default function StockPage() {
                         Save Preferences
                     </Button>
                 </DialogActions>
-            </Dialog>
-        </Box>
+            </Dialog >
+        </Box >
     );
 }
 

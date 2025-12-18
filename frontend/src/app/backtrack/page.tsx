@@ -8,6 +8,7 @@ import { RotateCcw, TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucid
 import { motion } from 'framer-motion';
 import CustomDatePicker from '@/components/ui/CustomDatePicker';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
+import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
 
 export default function BacktrackPage() {
     const [ticker, setTicker] = useState('');

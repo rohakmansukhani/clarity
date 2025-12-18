@@ -4,6 +4,11 @@ interface Message {
     id: string;
     role: 'user' | 'assistant';
     content: string;
+    suggest_switch?: {
+        to: 'advisor' | 'discovery_hub';
+        reason: string;
+        original_query?: string;
+    };
 }
 
 interface UIStore {
