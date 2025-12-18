@@ -106,19 +106,26 @@ class SectorRecommender:
         fundamental = analysis.get("analysis", {}).get("fundamental", {})
         health_score = fundamental.get("health_score", 50)
         
-        # Weighted scoring based on criteria
+        # ✅ FIXED: Weighted scoring based on criteria (matches test specification)
         if criteria == "stability":
-            composite = (stability * 0.6) + (health_score * 0.3) + ((100 - risk) * 0.1)
+            # Stability-focused: Prioritize low-risk, stable companies
+            composite = (stability * 0.6) + ((100 - risk) * 0.3) + (health_score * 0.1)
+            
         elif criteria == "growth":
+            # Growth-focused: Prioritize timing signals and growth potential
             growth_level = fundamental.get("growth_potential", {}).get("level", "LOW")
             growth_bonus = {"HIGH": 30, "MODERATE": 15, "LOW": 0, "DECLINING": -20}.get(growth_level, 0)
-            composite = (timing * 0.4) + (health_score * 0.3) + ((100 - risk) * 0.2) + growth_bonus
+            composite = (timing * 0.5) + (stability * 0.3) + ((100 - risk) * 0.2) + growth_bonus
+            
         elif criteria == "value":
+            # Value-focused: Prioritize undervalued companies with good fundamentals
             valuation_level = fundamental.get("valuation", {}).get("level", "FAIR")
             value_bonus = {"UNDERVALUED": 25, "FAIR": 10, "OVERVALUED": -15}.get(valuation_level, 0)
-            composite = (stability * 0.3) + (health_score * 0.3) + ((100 - risk) * 0.2) + value_bonus + 20
-        else:  # balanced
-            composite = (stability * 0.3) + (timing * 0.3) + ((100 - risk) * 0.2) + (health_score * 0.2)
+            composite = (health_score * 0.4) + (stability * 0.3) + ((100 - risk) * 0.3) + value_bonus
+            
+        else:  # balanced (DEFAULT)
+            # ✅ CRITICAL FIX: Match test specification (40/30/30)
+            composite = (stability * 0.4) + (timing * 0.3) + ((100 - risk) * 0.3)
         
         recommendation = analysis.get("recommendation", {})
         

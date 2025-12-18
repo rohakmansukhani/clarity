@@ -56,17 +56,65 @@ def add_holding(
     supabase: Client = Depends(get_user_supabase)
 ):
     try:
-        data = {
-            "portfolio_id": portfolio_id,
-            "ticker": holding.ticker,
-            "exchange": holding.exchange,
-            "shares": holding.shares,
-            "avg_price": holding.avg_price,
-            "allocation_percent": holding.allocation_percent
-        }
-        res = supabase.table("holdings").insert(data).execute()
-        return res.data[0]
+        # Normalize ticker
+        ticker_clean = holding.ticker.strip().upper()
+        
+        # Check if holding already exists (fetch ALL matches to handle duplicates)
+        existing_res = supabase.table("holdings").select("*").eq("portfolio_id", portfolio_id).eq("ticker", ticker_clean).execute()
+        existing_holdings = existing_res.data
+
+        if existing_holdings:
+            # Self-healing: If multiple records exist, merge them all
+            total_existing_shares = 0.0
+            total_existing_invested = 0.0
+            
+            # primary_record is the one we will keep (the first one)
+            primary_id = existing_holdings[0]['id']
+            
+            for h in existing_holdings:
+                s = float(h['shares'])
+                p = float(h['avg_price'])
+                total_existing_shares += s
+                total_existing_invested += (s * p)
+            
+            # Add the NEW transaction
+            new_shares = holding.shares
+            new_invested = new_shares * holding.avg_price
+            
+            final_shares = total_existing_shares + new_shares
+            final_invested = total_existing_invested + new_invested
+            
+            final_avg_price = (final_invested / final_shares) if final_shares > 0 else 0.0
+            
+            update_data = {
+                "shares": final_shares,
+                "avg_price": final_avg_price
+            }
+            
+            # Update the primary record
+            res = supabase.table("holdings").update(update_data).eq("id", primary_id).execute()
+            
+            # Delete any OTHER duplicate records if they existed
+            if len(existing_holdings) > 1:
+                duplicate_ids = [h['id'] for h in existing_holdings if h['id'] != primary_id]
+                if duplicate_ids:
+                    supabase.table("holdings").delete().in_("id", duplicate_ids).execute()
+            
+            return res.data[0]
+        else:
+            # Insert new holding
+            data = {
+                "portfolio_id": portfolio_id,
+                "ticker": ticker_clean,
+                "exchange": holding.exchange,
+                "shares": holding.shares,
+                "avg_price": holding.avg_price,
+                "allocation_percent": holding.allocation_percent
+            }
+            res = supabase.table("holdings").insert(data).execute()
+            return res.data[0]
     except Exception as e:
+        logger.error(f"Error adding holding: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{portfolio_id}/performance")
@@ -209,12 +257,17 @@ def delete_portfolio(
 ):
     """Delete a portfolio"""
     try:
+        # Update: Delete all holdings first to prevent FK constraint error
+        supabase.table("holdings").delete().eq("portfolio_id", portfolio_id).execute()
+        
+        # Then delete the portfolio
         # RLS handles ownership check
         res = supabase.table("portfolios").delete().eq("id", portfolio_id).execute()
         if not res.data:
             raise HTTPException(status_code=404, detail="Portfolio not found or not authorized")
         return {"message": "Portfolio deleted"}
     except Exception as e:
+        logger.error(f"Error deleting portfolio: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- Holdings Management ---

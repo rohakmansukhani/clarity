@@ -11,8 +11,15 @@ from app.utils.formatters import format_inr, format_percent
 from app.services.analysis.technical_analyzer import TechnicalAnalyzer
 from app.services.analysis.fundamental_analyzer import FundamentalAnalyzer
 from app.services.analysis.news_analyzer import NewsAnalyzer
+from app.core.calculations import (
+    COMMODITY_MAP, SYMBOL_MAP, NICKNAME_MAP, 
+    sanitize_numeric, sanitize_dict
+)
 
 logger = logging.getLogger(__name__)
+
+
+
 
 class MarketService:
     """
@@ -47,34 +54,36 @@ class MarketService:
         """
         symbol = symbol.upper()
         
+        # Commodity & ETF Symbol Mapping (User-friendly → Yahoo Finance)
+        # Using imported COMMODITY_MAP
+        
+        # Check if this is a commodity/ETF request
+        is_commodity = symbol in COMMODITY_MAP
+        yahoo_symbol = COMMODITY_MAP.get(symbol, symbol)
+        
         # Global Symbol Mapping (Nickname -> Official NSE Symbol)
-        # This ensures NSELib, Screener, and Yahoo all get the correct primary ticker.
-        mapping = {
-            "RIL": "RELIANCE",
-            "RELIANCE": "RELIANCE",
-            "TCS": "TCS",
-            "INFY": "INFY",
-            "HDFCBANK": "HDFCBANK",
-            "SBIN": "SBIN",
-            "ICICIBANK": "ICICIBANK",
-            "BHARTIARTL": "BHARTIARTL",
-            "ITC": "ITC",
-            "BAJFINANCE": "BAJFINANCE",
-            "KOTAKBANK": "KOTAKBANK"
-        }
+        # This helps with common stock name variations
+        # Using imported SYMBOL_MAP
+        
+        # Apply stock symbol mapping if not a commodity
+        if not is_commodity:
+            symbol = SYMBOL_MAP.get(symbol, symbol)
         
         # If symbol matches a known nickname, use the official one
         clean_input = symbol.replace(".NS", "")
-        if clean_input in mapping:
-            symbol = mapping[clean_input]
+        if clean_input in SYMBOL_MAP:
+            symbol = SYMBOL_MAP[clean_input]
         
         # Parallel Execution
         # 1. Consensus Price (Fast)
-        # 2. Fundamentals (Screener - Moderate)
+        # 2. Fundamentals (Screener - Moderate) - Skip for commodities/ETFs
         # 3. News (Google RSS - Moderate)
         
-        task_price = self.consensus.get_consensus_price(symbol)
-        task_fundamentals = self.screener.get_stock_details(symbol)
+        # For commodities/ETFs, use Yahoo symbol directly; for stocks, use NSE symbol
+        price_symbol = yahoo_symbol if is_commodity else symbol
+        
+        task_price = self.consensus.get_consensus_price(price_symbol)
+        task_fundamentals = self.screener.get_stock_details(symbol) if not is_commodity else asyncio.sleep(0)
         task_news = self.news_provider.get_stock_details(symbol) # Returns {'news': []}
         
         results = await asyncio.gather(task_price, task_fundamentals, task_news, return_exceptions=True)
@@ -98,8 +107,9 @@ class MarketService:
              change = 0.0
              p_change = 0.0
 
-        return {
+        result = {
             "symbol": symbol,
+            "name": fund_data.get("name", symbol),  # Add company name
             "market_data": {
                 **price_data,
                 "change": change,
@@ -113,8 +123,11 @@ class MarketService:
             "fundamentals": fund_data,
             "news": news_data.get("news", [])
         }
+        
+        # Sanitize all numeric values to prevent NaN JSON errors
+        return sanitize_dict(result)
 
-    @cache(expire=86400, key_prefix="stock_master_list")
+    @cache(expire=86400, key_prefix="stock_master_list_v2")
     async def get_all_symbols(self) -> List[Dict[str, str]]:
         """
         Fetches list of all NSE securities. Cached for 24 hours.
@@ -140,57 +153,55 @@ class MarketService:
             logger.error(f"Error fetching stock list: {e}")
             return []
 
+    @cache(expire=86400, key_prefix="searchable_stocks")
+    async def _get_searchable_stocks(self) -> List[Dict[str, Any]]:
+        """
+        Pre-process stocks for faster searching.
+        Returns list of dicts with 'symbol', 'name', 'search_sym', 'search_name'.
+        """
+        all_stocks = await self.get_all_symbols()
+        processed = []
+        for s in all_stocks:
+            processed.append({
+                "symbol": s['symbol'],
+                "name": s['name'],
+                "search_sym": s['symbol'].upper(),
+                "search_name": s['name'].upper()
+            })
+        return processed
+
     async def search_stocks(self, query: str) -> List[Dict[str, str]]:
         """
         Fuzzy search on cached stock list.
         """
-        all_stocks = await self.get_all_symbols()
+        stocks = await self._get_searchable_stocks()
         query = query.upper()
         
-        # Simple containment search
-        # Rank by: Starts with Symbol > Starts with Name > Contains Symbol
-        
-        # Common Nickname / Search Mapping
-        # Helps users find stocks by their colloquial names
-        nickname_map = {
-            "MAHINDRA": "M&M",
-            "M&M": "M&M",
-            "RELIANCE": "RELIANCE",
-            "RIL": "RELIANCE",
-            "TCS": "TCS",
-            "INFY": "INFY",
-            "INFOSYS": "INFY",
-            "HDFC": "HDFCBANK",
-            "SBI": "SBIN",
-            "AIRTEL": "BHARTIARTL",
-            "BAJFINANCE": "BAJFINANCE",
-            "BAJAJ FINANCE": "BAJFINANCE",
-            "KOTAK": "KOTAKBANK",
-            "L&T": "LT",
-            "LARSEN": "LT",
-            "MARUTI": "MARUTI",
-            "SUZUKI": "MARUTI",
-            "TITAN": "TITAN",
-            "SUN PHARMA": "SUNPHARMA",
-            "ULTRATECH": "ULTRACEMCO"
-        }
+        matches = []
 
-        # Check for direct nickname match first
-        if query in nickname_map:
-            target_symbol = nickname_map[query]
+        # Common Nickname / Search Mapping (Externalized)
+        if query in NICKNAME_MAP:
+            target_symbol = NICKNAME_MAP[query]
             # Prioritize this match
-            for s in all_stocks:
+            for s in stocks:
                 if s['symbol'] == target_symbol:
-                    s_copy = s.copy()
-                    s_copy['score'] = 1000 # Boost to top
+                    s_copy = {"symbol": s["symbol"], "name": s["name"], "score": 1000}
                     matches.append(s_copy)
+                    break 
         
-        for s in all_stocks:
-            sym = s['symbol']
-            name = s['name'].upper()
+        # Limit results for performance
+        count = 0
+        limit = 10
+        
+        for s in stocks:
+            if len(matches) >= limit + 5: # Optimization: stop if we have enough candidates
+                break
+                
+            sym = s['search_sym']
+            name = s['search_name']
             
-            # Skip if already added via nickname map (avoid dupes)
-            if any(m['symbol'] == sym for m in matches):
+            # Skip if already added
+            if any(m['symbol'] == s['symbol'] for m in matches):
                 continue
             
             score = 0
@@ -201,13 +212,16 @@ class MarketService:
             elif query in name: score = 20
             
             if score > 0:
-                s_copy = s.copy()
-                s_copy['score'] = score
-                matches.append(s_copy)
+                matches.append({
+                    "symbol": s['symbol'],
+                    "name": s['name'],
+                    "score": score
+                })
+                count += 1
                 
         # Sort by score desc, limit 10
         matches.sort(key=lambda x: x['score'], reverse=True)
-        return matches[:10]
+        return matches[:limit]
 
     @cache(expire=3600, key_prefix="history")
     async def get_history(self, symbol: str, period: str = "1mo") -> Dict[str, Any]:
@@ -368,7 +382,7 @@ class MarketService:
             "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS", 
             "HINDUNILVR.NS", "ITC.NS", "SBIN.NS", "BHARTIARTL.NS", "KOTAKBANK.NS", 
             "LT.NS", "AXISBANK.NS", "BAJFINANCE.NS", "MARUTI.NS", "ULTRACEMCO.NS",
-            "SUNPHARMA.NS", "TITAN.NS", "TATAMOTORS.NS"
+            "SUNPHARMA.NS", "TITAN.NS", "TMPV.NS"  # TMPV = Tata Motors Passenger Vehicles (post-demerger)
         ]
         
         def _fetch():

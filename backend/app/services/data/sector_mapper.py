@@ -125,15 +125,28 @@ class SectorMapper:
         This is the most reliable source.
         """
         try:
-            # NSE provides CSV downloads for index constituents
-            # Format: https://www.nse india.com/products-services/indices-nifty50-index
-            # They have APIs but require complex auth
+            # STATIC FALLBACK MAP (Major Indices)
+            # Ensures core functionality always works even if scraping fails
+            STATIC_INDICES = {
+                "NIFTY AUTO": ["MARUTI", "M&M", "TATAMOTORS", "BAJAJ-AUTO", "EICHERMOT", "HEROMOTOCO", "TVSMOTOR", "ASHOKLEY", "BHARATFORG"],
+                "NIFTY IT": ["TCS", "INFY", "HCLTECH", "WIPRO", "TECHM", "LTIM", "PERSISTENT", "COFORGE", "MPHASIS"],
+                "NIFTY BANK": ["HDFCBANK", "ICICIBANK", "SBIN", "AXISBANK", "KOTAKBANK", "INDUSINDBK", "BANKBARODA", "PNB", "IDFCFIRSTB"],
+                "NIFTY PHARMA": ["SUNPHARMA", "DRREDDY", "CIPLA", "DIVISLAB", "APOLLOHOSP", "TORNTPHARM", "LUPIN", "AUROPHARMA"],
+                "NIFTY FMCG": ["ITC", "HUL", "NESTLEIND", "BRITANNIA", "TATACONSUM", "GODREJCP", "DABUR", "MARICO", "COLPAL"],
+                "NIFTY METAL": ["TATASTEEL", "HINDALCO", "JSWSTEEL", "VEDL", "COALINDIA", "JINDALSTEL", "SAIL", "NMDC"],
+                "NIFTY REALTY": ["DLF", "GODREJPROP", "OBEROIRLTY", "PHOENIXLTD", "PRESTIGE", "BRIGADE"],
+                "NIFTY ENERGY": ["RELIANCE", "NTPC", "ONGC", "POWERGRID", "ADANIGREEN", "ADANIPORTS", "BPCL", "IOC"],
+                "NIFTY PVT BANK": ["HDFCBANK", "ICICIBANK", "AXISBANK", "KOTAKBANK", "INDUSINDBK"],
+                "NIFTY PSU BANK": ["SBIN", "BANKBARODA", "PNB", "CANBK", "UNIONBANK"],
+                "NIFTY INFRA": ["LARSEN", "RELIANCE", "POWERGRID", "NTPC", "ULTRACEMCO", "GRASIM"],
+                "NIFTY FIN SERVICE": ["HDFCBANK", "ICICIBANK", "SBIN", "HDFC", "BAJFINANCE", "BAJAJFINSV", "AXISBANK", "KOTAKBANK"]
+            }
+
+            if index_name in STATIC_INDICES:
+                logger.info(f"Using static fallback for {index_name}")
+                return STATIC_INDICES[index_name]
             
-            # Alternative: Use NSEPython library or direct API
-            # For now, we'll use a mapping based on latest known constituents
-            # This would ideally be updated via a scheduled job
-            
-            # Temporary implementation: Return empty to fall back to other methods
+            # If not in static map, return empty (triggering downstream fallbacks)
             return []
             
         except Exception as e:

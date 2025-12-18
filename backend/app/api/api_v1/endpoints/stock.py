@@ -56,3 +56,25 @@ async def get_stock_history(request: Request, symbol: str, period: str = "1mo"):
         return history
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/listing-date/{symbol}")
+@limiter.limit("60/minute")
+async def get_listing_date(request: Request, symbol: str):
+    """Get stock listing date."""
+    try:
+        date = await market_service.get_listing_date(symbol)
+        return {"listing_date": date}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/price/{symbol}/{date}")
+@limiter.limit("60/minute")
+async def get_price_at_date(request: Request, symbol: str, date: str):
+    """Get stock price at specific date (YYYY-MM-DD)."""
+    try:
+        price = await market_service.get_price_at_date(symbol, date)
+        return {"price": price}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

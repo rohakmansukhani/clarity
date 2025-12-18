@@ -50,7 +50,7 @@ class NSELibProvider(BaseDataSource):
     async def get_stock_details(self, symbol: str) -> Dict[str, Any]:
         try:
             loop = asyncio.get_event_loop()
-            data = await loop.run_in_executor(None, lambda: capital_market.price_volume_and_delivery_position_data(symbol=symbol, period='1D'))
+            data = await loop.run_in_executor(None, lambda: capital_market.price_volume_and_deliverable_position_data(symbol=symbol, period='1D'))
             
             if data is not None and not data.empty:
                 latest = data.iloc[-1].to_dict()

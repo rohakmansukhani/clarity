@@ -6,6 +6,7 @@ from app.core.cache import cache
 from app.services.providers.nselib_service import NSELibProvider
 from app.services.providers.yahoo_service import YahooProvider
 from app.services.providers.google_finance import GoogleFinanceProvider
+from app.utils.market_hours import get_smart_cache_expiry
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +29,24 @@ class ConsensusEngine:
             GoogleFinanceProvider()
         ]
     
-    @cache(expire=60, key_prefix="consensus")
     async def get_consensus_price(self, symbol: str) -> Dict[str, Any]:
         """
         Fetches full details from all providers and determines consensus price.
         Returns the consensus price AND the details from the primary source.
+        
+        Cache: 60s during market hours, until next market open when closed
         """
+        # Calculate smart cache expiry
+        cache_expiry = get_smart_cache_expiry(60)
+        
+        # Use cache decorator dynamically
+        @cache(expire=cache_expiry, key_prefix="consensus")
+        async def _fetch_consensus(sym: str):
+            return await self._fetch_consensus_internal(sym)
+        
+        return await _fetch_consensus(symbol)
+    
+    async def _fetch_consensus_internal(self, symbol: str) -> Dict[str, Any]:
         results = []
         # Parallel fetch details instead of just price
         tasks = [p.get_stock_details(symbol) for p in self.providers]

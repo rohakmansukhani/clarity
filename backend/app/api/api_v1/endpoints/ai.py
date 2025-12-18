@@ -57,7 +57,7 @@ async def explain_term(request: Request, body: ExplainRequest):
 @limiter.limit("30/minute")
 async def get_stock_ai_summary(request: Request, symbol: str):
     """
-    Get an AI-generated summary for a stock based on real-time data.
+    Get an AI-generated summary for a stock based on real-time data including news.
     """
     try:
         # Fetch data first
@@ -65,14 +65,8 @@ async def get_stock_ai_summary(request: Request, symbol: str):
         if not data:
             raise HTTPException(status_code=404, detail="Stock not found")
             
-        # Refine data for AI (remove noise)
-        minimal_data = {
-            "price": data.get("market_data", {}).get("price"),
-            "fundamentals": data.get("fundamentals", {}),
-            "news_headlines": [n.get("title") for n in data.get("news", [])[:3]]
-        }
-        
-        summary = await ai_service.generate_stock_summary(symbol, minimal_data)
+        # Pass full data to AI service (it will extract what it needs)
+        summary = await ai_service.generate_stock_summary(symbol, data)
         return {"symbol": symbol, "summary": summary}
         
     except Exception as e:
