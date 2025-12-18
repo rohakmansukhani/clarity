@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, TextField, Button, Card, CardContent, CircularProgress, Autocomplete, Paper } from '@mui/material';
 import Sidebar from '@/components/layout/Sidebar';
 import { marketService } from '@/services/marketService';
@@ -28,6 +28,17 @@ export default function BacktrackPage() {
     // Fetch listing date when ticker changes (debounced or on selection)
     // We'll do it on selection for now in Autocomplete onChange
     const [priceAtDate, setPriceAtDate] = useState<number | null>(null);
+
+    // Check URL params for pre-filled stock
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const stockParam = params.get('stock');
+
+        if (stockParam) {
+            const symbol = stockParam.trim().toUpperCase();
+            handleTickerSelect(symbol);
+        }
+    }, []);
 
     // Fetch listing date when ticker changes (debounced or on selection)
     // We'll do it on selection for now in Autocomplete onChange
@@ -179,7 +190,7 @@ export default function BacktrackPage() {
                                     <CustomDatePicker
                                         value={date}
                                         onChange={setDate}
-                                        label={minDate ? `Buy Date (Listed: ${minDate})` : "Buy Date"}
+                                        label={minDate ? `Buy Date (Data since: ${minDate})` : "Buy Date"}
                                         minDate={minDate}
                                     />
                                 </Box>

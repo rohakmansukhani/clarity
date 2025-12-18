@@ -219,7 +219,7 @@ export default function StockPage() {
                             <Chip label={data.scores?.recommendation?.action || "AI ANALYZING"} sx={{ bgcolor: '#10B981', color: '#000', fontWeight: 700, borderRadius: 1 }} />
                         </Box>
                         <Typography variant="body1" sx={{ color: '#ccc', fontSize: '1.1rem', lineHeight: 1.6, maxWidth: '90%' }}>
-                            {aiSummary || data.scores?.recommendation?.reasoning || "Generating real-time analysis..."}
+                            {data.scores?.recommendation?.reasoning || aiSummary || "Generating real-time analysis..."}
                         </Typography>
                     </Box>
                 </Grid>

@@ -77,16 +77,16 @@ export default function FloatingAdvisor() {
     }, [isResizing]);
 
     // Feature: Hide on mobile
-    // Feature: Hide on /advisor page
+    // Feature: Hide on /advisor and /sectors pages
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     const isAdvisorPage = pathname?.startsWith('/advisor');
+    const isSectorsPage = pathname?.startsWith('/sectors');
     const isAuthPage = pathname === '/login' || pathname === '/signup';
 
     // Allow on auth pages even if deemed "mobile" if desired, but user said "keep quickadvisor on login or signup".
     // We'll keep mobile restriction for now unless asked otherwise.
-    // We'll keep mobile restriction for now unless asked otherwise.
-    // Feature: Hide on /advisor page
-    if (isAdvisorPage) return null;
+    // Feature: Hide on /advisor and /sectors pages
+    if (isAdvisorPage || isSectorsPage) return null;
 
     const handleSend = async (text: string = input) => {
         if (!text.trim()) return;
@@ -120,14 +120,20 @@ export default function FloatingAdvisor() {
             }
 
             // Call Backend AI with Context
-            const context = isAuthPage ? { type: 'auth_help' } : undefined;
-            const response = await marketService.chatWithAI(text, context);
+            const context = isAuthPage ? { type: 'auth_help' } : { type: 'floating' };
+            const responseData = await marketService.chatWithAI(text, context);
+            const responseText = responseData.response;
 
-            addMessage({ id: (Date.now() + 1).toString(), role: 'assistant', content: response });
+            addMessage({
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: responseText,
+                suggest_switch: responseData.suggest_switch
+            });
 
             // 3. Save Assistant Message (Only if NOT on Auth Page)
             if (!isAuthPage && currentSessionId) {
-                await marketService.addMessageToSession(currentSessionId, 'assistant', response);
+                await marketService.addMessageToSession(currentSessionId, 'assistant', responseText);
             }
 
             // Redirect logic (Only if NOT on auth page)

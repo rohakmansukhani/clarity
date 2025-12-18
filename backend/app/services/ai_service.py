@@ -50,7 +50,7 @@ class AIService:
             return "New Chat"
 
         # Create a condensed context from the first few messages
-        conversation_text = "\n".join([f"{m['role']}: {m['content']}" for m in messages[:4]])
+        conversation_text = "\\n".join([f"{m['role']}: {m['content']}" for m in messages[:4]])
         
         prompt = f"""
         Summarize this conversation into a short, descriptive title (maximum 5 words).
@@ -77,12 +77,13 @@ class AIService:
             logger.error(f"Title Gen Error: {e}")
             return "New Chat"
 
-    async def chat(self, user_query: str, context_data: dict = None) -> str:
+    async def chat(self, user_query: str, context_data: dict = None, conversation_history: list = None) -> dict:
         """
         Agentic chat handler with comprehensive tools.
+        Returns dict with 'response' and optional 'suggest_switch'
         """
         if not self.client:
-            return "AI Service Unavailable."
+            return {"response": "AI Service Unavailable.", "suggest_switch": None}
 
         from app.services.market_service import MarketService
         market_service = MarketService()
@@ -109,6 +110,47 @@ class AIService:
             Do not provide market data or financial advice in this mode.
             """
         else:
+            # Determine mode based on context
+            mode = context_data.get('type') if context_data else None
+            
+            if mode == 'advisor_chat':
+                # Advisor Mode - Individual stocks, portfolio management
+                domain_restriction = """
+            **DOMAIN - ADVISOR MODE:**
+            - You specialize in: Individual stock analysis, stock comparisons, portfolio management, general investment advice
+            - If user asks about SECTORS, COMMODITIES, or INDUSTRIES (e.g., "Tell me about aluminium sector", "EV industry trends", "pharma sector outlook"), respond with:
+              "I specialize in individual stock analysis and portfolio management. For sector and industry research, try the **Discovery Hub**!"
+            - After your response, add this EXACT marker on a new line: __SUGGEST_SWITCH_TO_DISCOVERY_HUB__
+            - You CAN answer: individual stocks, stock comparisons, portfolio optimization, market indices
+            - **CRITICAL:** DO NOT suggest switching to AI Advisor (you are already in Advisor mode).
+            """
+            elif mode == 'discovery_hub':
+                # Discovery Hub Mode - Sector/commodity/industry research
+                domain_restriction = """
+            **DOMAIN - DISCOVERY HUB MODE:**
+            - You specialize in: Sector analysis, commodity research, industry trends, sector-wide stock recommendations
+            - If user asks about INDIVIDUAL STOCK ANALYSIS or PORTFOLIO MANAGEMENT (e.g., "Should I buy TCS?", "Optimize my portfolio", "Compare TCS vs INFY"), respond with:
+              "I specialize in sector and industry research. For detailed stock analysis and portfolio management, try the **AI Advisor**!"
+            - After your response, add this EXACT marker on a new line: __SUGGEST_SWITCH_TO_ADVISOR__
+            - You CAN answer: sector analysis, commodity trends, industry research, sector-wide recommendations
+            - When recommending stocks, provide them in the context of sector analysis
+            - **CRITICAL:** DO NOT suggest switching to Discovery Hub (you are already in Discovery Hub).
+            """
+            elif mode == 'floating':
+                # Floating Advisor - Allows both but suggests specialized tools for deep dives
+                domain_restriction = """
+            **DOMAIN - GENERAL ASSISTANT:**
+            - You are the general floating assistant. You can answer questions about BOTH stocks and sectors.
+            - However, for deep dives, you should suggest the specialized tools.
+            - If user asks a detailed STOCK/PORTFOLIO question, provide a brief answer and then add:
+              __SUGGEST_SWITCH_TO_ADVISOR__
+            - If user asks a detailed SECTOR/INDUSTRY question, provide a brief answer and then add:
+              __SUGGEST_SWITCH_TO_DISCOVERY_HUB__
+            - You are helpful and don't block queries, but you guide users to the best tool.
+            """
+            else:
+                # Default mode - no domain restrictions
+                domain_restriction = """"""
             # Standard Market Analyst Mode
             system_prompt = f"""
             You are 'Clarity AI', an advanced Indian stock market analyst and research assistant.
@@ -119,22 +161,25 @@ class AIService:
             3. Analyze sectors and recommend top stocks
             4. Compare multiple stocks with data-driven metrics
             
+            {domain_restriction}
+            
             **DOMAIN RESTRICTION (CRITICAL):**
             - You are a **FINANCE-ONLY** assistant.
             - If the user asks about anything NOT related to finance, stocks, economics, investing, or money management (e.g., "What is CRUD?", "Write a poem", "Python code", "General knowledge"), you MUST refuse.
+            - **IMPORTANT**: When evaluating if a query is finance-related, consider the CONVERSATION CONTEXT. Follow-up questions like "What are the latest news about these", "Tell me more", "What about X?" should be treated as finance-related if the previous context was about stocks/sectors.
             - Refusal message: "I am a dedicated financial advisor. I can only assist with market data, stock analysis, and investment inquiries."
-            - exception: You may answer greetings ("Hi", "Hello") with a financial context ("Hello! Ready to analyze the markets?").
+            - Exception: You may answer greetings ("Hi", "Hello") with a financial context ("Hello! Ready to analyze the markets?").
 
             Presentational Rules (CRITICAL for UI/UX):
             - **Structure**: Use Markdown Headers (##) for main sections.
             - **Conciseness**: Use bullet points for lists and features. Avoid walls of text.
-            - **Data**: Present key numbers (Price, Change, P/E) in a clear way, bolding the values (e.g., **₹2,400**).
+            - **Data**: Present key numbers (Price, Change, P/E) in a clear way, bolding the values (e.g., **INR 2,400**).
             - **Tone**: Professional, insightful, yet easy to read.
             
             Critical Rules:
             - NEVER invent numbers, prices, or scores
             - ALL recommendations must be backed by tool-provided data
-            - Use ₹ INR for all currency values
+            - Use INR for all currency values
             - Format large numbers in Lakhs/Crores
             - When asked for recommendations, ALWAYS call get_comprehensive_analysis tool
             - Be direct and actionable - avoid preambles
@@ -149,10 +194,18 @@ class AIService:
             """
         
         context_json = json.dumps(context_data, default=str) if context_data else "No context"
+        
+        # Build messages with conversation history
         messages = [
-            {"role": "system", "content": f"{system_prompt}\n\nContext: {context_json}"},
-            {"role": "user", "content": user_query}
+            {"role": "system", "content": f"{system_prompt}\\n\\nContext: {context_json}"}
         ]
+        
+        # Add conversation history if provided (last 10 messages for context)
+        if conversation_history:
+            messages.extend(conversation_history[-10:])
+        
+        # Add current user query
+        messages.append({"role": "user", "content": user_query})
 
         # Enhanced Tools
         tools = [
@@ -305,10 +358,54 @@ class AIService:
                     max_tokens=1500
                 )
                 
-                return final_response.choices[0].message.content.strip()
+                response_text = final_response.choices[0].message.content.strip()
+                
+                # Detect switch suggestions
+                suggest_switch = None
+                if "__SUGGEST_SWITCH_TO_DISCOVERY_HUB__" in response_text:
+                    suggest_switch = {
+                        "to": "discovery_hub",
+                        "reason": "sector_research"
+                    }
+                    response_text = response_text.replace("__SUGGEST_SWITCH_TO_DISCOVERY_HUB__", "").strip()
+                elif "__SUGGEST_SWITCH_TO_ADVISOR__" in response_text:
+                    suggest_switch = {
+                        "to": "advisor",
+                        "reason": "stock_analysis"
+                    }
+                    response_text = response_text.replace("__SUGGEST_SWITCH_TO_ADVISOR__", "").strip()
+                
+                return {
+                    "response": response_text,
+                    "suggest_switch": suggest_switch
+                }
             
-            return response_message.content.strip()
+            # No tool calls - direct response
+            response_text = response_message.content.strip()
+            
+            # Detect switch suggestions
+            suggest_switch = None
+            if "__SUGGEST_SWITCH_TO_DISCOVERY_HUB__" in response_text:
+                suggest_switch = {
+                    "to": "discovery_hub",
+                    "reason": "sector_research"
+                }
+                response_text = response_text.replace("__SUGGEST_SWITCH_TO_DISCOVERY_HUB__", "").strip()
+            elif "__SUGGEST_SWITCH_TO_ADVISOR__" in response_text:
+                suggest_switch = {
+                    "to": "advisor",
+                    "reason": "stock_analysis"
+                }
+                response_text = response_text.replace("__SUGGEST_SWITCH_TO_ADVISOR__", "").strip()
+            
+            return {
+                "response": response_text,
+                "suggest_switch": suggest_switch
+            }
             
         except Exception as e:
             logger.error(f"Groq Agent Error: {e}")
-            return f"I encountered an error: {str(e)}"
+            return {
+                "response": f"I encountered an error: {str(e)}",
+                "suggest_switch": None
+            }

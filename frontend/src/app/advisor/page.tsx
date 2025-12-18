@@ -10,6 +10,7 @@ import { useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import { marketService } from '@/services/marketService';
 import { useUIStore } from '@/lib/ui-store';
+import SwitchAIButton from '@/components/common/SwitchAIButton';
 
 // --- Interfaces ---
 interface Message {
@@ -18,6 +19,11 @@ interface Message {
     content: string;
     timestamp: Date;
     isThinking?: boolean;
+    suggest_switch?: {
+        to: 'advisor' | 'discovery_hub';
+        reason: string;
+        original_query?: string;
+    };
 }
 
 const SUGGESTED_PROMPTS = [
@@ -96,7 +102,7 @@ export default function AdvisorPage() {
 
     const loadSessions = async () => {
         try {
-            const data = await marketService.getChatSessions();
+            const data = await marketService.getChatSessions('advisor');
             setSessions(data);
         } catch (e) {
             console.error("Failed to load sessions", e);
@@ -172,19 +178,26 @@ export default function AdvisorPage() {
                 await marketService.addMessageToSession(sessionId!, 'user', text);
             }
 
-            // Get AI Response
-            const responseText = await marketService.chatWithAI(text);
+            // Prepare history (excluding current message which is passed as query)
+            const conversationHistory = messages.map(msg => ({
+                role: msg.role,
+                content: msg.content
+            }));
+
+            // Get AI Response with History
+            const responseData = await marketService.chatWithAI(text, { type: 'advisor_chat' }, conversationHistory);
 
             const newAiMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: responseText,
+                content: responseData.response,
+                suggest_switch: responseData.suggest_switch,
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, newAiMsg]);
 
-            // Save AI Response to History
-            await marketService.addMessageToSession(sessionId!, 'assistant', responseText);
+            // Save AI Response to History (only text content)
+            await marketService.addMessageToSession(sessionId!, 'assistant', responseData.response);
 
             // Generate Title if it's the first interaction (User + AI = 2 messages in current view, roughly)
             // Or explicitly if we just created the session.
@@ -448,6 +461,17 @@ export default function AdvisorPage() {
                                         '& blockquote': { borderLeft: '3px solid #00E5FF', pl: 2, fontStyle: 'italic', my: 2, opacity: 0.8 }
                                     }}>
                                         <ReactMarkdown>{msg.content}</ReactMarkdown>
+
+                                        {/* Show Switch Button if suggested */}
+                                        {msg.suggest_switch && (
+                                            <Box sx={{ mt: 2 }}>
+                                                <SwitchAIButton
+                                                    target={msg.suggest_switch.to}
+                                                    originalQuery={msg.suggest_switch.original_query || ''}
+                                                    reason={msg.suggest_switch.reason}
+                                                />
+                                            </Box>
+                                        )}
                                     </Box>
                                 </Paper>
                             </motion.div>

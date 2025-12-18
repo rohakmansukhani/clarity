@@ -150,10 +150,48 @@ class MarketService:
         # Simple containment search
         # Rank by: Starts with Symbol > Starts with Name > Contains Symbol
         
-        matches = []
+        # Common Nickname / Search Mapping
+        # Helps users find stocks by their colloquial names
+        nickname_map = {
+            "MAHINDRA": "M&M",
+            "M&M": "M&M",
+            "RELIANCE": "RELIANCE",
+            "RIL": "RELIANCE",
+            "TCS": "TCS",
+            "INFY": "INFY",
+            "INFOSYS": "INFY",
+            "HDFC": "HDFCBANK",
+            "SBI": "SBIN",
+            "AIRTEL": "BHARTIARTL",
+            "BAJFINANCE": "BAJFINANCE",
+            "BAJAJ FINANCE": "BAJFINANCE",
+            "KOTAK": "KOTAKBANK",
+            "L&T": "LT",
+            "LARSEN": "LT",
+            "MARUTI": "MARUTI",
+            "SUZUKI": "MARUTI",
+            "TITAN": "TITAN",
+            "SUN PHARMA": "SUNPHARMA",
+            "ULTRATECH": "ULTRACEMCO"
+        }
+
+        # Check for direct nickname match first
+        if query in nickname_map:
+            target_symbol = nickname_map[query]
+            # Prioritize this match
+            for s in all_stocks:
+                if s['symbol'] == target_symbol:
+                    s_copy = s.copy()
+                    s_copy['score'] = 1000 # Boost to top
+                    matches.append(s_copy)
+        
         for s in all_stocks:
             sym = s['symbol']
             name = s['name'].upper()
+            
+            # Skip if already added via nickname map (avoid dupes)
+            if any(m['symbol'] == sym for m in matches):
+                continue
             
             score = 0
             if sym == query: score = 100

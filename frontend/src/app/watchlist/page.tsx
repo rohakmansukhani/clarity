@@ -88,7 +88,7 @@ export default function WatchlistPage() {
                             const price = marketData.price_formatted || 'Loading...';
 
                             return (
-                                <Grid item xs={12} md={6} lg={4} key={item.ticker}>
+                                <Grid size={{ xs: 12, md: 6, lg: 4 }} key={item.ticker}>
                                     <Card
                                         component={motion.div}
                                         whileHover={{ y: -4, borderColor: '#444' }}
@@ -116,7 +116,7 @@ export default function WatchlistPage() {
                                                 </IconButton>
                                             </Box>
 
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', mb: 2 }}>
                                                 <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700 }}>
                                                     {price}
                                                 </Typography>
@@ -130,6 +130,48 @@ export default function WatchlistPage() {
                                                     </Box>
                                                 )}
                                             </Box>
+
+                                            {/* Target Prices & Notes */}
+                                            {(item.target_buy_price || item.target_sell_price || item.notes) && (
+                                                <Box sx={{ pt: 2, borderTop: '1px solid #222' }}>
+                                                    {item.target_buy_price && (
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                                            <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 600 }}>
+                                                                Buy Target:
+                                                            </Typography>
+                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: '#10B981' }}>
+                                                                ₹{item.target_buy_price.toLocaleString()}
+                                                            </Typography>
+                                                        </Box>
+                                                    )}
+                                                    {item.target_sell_price && (
+                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                                            <Typography variant="caption" sx={{ color: '#EF4444', fontWeight: 600 }}>
+                                                                Sell Target:
+                                                            </Typography>
+                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: '#EF4444' }}>
+                                                                ₹{item.target_sell_price.toLocaleString()}
+                                                            </Typography>
+                                                        </Box>
+                                                    )}
+                                                    {item.notes && (
+                                                        <Typography
+                                                            variant="caption"
+                                                            sx={{
+                                                                color: '#666',
+                                                                fontStyle: 'italic',
+                                                                display: '-webkit-box',
+                                                                WebkitLineClamp: 2,
+                                                                WebkitBoxOrient: 'vertical',
+                                                                overflow: 'hidden',
+                                                                mt: 1
+                                                            }}
+                                                        >
+                                                            "{item.notes}"
+                                                        </Typography>
+                                                    )}
+                                                </Box>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 </Grid>

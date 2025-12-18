@@ -25,6 +25,7 @@ class MessageCreate(BaseModel):
 class SessionCreate(BaseModel):
     title: str = "New Chat"
     initial_messages: List[MessageCreate] = []
+    type: str = "advisor" # 'advisor' or 'discovery_hub'
 
 # --- Endpoints ---
 
@@ -32,16 +33,21 @@ class SessionCreate(BaseModel):
 @limiter.limit("30/minute")
 def list_chat_sessions(
     request: Request,
+    type: Optional[str] = None,
     user = Depends(get_current_user),
     supabase: Client = Depends(get_user_supabase)
 ):
-    """List all chat sessions for the current user."""
+    """List all chat sessions for the current user, optionally filtered by type."""
     try:
         # Fetch sessions sorted by updated_at desc
-        response = supabase.table("chat_sessions")\
+        query = supabase.table("chat_sessions")\
             .select("*")\
-            .eq("user_id", user.id)\
-            .order("is_pinned", desc=True)\
+            .eq("user_id", user.id)
+            
+        if type:
+            query = query.eq("type", type)
+            
+        response = query.order("is_pinned", desc=True)\
             .order("updated_at", desc=True)\
             .execute()
         return response.data
@@ -84,6 +90,7 @@ def create_session(
         new_session = {
             "user_id": user.id,
             "title": session_data.title,
+            "type": session_data.type
             # created_at, updated_at handled by Supabase defaults usually, 
             # but we can pass them if needed. Use defaults.
         }

@@ -1,21 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { Box, Typography, Paper, IconButton, TextField, Button, Avatar } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Paper, IconButton, TextField, Button, Avatar, CircularProgress } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, X, ArrowRight, TrendingUp, TrendingDown, Scale } from 'lucide-react';
 import Sidebar from '@/components/layout/Sidebar';
 import { useRouter } from 'next/navigation';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-
-// Mock Data for "Quick Info" simulation
-const MOCK_PRICES: Record<string, { price: string, change: string, up: boolean, logo: string | null }> = {
-    'TCS': { price: '₹3,450.20', change: '+1.2%', up: true, logo: 'T' },
-    'RELIANCE': { price: '₹2,340.50', change: '-0.5%', up: false, logo: 'R' },
-    'HDFCBANK': { price: '₹1,560.00', change: '+0.8%', up: true, logo: 'H' },
-    'INFY': { price: '₹1,420.10', change: '-1.1%', up: false, logo: 'I' },
-    'TATAMOTORS': { price: '₹945.50', change: '+2.8%', up: true, logo: 'T' },
-};
+import { marketService } from '@/services/marketService';
 
 export default function AnalysisPage() {
     const router = useRouter();
@@ -23,9 +15,44 @@ export default function AnalysisPage() {
     const [selectedStocks, setSelectedStocks] = useState<string[]>([]);
     const [isComparing, setIsComparing] = useState(false);
     const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+    const [comparisonData, setComparisonData] = useState<any>(null);
+    const [loadingComparison, setLoadingComparison] = useState(false);
+    const [stockPrices, setStockPrices] = useState<Record<string, any>>({});
 
     // Max 5 stocks for comparison
     const MAX_SLOTS = 5;
+
+    // Check URL params for pre-filled stocks
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const stocksParam = params.get('stocks');
+
+        if (stocksParam) {
+            const symbols = stocksParam.split(',').map(s => s.trim().toUpperCase()).slice(0, MAX_SLOTS);
+            setSelectedStocks(symbols);
+            // Auto-trigger comparison if 2+ stocks
+            if (symbols.length >= 2) {
+                setTimeout(() => handleCompare(symbols), 500);
+            }
+        }
+    }, []);
+
+    // Fetch stock prices when stocks are selected
+    useEffect(() => {
+        selectedStocks.forEach(async (ticker) => {
+            if (!stockPrices[ticker]) {
+                try {
+                    const details = await marketService.getStockDetails(ticker);
+                    setStockPrices(prev => ({
+                        ...prev,
+                        [ticker]: details.market_data
+                    }));
+                } catch (error) {
+                    console.error(`Failed to fetch price for ${ticker}`, error);
+                }
+            }
+        });
+    }, [selectedStocks]);
 
     const handleAddStock = (ticker: string) => {
         const t = ticker.trim().toUpperCase();
@@ -41,18 +68,33 @@ export default function AnalysisPage() {
         setSelectedStocks(selectedStocks.filter(s => s !== ticker));
     };
 
-    const handleCompare = () => {
-        if (selectedStocks.length >= 2) {
+    const handleCompare = async (stocks: string[] = selectedStocks) => {
+        if (stocks.length >= 2) {
             setIsComparing(true);
-            // In a real app, we'd fetch data here. For now, we use the mocks.
-            setTimeout(() => {
-                document.getElementById('analysis-section')?.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
+            setLoadingComparison(true);
+
+            try {
+                // Call AI to compare stocks
+                const query = `Compare these stocks: ${stocks.join(', ')}. Provide detailed comparison with metrics, performance, and recommendation.`;
+                const responseData = await marketService.chatWithAI(query, { type: 'advisor_chat' });
+
+                // Store the AI response
+                setComparisonData({ aiAnalysis: responseData.response });
+
+                // Scroll to analysis section
+                setTimeout(() => {
+                    document.getElementById('analysis-section')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            } catch (error) {
+                console.error('Comparison failed:', error);
+            } finally {
+                setLoadingComparison(false);
+            }
         }
     };
 
     // Quick Info for current search
-    const quickInfo = search.length > 2 ? MOCK_PRICES[search.toUpperCase()] : null;
+    const quickInfo = stockPrices[search.toUpperCase()];
 
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#000' }}>
@@ -99,7 +141,7 @@ export default function AnalysisPage() {
                 }}>
                     {/* Render Selected Stocks */}
                     {selectedStocks.map((stock, i) => {
-                        const stockData = MOCK_PRICES[stock];
+                        const stockData = stockPrices[stock];
                         return (
                             <Box key={stock} sx={{ width: { xs: '100%', sm: 'calc(50% - 24px)', md: 'calc(33.33% - 24px)', lg: 'calc(20% - 24px)' }, minWidth: 200 }}>
                                 <motion.div
@@ -352,7 +394,7 @@ export default function AnalysisPage() {
                             variant="contained"
                             size="large"
                             disabled={selectedStocks.length < 2}
-                            onClick={handleCompare}
+                            onClick={() => handleCompare()}
                             sx={{
                                 bgcolor: '#fff',
                                 color: '#000',

@@ -162,7 +162,10 @@ export default function Sidebar() {
                         {/* Logout */}
                         <Box sx={{ mt: 'auto', pb: 2 }}>
                             <Tooltip title="Logout" placement="right">
-                                <ListItemButton onClick={() => router.push('/login')} sx={{ color: '#666', borderRadius: 3, '&:hover': { color: '#EF4444', bgcolor: 'rgba(239, 68, 68, 0.1)' } }}>
+                                <ListItemButton onClick={() => {
+                                    sessionStorage.removeItem('clarity_disclaimer_acknowledged');
+                                    router.push('/login');
+                                }} sx={{ color: '#666', borderRadius: 3, '&:hover': { color: '#EF4444', bgcolor: 'rgba(239, 68, 68, 0.1)' } }}>
                                     <LogOut size={22} />
                                 </ListItemButton>
                             </Tooltip>

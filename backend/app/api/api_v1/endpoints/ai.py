@@ -81,16 +81,19 @@ async def get_stock_ai_summary(request: Request, symbol: str):
 class ChatRequest(BaseModel):
     query: str
     context: dict = None # Optional context (e.g. current stock page data, portfolio data)
+    conversation_history: list = None # Optional conversation history for context-aware responses
 
 @router.post("/chat")
 @limiter.limit("10/minute")
 async def chat_with_ai(request: Request, body: ChatRequest):
     """
     Chat with Clarity AI.
-    Accepts a query and optional context (JSON data from the frontend).
+    Accepts a query, optional context, and optional conversation history for context-aware responses.
+    Returns response text and optional suggest_switch for domain switching.
     """
     try:
-        response = await ai_service.chat(body.query, body.context)
-        return {"response": response}
+        result = await ai_service.chat(body.query, body.context, body.conversation_history)
+        # result is now a dict with 'response' and 'suggest_switch'
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

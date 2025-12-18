@@ -64,18 +64,21 @@ export const marketService = {
     },
 
     // Generic Chat with AI Advisor
-    chatWithAI: async (query: string, context?: any) => {
+    chatWithAI: async (query: string, context?: any, conversationHistory?: Array<{ role: string; content: string }>) => {
         const response = await api.post('/ai/chat', {
             query,
+            conversation_history: conversationHistory,
             context
         });
-        // Backend returns { response: "string" }
-        return response.data.response;
+        // Backend now returns { response: "...", suggest_switch: {...} }
+        return response.data;
     },
 
     // --- Chat History API ---
-    getChatSessions: async () => {
-        const response = await api.get('/history/sessions');
+    getChatSessions: async (type?: 'advisor' | 'discovery_hub') => {
+        const response = await api.get('/history/sessions', {
+            params: { type }
+        });
         return response.data;
     },
 
@@ -84,8 +87,12 @@ export const marketService = {
         return response.data;
     },
 
-    createSession: async (title: string, initialMessages: any[]) => {
-        const response = await api.post('/history/sessions', { title, initial_messages: initialMessages });
+    createSession: async (title: string, initialMessages: any[] = [], type: 'advisor' | 'discovery_hub' = 'advisor') => {
+        const response = await api.post('/history/sessions', {
+            title,
+            initial_messages: initialMessages,
+            type
+        });
         return response.data;
     },
 
@@ -150,9 +157,28 @@ export const marketService = {
         return response.data;
     },
 
-    createPortfolio: async (name: string) => {
-        const response = await api.post('/portfolios/', { name, currency: 'INR' });
+    createPortfolio: async (name: string, currency: string = 'INR') => {
+        const response = await api.post('/portfolios/', { name, currency });
         return response.data;
+    },
+
+    createPortfolioWithHoldings: async (name: string, holdings: Array<{ ticker: string; shares: number; avg_price: number }>) => {
+        // First create the portfolio
+        const portfolioResponse = await api.post('/portfolios/', { name, currency: 'INR' });
+        const portfolio = portfolioResponse.data;
+
+        // Then add all holdings
+        const holdingPromises = holdings.map(holding =>
+            api.post(`/portfolios/${portfolio.id}/holdings`, {
+                ticker: holding.ticker,
+                shares: holding.shares,
+                avg_price: holding.avg_price,
+                exchange: 'NSE'
+            })
+        );
+
+        await Promise.all(holdingPromises);
+        return portfolio;
     },
 
     backtest: async (ticker: string, date: string, shares?: number, investment_amount?: number, sell_date?: string) => {
@@ -168,5 +194,11 @@ export const marketService = {
     getPriceAtDate: async (ticker: string, date: string) => {
         const response = await api.get(`/market/price/${ticker}/${date}`);
         return response.data.price;
+    },
+
+    // Get Sector Performance
+    getSectorPerformance: async () => {
+        const response = await api.get('/market/sectors');
+        return response.data;
     }
 };

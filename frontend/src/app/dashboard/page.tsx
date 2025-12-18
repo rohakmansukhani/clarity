@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Paper, IconButton, TextField, InputAdornment, Button, Tooltip, CircularProgress, Autocomplete } from '@mui/material';
-import { Search, Bell, Settings, TrendingUp, ArrowUpRight, ArrowDownRight, Zap, MessageSquare, PieChart } from 'lucide-react';
+import { Search, Bell, Settings, TrendingUp, ArrowUpRight, ArrowDownRight, Zap, MessageSquare, PieChart, Lightbulb } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { marketService } from '@/services/marketService';
@@ -137,14 +137,17 @@ export default function DashboardPage() {
                                 }}
                             />
                         )}
-                        renderOption={(props, option: any) => (
-                            <li {...props} style={{ backgroundColor: '#111', color: '#fff', borderBottom: '1px solid #222' }}>
-                                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Typography variant="body1" sx={{ fontWeight: 600 }}>{option.symbol}</Typography>
-                                    <Typography variant="caption" sx={{ color: '#888' }}>{option.name}</Typography>
-                                </Box>
-                            </li>
-                        )}
+                        renderOption={(props, option: any) => {
+                            const { key, ...otherProps } = props;
+                            return (
+                                <li key={key} {...otherProps} style={{ backgroundColor: '#111', color: '#fff', borderBottom: '1px solid #222' }}>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Typography variant="body1" sx={{ fontWeight: 600 }}>{option.symbol}</Typography>
+                                        <Typography variant="caption" sx={{ color: '#888' }}>{option.name}</Typography>
+                                    </Box>
+                                </li>
+                            );
+                        }}
                     />
                     <IconButton sx={{ color: '#666', '&:hover': { color: '#fff' } }}><Bell size={20} /></IconButton>
                     <Box sx={{ width: 36, height: 36, minWidth: 36, borderRadius: '50%', bgcolor: '#00E5FF', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem', border: '2px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
@@ -192,7 +195,7 @@ export default function DashboardPage() {
                             icon={Zap}
                             title="Compare Stocks"
                             desc="Compare performance & AI insights"
-                            onClick={() => router.push('/market')}
+                            onClick={() => router.push('/analysis')}
                             delay={0.1}
                         />
                         <ActionCard
@@ -203,10 +206,10 @@ export default function DashboardPage() {
                             delay={0.2}
                         />
                         <ActionCard
-                            icon={PieChart}
-                            title="Sector Heatmap"
-                            desc="Identify leading & lagging sectors"
-                            onClick={() => router.push('/market')} // Placeholder
+                            icon={Lightbulb}
+                            title="Discovery Hub"
+                            desc="Research sectors & build portfolios"
+                            onClick={() => router.push('/sectors')}
                             delay={0.3}
                         />
                     </Grid>
