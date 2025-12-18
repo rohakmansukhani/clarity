@@ -8,15 +8,15 @@ export default function DisclaimerModal() {
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
-        // Check if user has already acknowledged the disclaimer
-        const hasAcknowledged = localStorage.getItem('clarity_disclaimer_acknowledged');
+        // Check if user has already acknowledged the disclaimer IN THIS SESSION
+        const hasAcknowledged = sessionStorage.getItem('clarity_disclaimer_acknowledged');
         if (!hasAcknowledged) {
             setOpen(true);
         }
     }, []);
 
     const handleAcknowledge = () => {
-        localStorage.setItem('clarity_disclaimer_acknowledged', 'true');
+        sessionStorage.setItem('clarity_disclaimer_acknowledged', 'true');
         setOpen(false);
     };
 
@@ -38,11 +38,11 @@ export default function DisclaimerModal() {
                 <Box sx={{ mb: 4, p: 2, bgcolor: 'rgba(0, 229, 255, 0.1)', borderRadius: '50%' }}>
                     <AlertTriangle size={64} color="#00E5FF" />
                 </Box>
-                
+
                 <Typography variant="h2" sx={{ fontWeight: 800, color: '#fff', mb: 2, letterSpacing: '-0.02em' }}>
                     EDUCATIONAL USE ONLY
                 </Typography>
-                
+
                 <Typography variant="h5" sx={{ color: '#888', mb: 6, fontWeight: 400, lineHeight: 1.6 }}>
                     Clarity is a simulation and analysis tool designed strictly for educational purposes.
                 </Typography>
@@ -59,18 +59,18 @@ export default function DisclaimerModal() {
                     </ul>
                 </Box>
 
-                <Button 
-                    variant="contained" 
+                <Button
+                    variant="contained"
                     size="large"
                     onClick={handleAcknowledge}
-                    sx={{ 
-                        bgcolor: '#00E5FF', 
-                        color: '#000', 
-                        fontWeight: 800, 
-                        py: 2, 
+                    sx={{
+                        bgcolor: '#00E5FF',
+                        color: '#000',
+                        fontWeight: 800,
+                        py: 2,
                         px: 8,
                         fontSize: '1.1rem',
-                        '&:hover': { bgcolor: '#fff' } 
+                        '&:hover': { bgcolor: '#fff' }
                     }}
                 >
                     I UNDERSTAND & AGREE

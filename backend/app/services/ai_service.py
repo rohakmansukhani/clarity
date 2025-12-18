@@ -42,6 +42,41 @@ class AIService:
             logger.error(f"Groq Gen Error: {e}")
             return "Could not generate summary."
 
+    async def generate_title(self, messages: list) -> str:
+        """
+        Generates a short 3-5 word title for a chat session.
+        """
+        if not self.client or not messages:
+            return "New Chat"
+
+        # Create a condensed context from the first few messages
+        conversation_text = "\n".join([f"{m['role']}: {m['content']}" for m in messages[:4]])
+        
+        prompt = f"""
+        Summarize this conversation into a short, descriptive title (maximum 5 words).
+        Examples: "Reliance Stock Analysis", "Nifty 50 Trends", "Portfolio Rebalancing".
+        No quotes, no "Title:", just the text.
+        
+        Conversation:
+        {conversation_text}
+        """
+
+        try:
+            chat_completion = self.client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                model="llama-3.3-70b-versatile", # or a smaller model if available for speed
+                temperature=0.7,
+                max_tokens=20,
+            )
+            title = chat_completion.choices[0].message.content.strip().replace('"', '')
+            return title
+        except Exception as e:
+            logger.error(f"Title Gen Error: {e}")
+            return "New Chat"
+
     async def chat(self, user_query: str, context_data: dict = None) -> str:
         """
         Agentic chat handler with comprehensive tools.
@@ -55,27 +90,63 @@ class AIService:
         from datetime import datetime
         current_date = datetime.now().strftime("%B %d, %Y")
         
-        system_prompt = f"""
-        You are 'Clarity AI', an advanced Indian stock market analyst and research assistant.
-        
-        Core Capabilities:
-        1. Fetch REAL-TIME stock data (prices, fundamentals, news)
-        2. Calculate QUANTITATIVE scores (stability, timing, risk)
-        3. Analyze sectors and recommend top stocks
-        4. Compare multiple stocks with data-driven metrics
-        
-        Critical Rules:
-        - NEVER invent numbers, prices, or scores
-        - ALL recommendations must be backed by tool-provided data
-        - Use ₹ INR for all currency values
-        - Format large numbers in Lakhs/Crores
-        - When asked for recommendations, ALWAYS call get_comprehensive_analysis tool
-        - Present data clearly with scores, metrics, and reasoning
-        - Be direct and actionable - avoid preambles
-        
-        Today's date: {current_date}
-        Market: NSE/BSE (Indian Stock Exchange)
-        """
+        # Check for Auth Context (Restricted Mode)
+        if context_data and context_data.get('type') == 'auth_help':
+            system_prompt = """
+            You are a helpful Login Support Assistant for Clarity Financial.
+            
+            Your ONLY role is to help users with:
+            - Logging in (email/password)
+            - Signing up (creating an account)
+            - Password resets
+            - Basic account troubleshooting
+            
+            CRITICAL RULE:
+            If the user asks about ANYTHING else (stocks, markets, analysis, advice, "hi", "hello"), 
+            you MUST respond with EXACTLY:
+            "Please login or sign up to use Clarity."
+            
+            Do not provide market data or financial advice in this mode.
+            """
+        else:
+            # Standard Market Analyst Mode
+            system_prompt = f"""
+            You are 'Clarity AI', an advanced Indian stock market analyst and research assistant.
+            
+            Core Capabilities:
+            1. Fetch REAL-TIME stock data (prices, fundamentals, news)
+            2. Calculate QUANTITATIVE scores (stability, timing, risk)
+            3. Analyze sectors and recommend top stocks
+            4. Compare multiple stocks with data-driven metrics
+            
+            **DOMAIN RESTRICTION (CRITICAL):**
+            - You are a **FINANCE-ONLY** assistant.
+            - If the user asks about anything NOT related to finance, stocks, economics, investing, or money management (e.g., "What is CRUD?", "Write a poem", "Python code", "General knowledge"), you MUST refuse.
+            - Refusal message: "I am a dedicated financial advisor. I can only assist with market data, stock analysis, and investment inquiries."
+            - exception: You may answer greetings ("Hi", "Hello") with a financial context ("Hello! Ready to analyze the markets?").
+
+            Presentational Rules (CRITICAL for UI/UX):
+            - **Structure**: Use Markdown Headers (##) for main sections.
+            - **Conciseness**: Use bullet points for lists and features. Avoid walls of text.
+            - **Data**: Present key numbers (Price, Change, P/E) in a clear way, bolding the values (e.g., **₹2,400**).
+            - **Tone**: Professional, insightful, yet easy to read.
+            
+            Critical Rules:
+            - NEVER invent numbers, prices, or scores
+            - ALL recommendations must be backed by tool-provided data
+            - Use ₹ INR for all currency values
+            - Format large numbers in Lakhs/Crores
+            - When asked for recommendations, ALWAYS call get_comprehensive_analysis tool
+            - Be direct and actionable - avoid preambles
+            
+            TOOL USE INSTRUCTIONS:
+            - You have access to tools. Use them whenever you need real data.
+            - DO NOT write custom XML like <function=...> or similar. 
+            - Simply call the function using the standard tool calling mechanism provided to you.
+            
+            Today's date: {current_date}
+            Market: NSE/BSE (Indian Stock Exchange)
+            """
         
         context_json = json.dumps(context_data, default=str) if context_data else "No context"
         messages = [

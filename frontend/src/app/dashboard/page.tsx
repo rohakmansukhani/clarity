@@ -15,7 +15,13 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [searchOptions, setSearchOptions] = useState<any[]>([]); // Search Suggestions State
 
+    const [user, setUser] = useState<any>(null);
+
     useEffect(() => {
+        // 0. Load User
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) setUser(JSON.parse(storedUser));
+
         // 1. Time-based Greeting
         const hour = new Date().getHours();
         if (hour < 12) setGreeting('Good Morning');
@@ -76,7 +82,7 @@ export default function DashboardPage() {
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: { xs: 4, md: 8 }, gap: { xs: 3, md: 0 } }}>
                 <Box>
                     <Typography variant="h3" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 0.5, color: '#fff', fontSize: { xs: '2rem', md: '3rem' } }}>
-                        {greeting}, Rohak
+                        {greeting}, {user?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'Trader'}
                     </Typography>
                     <Typography variant="body1" sx={{ color: '#666', fontWeight: 500 }}>
                         Market is <span style={{ color: statusObj.color, fontWeight: 700 }}>{statusObj.text}</span> ({statusObj.sub}).
@@ -141,7 +147,9 @@ export default function DashboardPage() {
                         )}
                     />
                     <IconButton sx={{ color: '#666', '&:hover': { color: '#fff' } }}><Bell size={20} /></IconButton>
-                    <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: '#333', border: '1px solid #444', flexShrink: 0 }} />
+                    <Box sx={{ width: 36, height: 36, minWidth: 36, borderRadius: '50%', bgcolor: '#00E5FF', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem', border: '2px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
+                        {(user?.full_name || user?.email || 'T').charAt(0).toUpperCase()}
+                    </Box>
                 </Box>
             </Box>
 
@@ -182,8 +190,8 @@ export default function DashboardPage() {
                     <Grid container spacing={3}>
                         <ActionCard
                             icon={Zap}
-                            title="Analyze Stock"
-                            desc="Get deep AI insights on any ticker"
+                            title="Compare Stocks"
+                            desc="Compare performance & AI insights"
                             onClick={() => router.push('/market')}
                             delay={0.1}
                         />

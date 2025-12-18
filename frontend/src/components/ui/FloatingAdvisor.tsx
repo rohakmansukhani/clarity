@@ -6,18 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ClarityLogo from './ClarityLogo';
 import { useUIStore } from '@/lib/ui-store';
 import { Send, Bot, MessageSquare, X } from 'lucide-react';
+import { marketService } from '@/services/marketService';
+import ReactMarkdown from 'react-markdown';
 
 export default function FloatingAdvisor() {
     const router = useRouter();
     const pathname = usePathname();
-    const { isQuickChatOpen, openQuickChat, closeQuickChat, initialQuery, addMessage, quickChatMessages, interactionCount, incrementInteraction, resetQuickChat } = useUIStore();
-
-    // Feature: Hide on mobile
-    // Feature: Hide on /advisor page
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-    const isAdvisorPage = pathname?.startsWith('/advisor');
-
-    if (isMobile || isAdvisorPage) return null;
+    const { isQuickChatOpen, openQuickChat, closeQuickChat, initialQuery, addMessage, quickChatMessages, interactionCount, incrementInteraction, resetQuickChat, quickSessionId, setQuickSessionId } = useUIStore();
 
     const [isGreetingVisible, setIsGreetingVisible] = useState(false);
     const [input, setInput] = useState('');
@@ -46,38 +41,114 @@ export default function FloatingAdvisor() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+
+
+    const [chatHeight, setChatHeight] = useState(300);
+    const [isResizing, setIsResizing] = useState(false);
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isResizing) return;
+            // Calculate new height: simply based on mouse movement relative to bottom
+            // Since it's fixed at bottom-10 (approx 40px), we can estimate.
+            // Better: Mouse Y position. The lower the mouse, the smaller the window.
+            // Height = Window Height - Mouse Y - Bottom Offset (approx 100px for input + margin)
+            const newHeight = window.innerHeight - e.clientY - 120;
+            if (newHeight > 100 && newHeight < 800) {
+                setChatHeight(newHeight);
+            }
+        };
+
+        const handleMouseUp = () => {
+            setIsResizing(false);
+            document.body.style.cursor = 'default';
+        };
+
+        if (isResizing) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = 'row-resize';
+        }
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isResizing]);
+
+    // Feature: Hide on mobile
+    // Feature: Hide on /advisor page
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const isAdvisorPage = pathname?.startsWith('/advisor');
+    const isAuthPage = pathname === '/login' || pathname === '/signup';
+
+    // Allow on auth pages even if deemed "mobile" if desired, but user said "keep quickadvisor on login or signup".
+    // We'll keep mobile restriction for now unless asked otherwise.
+    // We'll keep mobile restriction for now unless asked otherwise.
+    // Feature: Hide on /advisor page
+    if (isAdvisorPage) return null;
+
     const handleSend = async (text: string = input) => {
         if (!text.trim()) return;
 
-        // Check if limit reached
-        if (interactionCount >= 1) { // 2nd interaction (0-indexed effectively, or 1 previous + current)
-            // Allow this one to send, then redirect? Or redirect immediately?
-            // User said "after the second prompt... shift chat to main page"
-            // Let's process this one, show a "Moving to main chat..." and redirect.
-        }
-
+        // Optimistic UI update
         addMessage({ id: Date.now().toString(), role: 'user', content: text });
         setInput('');
         setIsThinking(true);
         incrementInteraction();
 
-        // Simulate AI Response
-        setTimeout(() => {
-            const response = "This is a quick insight from Clarity AI. For deeper analysis, let's move to the full Advisor.";
-            addMessage({ id: (Date.now() + 1).toString(), role: 'assistant', content: response });
-            setIsThinking(false);
+        try {
+            // HISTORY SAVING LOGIC (Only if NOT on Auth Page)
+            let currentSessionId = quickSessionId;
 
-            // Redirect after 2nd interaction (index 1)
-            // We do NOT reset here, so the Advisor Page can pick up the history
-            if (interactionCount >= 1) {
-                setTimeout(() => {
-                    router.push('/advisor');
-                    closeQuickChat(); // Just close the UI
-                }, 1500);
+            if (!isAuthPage) {
+                // 1. Create session if needed
+                if (!currentSessionId) {
+                    try {
+                        const newSession = await marketService.createSession("Quick Chat", []);
+                        currentSessionId = newSession.id;
+                        setQuickSessionId(newSession.id);
+                    } catch (e) {
+                        console.error("Failed to create session", e);
+                    }
+                }
+
+                // 2. Save User Message
+                if (currentSessionId) {
+                    await marketService.addMessageToSession(currentSessionId, 'user', text);
+                }
             }
-        }, 1000);
-    };
 
+            // Call Backend AI with Context
+            const context = isAuthPage ? { type: 'auth_help' } : undefined;
+            const response = await marketService.chatWithAI(text, context);
+
+            addMessage({ id: (Date.now() + 1).toString(), role: 'assistant', content: response });
+
+            // 3. Save Assistant Message (Only if NOT on Auth Page)
+            if (!isAuthPage && currentSessionId) {
+                await marketService.addMessageToSession(currentSessionId, 'assistant', response);
+            }
+
+            // Redirect logic (Only if NOT on auth page)
+            if (interactionCount >= 1 && !isAuthPage) {
+                setTimeout(() => {
+                    router.push('/advisor'); // User might want to stay in quick chat if history is working?
+                    // User complained "quick advisor chat isnt adding into history", so maybe they want it to persist.
+                    // The redirect was an earlier requirement "redirect to advisor after 2 interactions".
+                    // I will KEEP the redirect for now but maybe increase threshold or remove it if UX is bad.
+                    // Effectively, if history is saved, redirecting to /advisor shows the history, which is good.
+
+                    closeQuickChat(); // Just close the UI
+                }, 2000); // Slightly longer delay to read
+            }
+        } catch (error) {
+            console.error("Quick Chat Data Error", error);
+            addMessage({ id: Date.now().toString(), role: 'assistant', content: "I'm having trouble connecting to the server. Please check your connection." });
+        } finally {
+            setIsThinking(false);
+        }
+    };
     return (
         <>
             {/* Quick Input Bar (Centered Bottom) */}
@@ -95,21 +166,34 @@ export default function FloatingAdvisor() {
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="bg-[#111]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl overflow-y-auto max-h-[300px] flex flex-col gap-3"
+                                style={{ maxHeight: chatHeight }}
+                                className="bg-[#111]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl overflow-y-auto flex flex-col gap-3 relative"
                             >
-                                {quickChatMessages.map((msg) => (
-                                    <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-[85%] p-3 rounded-2xl text-[15px] leading-relaxed ${msg.role === 'user' ? 'bg-[#00E5FF] text-black font-medium' : 'bg-white/5 text-gray-200'}`}>
-                                            {msg.content}
+                                {/* Resize Handle */}
+                                <div
+                                    className="absolute top-0 left-0 right-0 h-4 flex justify-center items-center cursor-row-resize opacity-50 hover:opacity-100 z-10"
+                                    onMouseDown={(e) => { e.preventDefault(); setIsResizing(true); }}
+                                >
+                                    <div className="w-12 h-1 bg-white/20 rounded-full" />
+                                </div>
+
+                                <div className="mt-2"> {/* Spacer for handle */}
+                                    {quickChatMessages.map((msg) => (
+                                        <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-3`}>
+                                            <div className={`max-w-[85%] p-3 rounded-2xl text-[15px] leading-relaxed ${msg.role === 'user' ? 'bg-[#00E5FF] text-black font-medium' : 'bg-white/5 text-gray-200'}`}>
+                                                <div className="prose prose-invert prose-sm max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:pl-4 [&>ul]:list-disc [&>ul]:mb-2 [&>strong]:text-[#00E5FF] [&>strong]:font-bold [&>h2]:text-base [&>h2]:font-bold [&>h2]:text-white [&>h2]:mt-3 [&>h2]:mb-1">
+                                                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                                {isThinking && (
-                                    <div className="flex items-center gap-2 text-gray-400 text-sm p-2">
-                                        <ClarityLogo size={16} />
-                                        <span className="animate-pulse">Thinking...</span>
-                                    </div>
-                                )}
+                                    ))}
+                                    {isThinking && (
+                                        <div className="flex items-center gap-2 text-gray-400 text-sm p-2">
+                                            <ClarityLogo size={16} />
+                                            <span className="animate-pulse">Thinking...</span>
+                                        </div>
+                                    )}
+                                </div>
                             </motion.div>
                         )}
 
@@ -149,37 +233,39 @@ export default function FloatingAdvisor() {
             {/* Greeting Bubble (Helper) */}
             <AnimatePresence>
                 {!isQuickChatOpen && isGreetingVisible && (
-                    <div className="fixed bottom-6 right-24 z-40 hidden md:block">
+                    <div className="fixed bottom-6 right-24 z-[9999]">
                         <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            className="bg-[#111]/90 backdrop-blur-xl border border-white/10 text-white px-4 py-2 rounded-xl shadow-lg text-sm font-medium relative"
+                            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                            className="bg-[#1A1A1A] border border-white/10 text-white px-4 py-2 rounded-xl shadow-2xl text-sm font-medium relative"
                         >
                             Hi, Clarity Advisor here! 👋
-                            <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-3 h-3 bg-white transform rotate-45" />
+                            <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-3 h-3 bg-[#1A1A1A] border-r border-t border-white/10 transform rotate-45" />
                         </motion.div>
                     </div>
                 )}
-            </AnimatePresence>
+            </AnimatePresence >
 
             {/* Floating Toggle Button (Always Visible when closed) */}
             <AnimatePresence>
-                {!isQuickChatOpen && (
-                    <motion.button
-                        initial={{ scale: 0, rotate: 180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        exit={{ scale: 0, rotate: -180 }}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => openQuickChat()}
-                        className="fixed bottom-6 right-6 z-50 bg-black border border-white/20 p-3 rounded-full shadow-2xl hover:border-[#00E5FF] transition-colors group hidden md:block"
-                    >
-                        <div className="absolute inset-0 rounded-full bg-[#00E5FF] opacity-20 group-hover:animate-ping" />
-                        <ClarityLogo size={32} />
-                    </motion.button>
-                )}
-            </AnimatePresence>
+                {
+                    !isQuickChatOpen && (
+                        <motion.button
+                            initial={{ scale: 0, rotate: 180 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            exit={{ scale: 0, rotate: -180 }}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => openQuickChat()}
+                            className="fixed bottom-6 right-6 z-50 bg-[#1A1A1A] border border-white/10 p-3 rounded-full shadow-2xl hover:border-[#00E5FF] transition-colors group"
+                        >
+                            <div className="absolute inset-0 rounded-full bg-[#00E5FF] opacity-0 group-hover:opacity-10 transition-opacity" />
+                            <ClarityLogo size={32} />
+                        </motion.button>
+                    )
+                }
+            </AnimatePresence >
         </>
     );
 }

@@ -27,6 +27,20 @@ export default function StockPage() {
     const [portfolioModalOpen, setPortfolioModalOpen] = useState(false);
     const [buyListModalOpen, setBuyListModalOpen] = useState(false);
 
+    // Watchlist Form State
+    const [buyTarget, setBuyTarget] = useState('');
+    const [sellTarget, setSellTarget] = useState('');
+    const [notes, setNotes] = useState('');
+
+    const [watchlists, setWatchlists] = useState<any[]>([]); // Current watchlist items
+    const [userPortfolios, setUserPortfolios] = useState<any[]>([]);
+
+    useEffect(() => {
+        // Fetch User Portfolios for the modal
+        marketService.getPortfolios().then(res => setUserPortfolios(res)).catch(console.error);
+        marketService.getWatchlist().then(res => setWatchlists(res)).catch(console.error);
+    }, []);
+
     // Fetch Data
     const fetchData = useCallback(async () => {
         try {
@@ -107,7 +121,7 @@ export default function StockPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', color: change >= 0 ? '#10B981' : '#EF4444', bgcolor: change >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', px: 1.5, py: 0.5, borderRadius: 1 }}>
                         {change >= 0 ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />}
                         <Typography variant="h6" sx={{ fontWeight: 600, ml: 0.5 }}>
-                            {change > 0 ? '+' : ''}{change} ({changePercent}%)
+                            {change > 0 ? '+' : ''}{Number(change).toFixed(2)} ({Number(changePercent).toFixed(2)}%)
                         </Typography>
                     </Box>
                 </Box>
@@ -257,49 +271,85 @@ export default function StockPage() {
                         }}
                     >
                         <DialogTitle sx={{ color: '#fff', fontWeight: 800, fontSize: '1.4rem', textAlign: 'center', mb: 2 }}>
-                            SELECT WATCHLIST
+                            ADD TO WATCHLIST
                         </DialogTitle>
                         <DialogContent>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                {/* Existing Buy Lists */}
-                                {['High Conviction', 'Watchlist 2024', 'Dip Buyers'].map((list) => (
-                                    <Button
-                                        key={list}
-                                        onClick={() => setBuyListModalOpen(false)}
-                                        sx={{
-                                            justifyContent: 'space-between',
-                                            textTransform: 'none',
-                                            bgcolor: '#111',
-                                            border: '1px solid #333',
-                                            color: '#fff',
-                                            py: 3,
-                                            px: 3,
-                                            borderRadius: 3,
-                                            '&:hover': { bgcolor: '#222', borderColor: '#555' }
-                                        }}
-                                    >
-                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>{list}</Typography>
-                                        <Typography variant="caption" sx={{ color: '#00E5FF' }}>+ Add Stock</Typography>
-                                    </Button>
-                                ))}
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
+                                <Typography sx={{ color: '#888', textAlign: 'center', mb: 1 }}>
+                                    Set targets and notes for <b>{symbol}</b>
+                                </Typography>
 
-                                {/* Create New List */}
-                                <Button
-                                    onClick={() => setBuyListModalOpen(false)}
+                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                    <TextField
+                                        label="Target Buy Price"
+                                        type="number"
+                                        fullWidth
+                                        variant="outlined"
+                                        InputLabelProps={{ shrink: true, style: { color: '#666' } }}
+                                        InputProps={{ style: { color: '#fff' } }}
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#333' }, '&:hover fieldset': { borderColor: '#555' } }
+                                        }}
+                                        onChange={(e) => setBuyTarget(e.target.value)}
+                                    />
+                                    <TextField
+                                        label="Target Sell Price"
+                                        type="number"
+                                        fullWidth
+                                        variant="outlined"
+                                        InputLabelProps={{ shrink: true, style: { color: '#666' } }}
+                                        InputProps={{ style: { color: '#fff' } }}
+                                        sx={{
+                                            '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#333' }, '&:hover fieldset': { borderColor: '#555' } }
+                                        }}
+                                        onChange={(e) => setSellTarget(e.target.value)}
+                                    />
+                                </Box>
+
+                                <TextField
+                                    label="Notes (Strategy, thesis...)"
+                                    multiline
+                                    rows={3}
+                                    fullWidth
+                                    variant="outlined"
+                                    InputLabelProps={{ style: { color: '#666' } }}
+                                    InputProps={{ style: { color: '#fff' } }}
                                     sx={{
-                                        mt: 2,
+                                        '& .MuiOutlinedInput-root': { '& fieldset': { borderColor: '#333' }, '&:hover fieldset': { borderColor: '#555' } }
+                                    }}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                />
+
+                                <Button
+                                    onClick={async () => {
+                                        try {
+                                            await marketService.addToWatchlist(symbol, {
+                                                target_buy_price: buyTarget ? parseFloat(buyTarget) : undefined,
+                                                target_sell_price: sellTarget ? parseFloat(sellTarget) : undefined,
+                                                notes: notes
+                                            });
+                                            setBuyListModalOpen(false);
+                                            // Reset form
+                                            setBuyTarget('');
+                                            setSellTarget('');
+                                            setNotes('');
+                                        } catch (e) {
+                                            console.error(e);
+                                        }
+                                    }}
+                                    sx={{
                                         justifyContent: 'center',
                                         textTransform: 'none',
-                                        bgcolor: 'rgba(255, 255, 255, 0.03)',
-                                        border: '1px dashed #444',
-                                        backdropFilter: 'blur(10px)',
-                                        color: '#888',
-                                        py: 3,
+                                        bgcolor: '#00E5FF',
+                                        color: '#000',
+                                        py: 2,
                                         borderRadius: 3,
-                                        '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)', color: '#fff', borderColor: '#fff' }
+                                        fontWeight: 700,
+                                        fontSize: '1rem',
+                                        '&:hover': { bgcolor: '#00B2CC' }
                                     }}
                                 >
-                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>+ Create New Watchlist</Typography>
+                                    Confirm Add
                                 </Button>
                             </Box>
                         </DialogContent>
@@ -328,14 +378,7 @@ export default function StockPage() {
                         open={portfolioModalOpen}
                         onClose={() => setPortfolioModalOpen(false)}
                         PaperProps={{
-                            sx: {
-                                bgcolor: '#0B0B0B',
-                                border: '1px solid #333',
-                                borderRadius: 4,
-                                minWidth: 500,
-                                p: 2,
-                                backgroundImage: 'none'
-                            }
+                            sx: { bgcolor: '#0B0B0B', border: '1px solid #333', borderRadius: 4, minWidth: 500, p: 2 }
                         }}
                     >
                         <DialogTitle sx={{ color: '#fff', fontWeight: 800, fontSize: '1.4rem', textAlign: 'center', mb: 2 }}>
@@ -343,11 +386,22 @@ export default function StockPage() {
                         </DialogTitle>
                         <DialogContent>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                {/* Existing Portfolios */}
-                                {['Main Portfolio', 'Retirement Fund', 'Tech Growth'].map((portfolio) => (
+                                {userPortfolios.length > 0 ? userPortfolios.map((portfolio: any) => (
                                     <Button
-                                        key={portfolio}
-                                        onClick={() => setPortfolioModalOpen(false)}
+                                        key={portfolio.id}
+                                        onClick={async () => {
+                                            try {
+                                                const currentPrice = data.market_data?.price || 0;
+                                                await marketService.addToPortfolio(portfolio.id, {
+                                                    ticker: symbol,
+                                                    shares: 1,
+                                                    avg_price: currentPrice
+                                                });
+                                                setPortfolioModalOpen(false);
+                                            } catch (e) {
+                                                console.error(e);
+                                            }
+                                        }}
                                         sx={{
                                             justifyContent: 'space-between',
                                             textTransform: 'none',
@@ -360,21 +414,46 @@ export default function StockPage() {
                                             '&:hover': { bgcolor: '#222', borderColor: '#555' }
                                         }}
                                     >
-                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>{portfolio}</Typography>
+                                        <Typography variant="h6" sx={{ fontWeight: 600 }}>{portfolio.name}</Typography>
                                         <Typography variant="caption" sx={{ color: '#00E5FF' }}>+ Add Stock</Typography>
                                     </Button>
-                                ))}
+                                )) : (
+                                    <Typography sx={{ color: '#666', textAlign: 'center' }}>No portfolios found.</Typography>
+                                )}
 
-                                {/* Create New Portfolio - Blurred Effect */}
+                                {/* Create New Portfolio Button */}
                                 <Button
-                                    onClick={() => setPortfolioModalOpen(false)}
+                                    onClick={async () => {
+                                        const name = prompt("Enter new portfolio name:");
+                                        if (name) {
+                                            try {
+                                                // Create portfolio
+                                                // We need to import portfolioService or access creation logic.
+                                                // Since we are in StockPage using marketService, we can add a createPortfolio method there or just use fetch directly for now to save imports?
+                                                // Actually, let's use marketService (we need to add the method).
+                                                // Or better, redirect to portfolio page? User wants "option to create".
+                                                // Inline is better.
+                                                // Adding createPortfolio to marketService is cleanest.
+                                                // But wait, I can just use `window.location.href` to Portfolio page if too complex, 
+                                                // BUT user said "create new portfolio button HERE".
+                                                // I will add `createPortfolio` to `marketService` after this.
+                                                await marketService.createPortfolio(name);
+                                                // Refresh list
+                                                const res = await marketService.getPortfolios();
+                                                setUserPortfolios(res);
+                                            } catch (e) {
+                                                console.error(e);
+                                                alert("Failed to create portfolio");
+                                            }
+                                        }
+                                    }}
                                     sx={{
                                         mt: 2,
                                         justifyContent: 'center',
                                         textTransform: 'none',
-                                        bgcolor: 'rgba(255, 255, 255, 0.03)', // Slight transparent
+                                        bgcolor: 'rgba(255, 255, 255, 0.03)',
                                         border: '1px dashed #444',
-                                        backdropFilter: 'blur(10px)', // Blur effect
+                                        backdropFilter: 'blur(10px)',
                                         color: '#888',
                                         py: 3,
                                         borderRadius: 3,

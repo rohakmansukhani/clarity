@@ -1,23 +1,37 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, Container, Grid } from '@mui/material';
+import { Box, Typography, TextField, Button, Container, Grid, Alert } from '@mui/material';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import axios from 'axios';
 
 export default function SignupPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
-    const handleSignup = (e: React.FormEvent) => {
+    const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setTimeout(() => {
+        setError(null);
+
+        try {
+            await axios.post('http://localhost:8000/api/v1/auth/register', {
+                email,
+                password
+            });
+            // Redirect to "Check Email" page
+            router.push('/auth/check-email');
+        } catch (err: any) {
+            console.error("Signup failed", err);
+            setError(err.response?.data?.detail || "Registration failed. Please try again.");
             setLoading(false);
-            router.push('/dashboard');
-        }, 1500);
+        }
     };
 
     return (
@@ -78,9 +92,33 @@ export default function SignupPage() {
                             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                         >
                             <Box component="form" onSubmit={handleSignup} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <MinimalInput label="FULL NAME" placeholder="John Doe" type="text" />
-                                <MinimalInput label="EMAIL" placeholder="name@example.com" type="email" />
-                                <MinimalInput label="PASSWORD" placeholder="••••••••" type="password" />
+                                {error && (
+                                    <Alert severity="error" sx={{ bgcolor: 'rgba(211, 47, 47, 0.1)', color: '#ffcdd2', border: '1px solid rgba(211, 47, 47, 0.3)' }}>
+                                        {error}
+                                    </Alert>
+                                )}
+
+                                <MinimalInput
+                                    label="FULL NAME"
+                                    placeholder="John Doe"
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                />
+                                <MinimalInput
+                                    label="EMAIL"
+                                    placeholder="name@example.com"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
+                                <MinimalInput
+                                    label="PASSWORD"
+                                    placeholder="••••••••"
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
 
                                 <Button
                                     fullWidth
@@ -98,6 +136,7 @@ export default function SignupPage() {
                                         letterSpacing: '0.05em',
                                         textTransform: 'uppercase',
                                         transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                                        opacity: loading ? 0.7 : 1,
                                         '&:hover': {
                                             bgcolor: '#fff',
                                             transform: 'translateY(-2px)'
@@ -138,7 +177,15 @@ export default function SignupPage() {
     );
 }
 
-function MinimalInput({ label, type, placeholder }: { label: string, type: string, placeholder: string }) {
+interface MinimalInputProps {
+    label: string;
+    type: string;
+    placeholder: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+function MinimalInput({ label, type, placeholder, value, onChange }: MinimalInputProps) {
     return (
         <Box>
             <Typography
@@ -158,6 +205,8 @@ function MinimalInput({ label, type, placeholder }: { label: string, type: strin
                 variant="standard"
                 type={type}
                 placeholder={placeholder}
+                value={value}
+                onChange={onChange}
                 InputProps={{
                     disableUnderline: true,
                     sx: {

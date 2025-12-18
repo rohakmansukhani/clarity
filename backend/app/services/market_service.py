@@ -47,6 +47,27 @@ class MarketService:
         """
         symbol = symbol.upper()
         
+        # Global Symbol Mapping (Nickname -> Official NSE Symbol)
+        # This ensures NSELib, Screener, and Yahoo all get the correct primary ticker.
+        mapping = {
+            "RIL": "RELIANCE",
+            "RELIANCE": "RELIANCE",
+            "TCS": "TCS",
+            "INFY": "INFY",
+            "HDFCBANK": "HDFCBANK",
+            "SBIN": "SBIN",
+            "ICICIBANK": "ICICIBANK",
+            "BHARTIARTL": "BHARTIARTL",
+            "ITC": "ITC",
+            "BAJFINANCE": "BAJFINANCE",
+            "KOTAKBANK": "KOTAKBANK"
+        }
+        
+        # If symbol matches a known nickname, use the official one
+        clean_input = symbol.replace(".NS", "")
+        if clean_input in mapping:
+            symbol = mapping[clean_input]
+        
         # Parallel Execution
         # 1. Consensus Price (Fast)
         # 2. Fundamentals (Screener - Moderate)
@@ -62,19 +83,31 @@ class MarketService:
         fund_data = results[1] if not isinstance(results[1], Exception) else {}
         news_data = results[2] if not isinstance(results[2], Exception) else {"news": []}
         
-        # Fallback to Yahoo if Screener fails
-        if not fund_data:
-             logger.info(f"Screener failed for {symbol}, falling back to Yahoo")
-             try:
-                 fund_data = await self.yahoo.get_stock_details(symbol)
-             except Exception as e:
-                 logger.error(f"Yahoo fallback failed: {e}")
-                 fund_data = {}
+        # Extract rich info from Consensus Details (if available)
+        rich_details = price_data.get('details', {})
         
+        # Normalize fields (NSE vs Yahoo keys)
+        change = rich_details.get('Change') or rich_details.get('regularMarketChange') or 0.0
+        p_change = rich_details.get('pChange') or rich_details.get('regularMarketChangePercent') or 0.0
+        
+        # Ensure floats
+        try:
+             change = round(float(str(change).replace(',', '')), 2)
+             p_change = round(float(str(p_change).replace(',', '')), 2)
+        except:
+             change = 0.0
+             p_change = 0.0
+
         return {
             "symbol": symbol,
             "market_data": {
                 **price_data,
+                "change": change,
+                "pChange": p_change,
+                "changePercent": p_change, # Fix for frontend (0%) issue
+                "open": rich_details.get('Open') or rich_details.get('regularMarketOpen'),
+                "high": rich_details.get('dayHigh') or rich_details.get('dayLow') or rich_details.get('regularMarketDayHigh'), # NSE uses dayHigh
+                "low": rich_details.get('dayLow') or rich_details.get('regularMarketDayLow'),
                 "price_formatted": format_inr(price_data.get("price", 0.0))
             },
             "fundamentals": fund_data,
@@ -151,9 +184,19 @@ class MarketService:
         import yfinance as yf
         
         def _fetch():
-            ticker = symbol.replace(".NS", "") + ".NS"
+            
+            # Smart resolve handled globally now, but ensure we use correct symbol
+            clean_sym = symbol.replace(".NS", "").upper()
+            ticker = f"{clean_sym}.NS"
+            
             dat = yf.Ticker(ticker)
             hist = dat.history(period=period)
+            
+            if hist.empty and period == "1y":
+                 # Retry with shorter period if 1y fails or maybe ticker is wrong?
+                 # But hist.empty usually means wrong ticker or no data.
+                 logger.warning(f"History empty for {ticker}")
+                 
             # Convert to list of dicts
             hist.reset_index(inplace=True)
             # Date to str
@@ -430,26 +473,34 @@ class MarketService:
         )
         
         # Determine Action
-        if composite >= 70 and timing_signal == 'BUY':
+        if composite >= 75 and timing_signal == 'BUY':
             action = "STRONG BUY"
             confidence = "HIGH"
-            reason = "Excellent fundamentals, good entry timing, manageable risk"
-        elif composite >= 60:
+            reason = "Excellent fundamentals, perfect entry timing, low risk."
+        elif composite >= 65:
             action = "BUY"
             confidence = "MEDIUM"
-            reason = "Solid fundamentals with favorable risk-reward"
-        elif composite >= 50:
-            action = "HOLD"
+            reason = "Solid fundamentals with favorable risk-reward."
+        elif composite >= 55:
+            if timing_signal == 'BUY':
+                action = "ACCUMULATE"
+                reason = "Good long-term value, consider adding on dips."
+            else:
+                action = "HOLD"
+                reason = "Stable stock, but wait for better momentum to add more."
             confidence = "MEDIUM"
-            reason = "Mixed signals, wait for better entry point"
         elif composite >= 40:
             action = "HOLD"
             confidence = "LOW"
-            reason = "Some concerns present, monitor closely"
+            reason = "Mixed signals. If you own it, continue holding; otherwise wait."
+        elif composite >= 25:
+            action = "REDUCE"
+            confidence = "MEDIUM"
+            reason = "Weakening fundamentals or trend. Consider trimming position."
         else:
-            action = "AVOID"
+            action = "SELL"
             confidence = "HIGH"
-            reason = "Multiple red flags detected"
+            reason = "Multiple red flags detected. High risk."
         
         return {
             "action": action,
@@ -463,3 +514,77 @@ class MarketService:
                 "fundamentals": fundamental.get('valuation', {}).get('level')
             }
         }
+    @cache(expire=3600, key_prefix="price_at_date")
+    async def get_price_at_date(self, symbol: str, date: str) -> float:
+        """
+        Fetches closing price for a specific date.
+        """
+        import yfinance as yf
+        from datetime import datetime, timedelta
+
+        def _fetch():
+            try:
+                symbol_clean = symbol.replace(".NS", "").upper()
+                ticker = f"{symbol_clean}.NS"
+                
+                # yfinance download expects start (inclusive) and end (exclusive)
+                target_date = datetime.strptime(date, "%Y-%m-%d")
+                
+                # Try fetching [date, date+7] to find the first valid trading day on or after date
+                end_window = target_date + timedelta(days=7)
+                df = yf.download(ticker, start=date, end=end_window.strftime("%Y-%m-%d"), progress=False)
+                
+                if df.empty:
+                    # Fallback: Try looking BACK 5 days if looking forward failed (maybe simple data gap)
+                    start_back = target_date - timedelta(days=5)
+                    df = yf.download(ticker, start=start_back.strftime("%Y-%m-%d"), end=target_date.strftime("%Y-%m-%d"), progress=False)
+                    if not df.empty:
+                         return float(df['Close'].iloc[-1]) # Last available
+                    return 0.0
+                
+                # Return first available close in the forward window
+                return float(df['Close'].iloc[0])
+
+            except Exception as e:
+                logger.error(f"Error fetching price at date {date} for {symbol}: {e}")
+                return 0.0
+
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _fetch)
+    @cache(expire=86400, key_prefix="listing_date")
+    async def get_listing_date(self, symbol: str) -> str:
+        """
+        Fetches the first trade date (listing date) for a symbol.
+        Returns YYYY-MM-DD string or empty string if not found.
+        """
+        import yfinance as yf
+        from datetime import datetime
+        
+        def _fetch():
+            try:
+                symbol_clean = symbol.replace(".NS", "").upper()
+                ticker = f"{symbol_clean}.NS"
+                dat = yf.Ticker(ticker)
+                
+                # Try getting from metadata
+                # firstTradeDateEpochUtc is reliable when available
+                epoch = dat.info.get('firstTradeDateEpochUtc')
+                if epoch:
+                    dt = datetime.fromtimestamp(epoch)
+                    return dt.strftime("%Y-%m-%d")
+                
+                # Fallback: history max (slower but more accurate for old stocks)
+                # Note: yfinance historical data may not go back to actual listing date
+                # For example, RELIANCE listed on Nov 28, 1995 but yfinance data starts Jan 1, 1996
+                hist = dat.history(period="max")
+                if not hist.empty:
+                    return hist.index[0].strftime("%Y-%m-%d")
+                    
+                return ""
+            except Exception as e:
+                logger.error(f"Error fetching listing date for {symbol}: {e}")
+                return ""
+        
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _fetch)
+

@@ -12,22 +12,48 @@ export default function ContextMenu() {
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [selectedText, setSelectedText] = useState('');
     const menuRef = useRef<HTMLDivElement>(null);
+    const isMenuVisibleRef = useRef(false);
+    const lastRightClickTimeRef = useRef(0);
 
     const openQuickChat = useUIStore((state) => state.openQuickChat);
 
     useEffect(() => {
         const handleContextMenu = (e: MouseEvent) => {
             const selection = window.getSelection()?.toString().trim();
+            const now = Date.now();
+            const timeSinceLastClick = now - lastRightClickTimeRef.current;
 
-            // Only show custom menu if text is selected
+            console.log('Right click detected', {
+                isMenuVisible: isMenuVisibleRef.current,
+                timeSinceLastClick,
+                hasSelection: !!selection
+            });
+
+            // If menu is already visible and user right-clicks again within 2 seconds, allow native menu
+            if (isMenuVisibleRef.current && timeSinceLastClick < 2000) {
+                console.log('Second click detected - allowing native menu');
+                setVisible(false);
+                isMenuVisibleRef.current = false;
+                lastRightClickTimeRef.current = 0;
+                // Don't call e.preventDefault() - this allows native menu
+                return;
+            }
+
+            // Show custom menu if text is selected
             if (selection && selection.length > 2) {
+                console.log('Showing custom menu');
                 e.preventDefault();
                 setSelectedText(selection);
                 setPosition({ x: e.clientX, y: e.clientY });
                 setVisible(true);
+                isMenuVisibleRef.current = true;
+                lastRightClickTimeRef.current = now;
             } else {
-                // Allow default browser menu if no text selected (or very short)
+                // No text selected - allow native menu
+                console.log('No selection - allowing native menu');
                 setVisible(false);
+                isMenuVisibleRef.current = false;
+                lastRightClickTimeRef.current = 0;
             }
         };
 
@@ -35,12 +61,16 @@ export default function ContextMenu() {
             // Close menu on any click
             if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
                 setVisible(false);
+                isMenuVisibleRef.current = false;
             }
         };
 
         const handleScroll = () => {
             // Close menu on scroll
-            if (visible) setVisible(false);
+            if (visible) {
+                setVisible(false);
+                isMenuVisibleRef.current = false;
+            }
         }
 
         document.addEventListener('contextmenu', handleContextMenu);

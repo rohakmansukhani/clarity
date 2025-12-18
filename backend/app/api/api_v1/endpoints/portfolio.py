@@ -198,3 +198,126 @@ def create_portfolio(
         return res.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/{portfolio_id}")
+@limiter.limit("10/minute")
+def delete_portfolio(
+    request: Request,
+    portfolio_id: str,
+    user = Depends(get_current_user),
+    supabase: Client = Depends(get_user_supabase)
+):
+    """Delete a portfolio"""
+    try:
+        # RLS handles ownership check
+        res = supabase.table("portfolios").delete().eq("id", portfolio_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Portfolio not found or not authorized")
+        return {"message": "Portfolio deleted"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Holdings Management ---
+
+class HoldingUpdate(BaseModel):
+    shares: Optional[float] = None
+    avg_price: Optional[float] = None
+
+@router.delete("/holdings/{holding_id}")
+@limiter.limit("20/minute")
+def delete_holding(
+    request: Request,
+    holding_id: str,
+    user = Depends(get_current_user),
+    supabase: Client = Depends(get_user_supabase)
+):
+    try:
+        # Check ownership via RLS policy "Users can manage holdings of their portfolios"
+        res = supabase.table("holdings").delete().eq("id", holding_id).execute()
+        if not res.data:
+             raise HTTPException(status_code=404, detail="Holding not found or not authorized")
+        return {"message": "Holding deleted"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/holdings/{holding_id}")
+@limiter.limit("20/minute")
+def update_holding(
+    request: Request,
+    holding_id: str,
+    update: HoldingUpdate,
+    user = Depends(get_current_user),
+    supabase: Client = Depends(get_user_supabase)
+):
+    try:
+        data = {}
+        if update.shares is not None: data['shares'] = update.shares
+        if update.avg_price is not None: data['avg_price'] = update.avg_price
+        
+        if not data:
+            return {"message": "No changes"}
+
+        res = supabase.table("holdings").update(data).eq("id", holding_id).execute()
+        if not res.data:
+             raise HTTPException(status_code=404, detail="Holding not found or not authorized")
+        return res.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- Watchlists ---
+
+class WatchlistCreate(BaseModel):
+    ticker: str
+    exchange: str = "NSE"
+
+@router.get("/watchlists/")
+@limiter.limit("30/minute")
+def get_watchlist(
+    request: Request,
+    user = Depends(get_current_user),
+    supabase: Client = Depends(get_user_supabase)
+):
+    try:
+        res = supabase.table("watchlists").select("*").execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/watchlists/")
+@limiter.limit("20/minute")
+def add_to_watchlist(
+    request: Request,
+    item: WatchlistCreate,
+    user = Depends(get_current_user),
+    supabase: Client = Depends(get_user_supabase)
+):
+    try:
+        # Check if exists
+        existing = supabase.table("watchlists").select("*").eq("ticker", item.ticker).execute()
+        if existing.data:
+            return existing.data[0]
+            
+        data = {
+            "user_id": user.id,
+            "ticker": item.ticker,
+            "exchange": item.exchange
+        }
+        res = supabase.table("watchlists").insert(data).execute()
+        return res.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/watchlists/{ticker}")
+@limiter.limit("20/minute")
+def remove_from_watchlist(
+    request: Request,
+    ticker: str,
+    user = Depends(get_current_user),
+    supabase: Client = Depends(get_user_supabase)
+):
+    try:
+        res = supabase.table("watchlists").delete().eq("ticker", ticker).execute()
+        return {"message": "Removed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

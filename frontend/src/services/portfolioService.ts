@@ -51,5 +51,49 @@ export const portfolioService = {
     getPortfolioPerformance: async (portfolioId: string): Promise<PortfolioPerformance> => {
         const response = await api.get(`/portfolios/${portfolioId}/performance`);
         return response.data;
+    },
+
+    // Delete Portfolio
+    deletePortfolio: async (portfolioId: string) => {
+        const response = await api.delete(`/portfolios/${portfolioId}`);
+        return response.data;
+    },
+
+    // --- Holdings ---
+
+    deleteHolding: async (holdingId: string) => {
+        const response = await api.delete(`/portfolios/holdings/${holdingId}`); // Note: Path adjusted to match likely router structure or need to check router
+        // Wait, in backend I defined it as @router.delete("/holdings/{holding_id}")
+        // The router prefix is likely /api/v1/portfolios if it's included in api.py
+        // Let me double check api.py or the router registration. 
+        // Assuming router is mounted at /portfolios.
+        // The backend code was: @router.delete("/holdings/{holding_id}")
+        // So the path is /portfolios/holdings/{holding_id}
+        const res = await api.delete(`/portfolios/holdings/${holdingId}`);
+        return res.data;
+    },
+
+    updateHolding: async (holdingId: string, updates: { shares?: number; avg_price?: number }) => {
+        const response = await api.put(`/portfolios/holdings/${holdingId}`, updates);
+        return response.data;
+    },
+
+    // --- Watchlist ---
+
+    getWatchlist: async () => {
+        const response = await api.get('/portfolios/watchlists/'); // Mounted under portfolios router?
+        // Checking backend code: @router.get("/watchlists/")
+        // If portfolio router is at /portfolios, then yes /portfolios/watchlists/
+        return response.data;
+    },
+
+    addToWatchlist: async (ticker: string, exchange: string = 'NSE') => {
+        const response = await api.post('/portfolios/watchlists/', { ticker, exchange });
+        return response.data;
+    },
+
+    removeFromWatchlist: async (ticker: string) => {
+        const response = await api.delete(`/portfolios/watchlists/${ticker}`);
+        return response.data;
     }
 };

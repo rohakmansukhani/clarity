@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_KEY: str
     SUPABASE_JWT_SECRET: str | None = None
-    LOG_LEVEL: str = "INFO"
+    LOG_LEVEL: str = "WARNING"
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
 
     @property

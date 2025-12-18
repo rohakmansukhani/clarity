@@ -6,6 +6,7 @@ import { TrendingUp, TrendingDown, Plus, Wallet, PieChart as PieChartIcon, X, Se
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/layout/Sidebar';
+import { portfolioService } from '@/services/portfolioService';
 
 // --- Interfaces ---
 interface Holding {
@@ -30,31 +31,6 @@ interface Portfolio {
 }
 
 // --- Initial Mock Data ---
-const INITIAL_PORTFOLIOS: Portfolio[] = [
-    {
-        id: 'main',
-        name: 'Main Portfolio',
-        total_value: 1245000.00,
-        total_invested: 1060000.00,
-        total_gain: 185000.00,
-        return_pct: 17.45,
-        holdings: [
-            { ticker: 'RELIANCE', shares: 50, avg_price: 2450, current_price: 2985.40, current_value: 149270, invested_value: 122500, gain: 26770, gain_pct: 21.85 },
-            { ticker: 'TCS', shares: 25, avg_price: 3200, current_price: 3890.00, current_value: 97250, invested_value: 80000, gain: 17250, gain_pct: 21.56 },
-            { ticker: 'HDFC', shares: 100, avg_price: 1450, current_price: 1650.00, current_value: 165000, invested_value: 145000, gain: 20000, gain_pct: 13.79 },
-        ]
-    },
-    {
-        id: 'retirement',
-        name: 'Retirement Fund',
-        total_value: 540000.00,
-        total_invested: 400000.00,
-        total_gain: 140000.00,
-        return_pct: 35.00,
-        holdings: []
-    }
-];
-
 const SECTOR_COLORS = ['#00E5FF', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#EC4899'];
 
 export default function PortfolioPage() {
@@ -73,109 +49,142 @@ export default function PortfolioPage() {
     const [portfolioMenuAnchor, setPortfolioMenuAnchor] = useState<null | HTMLElement>(null);
 
     // --- Simulation Init ---
-    useEffect(() => {
-        // Simulate fetching data
-        setTimeout(() => {
-            setPortfolios(INITIAL_PORTFOLIOS);
-            setActiveId(''); // Start with no active portfolio selected
+    // --- Actions ---
+    const fetchPortfolios = async () => {
+        try {
+            setLoading(true);
+            const data = await portfolioService.listPortfolios();
+            // The list endpoint returns basic info. We might need to map it to our UI model.
+            // But for the list view, we need total_value etc.
+            // Currently backend list endpoint returns just ID/Name.
+            // We probably need to fetch performance for ALL portfolios or just the active one?
+            // For the "My Portfolios" card view, we show totals.
+            // Let's fetch performance for each portfolio in parallel to populate the cards.
+
+            const detailedPortfolios = await Promise.all(data.map(async (p) => {
+                try {
+                    const perf = await portfolioService.getPortfolioPerformance(p.id);
+                    return {
+                        id: p.id,
+                        name: p.name,
+                        ...perf
+                    };
+                } catch (e) {
+                    return {
+                        id: p.id,
+                        name: p.name,
+                        total_value: 0,
+                        total_invested: 0,
+                        total_gain: 0,
+                        return_pct: 0,
+                        holdings: []
+                    };
+                }
+            }));
+
+            setPortfolios(detailedPortfolios);
+        } catch (error) {
+            console.error("Failed to fetch portfolios", error);
+        } finally {
             setLoading(false);
-        }, 800);
+        }
+    };
+
+    useEffect(() => {
+        fetchPortfolios();
     }, []);
 
-    const activePortfolio = useMemo(() =>
-        portfolios.find(p => p.id === activeId) || null,
-        [portfolios, activeId]);
+    const activePortfolio = useMemo(() => portfolios.find(p => p.id === activeId), [portfolios, activeId]);
 
-    // --- Actions ---
-    const handlePortfolioClick = (id: string) => {
+    const handlePortfolioClick = async (id: string) => {
         setActiveId(id);
         setViewMode('detail');
+        // Refresh performance to get latest live prices
+        try {
+            const perf = await portfolioService.getPortfolioPerformance(id);
+            setPortfolios(prev => prev.map(p => p.id === id ? { ...p, ...perf } : p));
+        } catch (e) {
+            console.error("Failed to refresh active portfolio", e);
+        }
     };
 
     const handleBackToList = () => {
         setViewMode('list');
         setActiveId('');
+        fetchPortfolios(); // Refresh summaries when going back
     };
 
-    const handleCreatePortfolio = (name: string) => {
-        const newPortfolio: Portfolio = {
-            id: name.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now(),
-            name: name,
-            total_value: 0,
-            total_invested: 0,
-            total_gain: 0,
-            return_pct: 0,
-            holdings: []
-        };
-        setPortfolios([...portfolios, newPortfolio]);
-        // Don't auto-switch, just add to list
-        setIsCreateModalOpen(false);
-    };
-
-    const handleDeletePortfolio = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (portfolios.length <= 1) return; // Prevent deleting last one
-        const newList = portfolios.filter(p => p.id !== id);
-        setPortfolios(newList);
-        if (activeId === id) {
-            setActiveId('');
-            setViewMode('list');
+    const handleCreatePortfolio = async (name: string) => {
+        try {
+            await portfolioService.createPortfolio(name);
+            await fetchPortfolios();
+            setIsCreateModalOpen(false);
+        } catch (e) {
+            console.error("Create failed", e);
         }
     };
 
-    const handleAddTransaction = (ticker: string, shares: number, price: number, type: 'BUY' | 'SELL') => {
-        if (!activePortfolio) return;
+    const handleDeletePortfolio = async (id: string, e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        if (!confirm("Are you sure you want to delete this portfolio?")) return;
 
-        // Create a deep copy of the active portfolio
-        const updatedPortfolio = { ...activePortfolio, holdings: [...activePortfolio.holdings.map(h => ({ ...h }))] };
-
-        const existingIndex = updatedPortfolio.holdings.findIndex(h => h.ticker === ticker);
-
-        if (existingIndex > -1) {
-            // Update existing holding
-            const h = updatedPortfolio.holdings[existingIndex];
-            if (type === 'BUY') {
-                const totalCost = (h.shares * h.avg_price) + (shares * price);
-                const totalShares = h.shares + shares;
-                h.shares = totalShares;
-                h.avg_price = totalCost / totalShares;
-            } else {
-                // Sell logic 
-                h.shares = Math.max(0, h.shares - shares);
+        try {
+            await portfolioService.deletePortfolio(id);
+            setPortfolios(prev => prev.filter(p => p.id !== id));
+            if (activeId === id) {
+                setActiveId('');
+                setViewMode('list');
             }
-            // Recalculate
-            h.current_price = price;
-            h.current_value = h.shares * h.current_price;
-            h.invested_value = h.shares * h.avg_price;
-            h.gain = h.current_value - h.invested_value;
-            h.gain_pct = (h.invested_value !== 0) ? (h.gain / h.invested_value) * 100 : 0;
+        } catch (err) {
+            console.error("Delete failed", err);
+        }
+    };
 
-            if (h.shares === 0) updatedPortfolio.holdings.splice(existingIndex, 1);
+    // ... existing code ...
 
-        } else if (type === 'BUY') {
-            // New holding
-            updatedPortfolio.holdings.push({
+    // --- At the bottom, fix subcomponents --- (Removed duplicates)
+
+    const handleAddTransaction = async (ticker: string, shares: number, price: number, type: 'BUY' | 'SELL') => {
+        if (!activeId) return;
+
+        try {
+            // Backend "Add Holding" is basically designed for initial add, 
+            // but we can use it. However, properly we should check if exists and update shares?
+            // The backend `add_holding` just inserts a new row. 
+            // If we want to support multiple lots, that's fine (FIFO).
+            // But our UI currently aggregates by ticker.
+
+            // For simplicity in this version, we will just INSERT a new holding row.
+            // The Backend Performance endpoint aggregates them? 
+            // Let's check backend... `get_portfolio_performance` loops through holdings.
+            // If we have multiple rows for RELIANCE, it will calculate each separately.
+            // The UI might show duplicate rows if we don't aggregate.
+            // The backend returns `detailed_holdings` list.
+
+            // Implementation: Just add it.
+            // Note: SELL logic isn't fully supported by backend `add_holding` unless we send negative shares?
+
+            if (type === 'SELL') {
+                alert("Sell transactions not yet fully supported in this version. Please delete the holding or update shares manually.");
+                return;
+            }
+
+            await portfolioService.addHolding(activeId, {
                 ticker,
                 shares,
                 avg_price: price,
-                current_price: price,
-                current_value: shares * price,
-                invested_value: shares * price,
-                gain: 0,
-                gain_pct: 0
+                exchange: "NSE",
+                allocation_percent: 0
             });
+
+            // Refresh data
+            const perf = await portfolioService.getPortfolioPerformance(activeId);
+            setPortfolios(prev => prev.map(p => p.id === activeId ? { ...p, ...perf } : p));
+            setIsTxModalOpen(false);
+
+        } catch (e) {
+            console.error("Transaction failed", e);
         }
-
-        // Recalculate Totals
-        updatedPortfolio.total_invested = updatedPortfolio.holdings.reduce((sum, h) => sum + h.invested_value, 0);
-        updatedPortfolio.total_value = updatedPortfolio.holdings.reduce((sum, h) => sum + h.current_value, 0);
-        updatedPortfolio.total_gain = updatedPortfolio.total_value - updatedPortfolio.total_invested;
-        updatedPortfolio.return_pct = updatedPortfolio.total_invested > 0 ? (updatedPortfolio.total_gain / updatedPortfolio.total_invested) * 100 : 0;
-        updatedPortfolio.return_pct = parseFloat(updatedPortfolio.return_pct.toFixed(2));
-
-        // Update State List
-        setPortfolios(portfolios.map(p => p.id === activeId ? updatedPortfolio : p));
-        setIsTxModalOpen(false);
     };
 
     if (loading) {
@@ -502,8 +511,8 @@ export default function PortfolioPage() {
                                     <Box sx={{ bgcolor: 'transparent', mb: 4 }}>
                                         <Typography variant="overline" sx={{ color: '#666', fontWeight: 700, letterSpacing: '0.1em' }}>PORTFOLIO HEALTH</Typography>
                                         <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                            <StatBar label="Equity Allocation" value={85} color="#00E5FF" />
-                                            <StatBar label="Cash Balance" value={15} color="#333" />
+                                            <StatBar label="Equity Allocation" value={activePortfolio.total_value > 0 ? 100 : 0} color="#00E5FF" />
+                                            <StatBar label="Cash Balance" value={0} color="#333" />
                                         </Box>
                                     </Box>
                                     {/* Additional metrics can go here */}
@@ -718,7 +727,14 @@ function CreatePortfolioModal({ open, onClose, onSubmit }: { open: boolean, onCl
     );
 }
 
-function TabButton({ active, onClick, label, icon: Icon }: any) {
+interface TabButtonProps {
+    active: boolean;
+    onClick: () => void;
+    label: string;
+    icon: React.ElementType;
+}
+
+function TabButton({ active, onClick, label, icon: Icon }: TabButtonProps) {
     return (
         <Button
             onClick={onClick}
@@ -741,7 +757,13 @@ function TabButton({ active, onClick, label, icon: Icon }: any) {
     )
 }
 
-function StatBar({ label, value, color }: any) {
+interface StatBarProps {
+    label: string;
+    value: number;
+    color: string;
+}
+
+function StatBar({ label, value, color }: StatBarProps) {
     return (
         <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>

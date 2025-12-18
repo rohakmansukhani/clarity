@@ -2,13 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { Box, List, ListItem, ListItemButton, Tooltip, IconButton, useMediaQuery, useTheme } from '@mui/material';
-import { LayoutDashboard, TrendingUp, PieChart, MessageSquare, LogOut, Menu, X, ChevronRight, ChevronLeft } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, PieChart, MessageSquare, LogOut, Menu, X, ChevronRight, ChevronLeft, Eye, RotateCcw } from 'lucide-react';
+import { useUIStore } from '@/lib/ui-store';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MENU_ITEMS = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { label: 'Market', icon: TrendingUp, path: '/market' },
+    { label: 'Watchlist', icon: Eye, path: '/watchlist' },
+    { label: 'Backtrack', icon: RotateCcw, path: '/backtrack' },
     { label: 'Portfolio', icon: PieChart, path: '/portfolio' },
     { label: 'Advisor', icon: MessageSquare, path: '/advisor' },
 ];
@@ -19,14 +22,15 @@ export default function Sidebar() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-    const [isOpen, setIsOpen] = useState(true);
+    const { isSidebarOpen, toggleSidebar, closeSidebar } = useUIStore();
+    const isOpen = isSidebarOpen;
 
     // Auto-collapse on mobile, open on desktop
     useEffect(() => {
-        setIsOpen(!isMobile);
-    }, [isMobile]);
-
-    const toggleSidebar = () => setIsOpen(!isOpen);
+        if (isMobile) {
+            closeSidebar();
+        }
+    }, [isMobile, closeSidebar]);
 
     return (
         <>
@@ -116,7 +120,7 @@ export default function Sidebar() {
                                     <ListItem key={item.path} disablePadding sx={{ display: 'block', width: 'auto' }}>
                                         <Tooltip title={item.label} placement="right" arrow>
                                             <ListItemButton
-                                                onClick={() => { router.push(item.path); if (isMobile) setIsOpen(false); }}
+                                                onClick={() => { router.push(item.path); if (isMobile) closeSidebar(); }}
                                                 sx={{
                                                     minWidth: 0,
                                                     justifyContent: 'center',

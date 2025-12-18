@@ -31,17 +31,13 @@ class ConsensusEngine:
     @cache(expire=60, key_prefix="consensus")
     async def get_consensus_price(self, symbol: str) -> Dict[str, Any]:
         """
-        Fetches prices from all providers and determines consensus.
-        
-        Weighting:
-        - NSELib: 1.0 (official, highest weight)
-        - YahooFinance: 0.8
-        - GoogleFinance: 0.6
+        Fetches full details from all providers and determines consensus price.
+        Returns the consensus price AND the details from the primary source.
         """
         results = []
-        # Parallel fetch
-        tasks = [p.get_latest_price(symbol) for p in self.providers]
-        prices = await asyncio.gather(*tasks, return_exceptions=True)
+        # Parallel fetch details instead of just price
+        tasks = [p.get_stock_details(symbol) for p in self.providers]
+        details_list = await asyncio.gather(*tasks, return_exceptions=True)
         
         # Weights for each provider
         weights = {
@@ -52,21 +48,47 @@ class ConsensusEngine:
         
         weighted_prices = []
         source_map = {}
+        valid_details = [] # Tuple of (price, weight, details, provider_name)
         
-        for i, res in enumerate(prices):
+        for i, res in enumerate(details_list):
             provider_name = self.providers[i].source_name
+            
             if isinstance(res, Exception):
                 logger.error(f"{provider_name} failed: {res}")
                 continue
-            if isinstance(res, (int, float)) and res > 0:
+            
+            if not isinstance(res, dict):
+                continue
+
+            # Extract Price based on Provider
+            price = 0.0
+            if provider_name == "NSE_Lib":
+                # Handle possible string format
+                p = res.get('LastPrice', 0)
+                if isinstance(p, str):
+                    price = float(p.replace(',', ''))
+                else:
+                    price = float(p)
+            elif provider_name == "YahooFinance":
+                price = res.get('currentPrice') or res.get('regularMarketPrice') or res.get('price', 0)
+            elif provider_name == "GoogleFinance":
+                price = res.get('price', 0)
+                
+            if price > 0:
                 weight = weights.get(provider_name, 0.5)
-                weighted_prices.append((res, weight, provider_name))
-                source_map[provider_name] = res
+                weighted_prices.append((price, weight, provider_name))
+                source_map[provider_name] = price
+                valid_details.append({
+                    "price": price,
+                    "weight": weight,
+                    "source": provider_name,
+                    "data": res
+                })
                 
         if not weighted_prices:
             return {"status": "ERROR", "price": 0.0, "message": "No data source available"}
             
-        # Weighted average
+        # Weighted average for Price
         total_weight = sum(w for _, w, _ in weighted_prices)
         final_price = sum(p * w for p, w, _ in weighted_prices) / total_weight
         
@@ -78,19 +100,22 @@ class ConsensusEngine:
         
         # Determine status
         if len(weighted_prices) >= 2:
-            if variance < 0.005: # < 0.5% variance
-                status = "VERIFIED"
-            elif variance < 0.01: # < 1% variance
-                status = "WARNING"
-            else:
-                status = "UNSTABLE"
+            if variance < 0.005: status = "VERIFIED"
+            elif variance < 0.01: status = "WARNING"
+            else: status = "UNSTABLE"
         else:
             status = "SINGLE_SOURCE"
+
+        # Determine Primary Source details to return (highest weight)
+        valid_details.sort(key=lambda x: x['weight'], reverse=True)
+        primary_data = valid_details[0]['data'] if valid_details else {}
+        primary_source_name = valid_details[0]['source'] if valid_details else None
 
         return {
             "price": round(final_price, 2),
             "status": status,
             "variance_pct": round(variance * 100, 2),
             "sources": source_map,
-            "primary_source": weighted_prices[0][2] if weighted_prices else None
+            "primary_source": primary_source_name,
+            "details": primary_data # Return rich data
         }

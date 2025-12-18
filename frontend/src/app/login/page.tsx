@@ -1,23 +1,55 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, Container, Grid } from '@mui/material';
-import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, TextField, Button, Container, Grid, CircularProgress } from '@mui/material';
+import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import axios from 'axios';
+import { Lock, User, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
+    const controls = useAnimation();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
+        setError(null);
+
+        try {
+            // Call Backend API
+            const response = await axios.post('http://localhost:8000/api/v1/auth/login', {
+                email,
+                password
+            });
+
+            const { access_token, user } = response.data;
+
+            // Save Token (Cookie for Middleware, LocalStorage for Client calls)
+            document.cookie = `token=${access_token}; path=/; max-age=86400; SameSite=Lax`; // 1 day
+            localStorage.setItem('token', access_token);
+            localStorage.setItem('user', JSON.stringify(user));
+
             router.push('/dashboard');
-        }, 1500);
+        } catch (err: any) {
+            console.error("Login failed", err);
+            setError(err.response?.data?.detail || "Invalid login credentials. Please try again.");
+
+            // Trigger Shake Animation
+            controls.start({
+                x: [0, -10, 10, -10, 10, 0],
+                transition: { duration: 0.4 }
+            });
+            // Clear password on error for UX
+            if (err.response?.status === 401) setPassword('');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -68,11 +100,7 @@ export default function LoginPage() {
                                 Easy investing analysis for everyone.
                             </Typography>
 
-                            <Box sx={{ display: 'flex', gap: 4 }}>
-                                <Metric label="MARKET" value="OPEN" color="#10B981" />
-                                <Metric label="SENSEX" value="72,400" />
-                                <Metric label="NIFTY" value="21,800" />
-                            </Box>
+                            <MarketMetrics />
                         </motion.div>
                     </Grid>
 
@@ -83,9 +111,57 @@ export default function LoginPage() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                         >
-                            <Box component="form" onSubmit={handleLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <MinimalInput label="EMAIL" placeholder="name@example.com" type="email" />
-                                <MinimalInput label="PASSWORD" placeholder="••••••••" type="password" />
+
+                            <Box component="form" onSubmit={handleLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                <AnimatePresence mode='wait'>
+                                    {error && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10, height: 0 }}
+                                            animate={{ opacity: 1, y: 0, height: 'auto' }}
+                                            exit={{ opacity: 0, y: -10, height: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            style={{ overflow: 'hidden' }}
+                                        >
+                                            <Box sx={{
+                                                bgcolor: 'rgba(255, 59, 48, 0.15)', // Apple System Red low opacity
+                                                border: '1px solid rgba(255, 59, 48, 0.3)',
+                                                borderRadius: '12px',
+                                                p: 2,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 2,
+                                                color: '#FF453A'
+                                            }}>
+                                                <AlertCircle size={20} />
+                                                <Typography variant="body2" sx={{ fontWeight: 500, letterSpacing: '-0.01em' }}>
+                                                    {error}
+                                                </Typography>
+                                            </Box>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                <motion.div
+                                    animate={controls}
+                                    style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
+                                >
+                                    <MinimalInput
+                                        label="EMAIL"
+                                        placeholder="name@example.com"
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        icon={<User size={18} color="#666" />}
+                                    />
+                                    <MinimalInput
+                                        label="PASSWORD"
+                                        placeholder="••••••••"
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        icon={<Lock size={18} color="#666" />}
+                                    />
+                                </motion.div>
 
                                 <Button
                                     fullWidth
@@ -93,28 +169,32 @@ export default function LoginPage() {
                                     type="submit"
                                     disabled={loading}
                                     sx={{
-                                        mt: 4,
+                                        mt: 2,
                                         py: 2.5,
-                                        borderRadius: '4px', // Less rounded, more structured
-                                        bgcolor: '#00E5FF',
+                                        borderRadius: '16px', // Apple-style rounded rect
+                                        bgcolor: '#fff', // White primary
                                         color: '#000',
-                                        fontSize: '1.1rem',
-                                        fontWeight: 600,
-                                        letterSpacing: '0.05em',
-                                        textTransform: 'uppercase',
+                                        fontSize: '1rem',
+                                        fontWeight: 700,
+                                        letterSpacing: '-0.01em',
+                                        textTransform: 'none', // Remove uppercase for friendlier UI
                                         transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                                        opacity: loading ? 0.7 : 1,
+                                        boxShadow: '0 4px 20px rgba(255,255,255,0.1)',
                                         '&:hover': {
-                                            bgcolor: '#fff',
-                                            transform: 'translateY(-2px)'
-                                        }
+                                            bgcolor: '#f0f0f0',
+                                            transform: 'scale(1.02)',
+                                            boxShadow: '0 8px 30px rgba(255,255,255,0.2)'
+                                        },
+                                        '&:active': { transform: 'scale(0.98)' }
                                     }}
                                 >
-                                    {loading ? 'Initializing...' : 'Get Started'}
+                                    {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
                                 </Button>
 
-                                <Box sx={{ textAlign: 'center' }}>
-                                    <Link href="/signup" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9rem', letterSpacing: '0.05em' }}>
-                                        NEW HERE? <span style={{ color: '#fff', borderBottom: '1px solid #fff' }}>JOIN CLARITY</span>
+                                <Box sx={{ textAlign: 'center', mt: 1 }}>
+                                    <Link href="/signup" style={{ color: '#888', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'color 0.2s' }}>
+                                        Don't have an account? <span style={{ color: '#fff' }}>Join Clarity</span>
                                     </Link>
                                 </Box>
                             </Box>
@@ -145,41 +225,121 @@ export default function LoginPage() {
     );
 }
 
-function MinimalInput({ label, type, placeholder }: { label: string, type: string, placeholder: string }) {
+// --- Components ---
+
+function MarketMetrics() {
+    const [status, setStatus] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                // Determine API URL based on environment or hardcode for now
+                // Since this is client component, we can use axios directly or marketService if imported
+                // But marketService might use a different axios instance. 
+                // Let's use axios direct to ensure public access if marketService adds tokens?
+                // Actually marketService is safe. I'll import it at top.
+                // Wait, I can't easily import 'marketService' if I don't add the import line.
+                // I will add import in next step or use axios here.
+                const res = await axios.get('http://localhost:8000/api/v1/market/status');
+                setStatus(res.data);
+            } catch (e) {
+                console.error("Market Status Error", e);
+                // Fallback
+                setStatus([
+                    { index: "MARKET", current: "OPEN", status: "OPEN" },
+                    { index: "SENSEX", current: "72,400", percent_change: 0 },
+                    { index: "NIFTY 50", current: "21,800", percent_change: 0 }
+                ]);
+            }
+        };
+        fetchStatus();
+    }, []);
+
+    const nifty = status.find(s => s.index === "NIFTY 50");
+    const sensex = status.find(s => s.index === "SENSEX");
+
+    const isMarketOpen = nifty?.status === 'OPEN';
+    const marketStatusColor = isMarketOpen ? '#10B981' : '#EF4444';
+    const marketStatusText = isMarketOpen ? 'OPEN' : 'CLOSED';
+
+    if (status.length === 0) return (
+        <Box sx={{ display: 'flex', gap: 4 }}>
+            <Metric label="MARKET" value="LOADING..." color="#666" />
+        </Box>
+    );
+
+    return (
+        <Box sx={{ display: 'flex', gap: 4 }}>
+            {/* 1. Market Status */}
+            <Metric
+                label="MARKET"
+                value={marketStatusText}
+                color={marketStatusColor}
+            />
+
+            {/* 2. Nifty */}
+            <Metric
+                label="NIFTY"
+                value={typeof nifty?.current === 'number' ? nifty.current.toLocaleString() : "..."}
+            />
+
+            {/* 3. Sensex */}
+            <Metric
+                label="SENSEX"
+                value={typeof sensex?.current === 'number' ? sensex.current.toLocaleString() : "..."}
+            />
+        </Box>
+    );
+}
+
+interface MinimalInputProps {
+    label: string;
+    type: string;
+    placeholder: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    icon?: React.ReactNode;
+}
+
+function MinimalInput({ label, type, placeholder, value, onChange, icon }: MinimalInputProps) {
     return (
         <Box>
-            <Typography
-                variant="caption"
-                sx={{
-                    color: '#666',
-                    mb: 1,
-                    display: 'block',
-                    fontWeight: 600,
-                    letterSpacing: '0.1em'
-                }}
-            >
-                {label}
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        color: '#666',
+                        fontWeight: 600,
+                        letterSpacing: '0.1em',
+                        fontSize: '0.75rem'
+                    }}
+                >
+                    {label}
+                </Typography>
+            </Box>
             <TextField
                 fullWidth
                 variant="standard"
                 type={type}
                 placeholder={placeholder}
+                value={value}
+                onChange={onChange}
                 InputProps={{
                     disableUnderline: true,
+                    endAdornment: icon ? <Box sx={{ opacity: 0.5 }}>{icon}</Box> : null,
                     sx: {
-                        fontSize: '1.5rem',
+                        fontSize: '1.2rem',
                         color: '#fff',
                         fontWeight: 500,
-                        pb: 1,
+                        pb: 1.5,
                         borderBottom: '1px solid #333',
-                        transition: 'border-color 0.3s',
+                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                         '&:hover': { borderBottom: '1px solid #666' },
-                        '&.Mui-focused': { borderBottom: '1px solid #00E5FF' }
+                        '&.Mui-focused': { borderBottom: '1px solid #fff' }
                     }
                 }}
                 sx={{
-                    '& input::placeholder': { color: '#333', opacity: 1 }
+                    '& input::placeholder': { color: '#444', opacity: 1 }
                 }}
             />
         </Box>
