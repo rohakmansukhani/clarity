@@ -1,8 +1,9 @@
 import logging
 import asyncio
 from typing import List, Dict, Any
-from nselib import capital_market
-import pandas as pd
+import asyncio
+from typing import List, Dict, Any
+# nselib and pandas imported lazily
 from app.core.cache import cache
 import requests
 from fake_useragent import UserAgent
@@ -163,6 +164,7 @@ class SectorMapper:
             
             def _fetch():
                 try:
+                    from nselib import capital_market
                     # Get full equity list with industry classification
                     df = capital_market.equity_list()
                     
@@ -209,6 +211,7 @@ class SectorMapper:
             
             def _fetch():
                 try:
+                    from nselib import capital_market
                     df = capital_market.equity_list()
                     
                     if df is None or df.empty:

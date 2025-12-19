@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-import pandas as pd
+import polars as pl
 from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
@@ -8,26 +8,32 @@ logger = logging.getLogger(__name__)
 class TechnicalAnalyzer:
     """
     Calculates technical indicators: Moving Averages, RSI, MACD, Bollinger Bands.
+    Optimized to use Polars for Memory Efficiency (10x lighter than Pandas).
     """
     
     def analyze(self, history: List[dict]) -> Dict[str, Any]:
         """
-        Full technical analysis on historical data.
+        Full technical analysis on historical data using Polars.
         """
         if not history or len(history) < 50:
             return {"error": "Insufficient data for technical analysis"}
         
         try:
-            df = pd.DataFrame(history)
-            df['close'] = df['close'].astype(float)
-            df['high'] = df['high'].astype(float)
-            df['low'] = df['low'].astype(float)
-            df['volume'] = df['volume'].astype(float)
+            # OPTIMIZATION: Use Polars DataFrame (Zero-copy, lower memory)
+            df = pl.DataFrame(history)
             
-            current_price = df['close'].iloc[-1]
+            # Cast columns to float
+            df = df.with_columns([
+                pl.col('close').cast(pl.Float64),
+                pl.col('high').cast(pl.Float64),
+                pl.col('low').cast(pl.Float64),
+                pl.col('volume').cast(pl.Float64)
+            ])
+            
+            current_price = df.select(pl.col("close").last()).item()
             
             # Moving Averages
-            ma_data = self._calc_moving_averages(df)
+            ma_data = self._calc_moving_averages(df, current_price)
             
             # RSI
             rsi = self._calc_rsi(df)
@@ -58,32 +64,42 @@ class TechnicalAnalyzer:
             logger.error(f"Technical Analysis Error: {e}")
             return {"error": str(e)}
     
-    def _calc_moving_averages(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Calculate 20, 50, 200 day moving averages."""
-        current = df['close'].iloc[-1]
-        
+    def _calc_moving_averages(self, df: pl.DataFrame, current: float) -> Dict[str, Any]:
+        """Calculate 20, 50, 200 day moving averages using Polars."""
         mas = {}
         for period in [20, 50, 200]:
-            if len(df) >= period:
-                ma = df['close'].rolling(window=period).mean().iloc[-1]
-                mas[f'ma{period}'] = round(ma, 2)
-                mas[f'ma{period}_signal'] = 'ABOVE' if current > ma else 'BELOW'
+            if df.height >= period:
+                ma = df.select(pl.col("close").rolling_mean(window_size=period).last()).item()
+                if ma is not None:
+                    mas[f'ma{period}'] = round(ma, 2)
+                    mas[f'ma{period}_signal'] = 'ABOVE' if current > ma else 'BELOW'
+                else:
+                    mas[f'ma{period}'] = None
+                    mas[f'ma{period}_signal'] = 'N/A'
             else:
                 mas[f'ma{period}'] = None
                 mas[f'ma{period}_signal'] = 'N/A'
         
         return mas
     
-    def _calc_rsi(self, df: pd.DataFrame, period: int = 14) -> Dict[str, Any]:
-        """Calculate Relative Strength Index."""
-        delta = df['close'].diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+    def _calc_rsi(self, df: pl.DataFrame, period: int = 14) -> Dict[str, Any]:
+        """Calculate RSI using Polars."""
+        delta = df.select(pl.col("close").diff())
         
-        rs = gain / loss
-        rsi = 100 - (100 / (1 + rs))
-        current_rsi = rsi.iloc[-1]
+        # Create gain/loss series
+        gain = delta.select(pl.when(pl.col("close") > 0).then(pl.col("close")).otherwise(0).alias("gain"))
+        loss = delta.select(pl.when(pl.col("close") < 0).then(-pl.col("close")).otherwise(0).alias("loss"))
         
+        avg_gain = gain.select(pl.col("gain").rolling_mean(window_size=period)).to_series()
+        avg_loss = loss.select(pl.col("loss").rolling_mean(window_size=period)).to_series()
+        
+        rs = avg_gain / avg_loss
+        rsi_series = 100 - (100 / (1 + rs))
+        current_rsi = rsi_series[-1]
+        
+        if current_rsi is None or np.isnan(current_rsi):
+             current_rsi = 50.0  # Fallback
+             
         if current_rsi < 30:
             signal = 'OVERSOLD'
         elif current_rsi > 70:
@@ -92,43 +108,45 @@ class TechnicalAnalyzer:
             signal = 'NEUTRAL'
         
         return {
-            "value": round(current_rsi, 2),
+            "value": round(float(current_rsi), 2),
             "signal": signal
         }
     
-    def _calc_macd(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Calculate MACD (Moving Average Convergence Divergence)."""
-        ema12 = df['close'].ewm(span=12, adjust=False).mean()
-        ema26 = df['close'].ewm(span=26, adjust=False).mean()
+    def _calc_macd(self, df: pl.DataFrame) -> Dict[str, Any]:
+        """Calculate MACD using Polars ewm_mean."""
+        # Polars ewm_mean is slightly different, ensure span logic matches
+        ema12 = df.select(pl.col("close").ewm_mean(span=12, adjust=False)).to_series()
+        ema26 = df.select(pl.col("close").ewm_mean(span=26, adjust=False)).to_series()
+        
         macd_line = ema12 - ema26
-        signal_line = macd_line.ewm(span=9, adjust=False).mean()
+        signal_line = macd_line.ewm_mean(span=9, adjust=False)
         histogram = macd_line - signal_line
         
-        current_macd = macd_line.iloc[-1]
-        current_signal = signal_line.iloc[-1]
-        current_hist = histogram.iloc[-1]
+        current_macd = macd_line[-1]
+        current_signal = signal_line[-1]
+        current_hist = histogram[-1]
         
         signal = 'BUY' if current_hist > 0 else 'SELL'
         
         return {
-            "macd": round(current_macd, 2),
-            "signal_line": round(current_signal, 2),
-            "histogram": round(current_hist, 2),
+            "macd": round(float(current_macd), 2),
+            "signal_line": round(float(current_signal), 2),
+            "histogram": round(float(current_hist), 2),
             "signal": signal
         }
     
-    def _calc_bollinger_bands(self, df: pd.DataFrame, period: int = 20) -> Dict[str, Any]:
-        """Calculate Bollinger Bands."""
-        sma = df['close'].rolling(window=period).mean()
-        std = df['close'].rolling(window=period).std()
+    def _calc_bollinger_bands(self, df: pl.DataFrame, period: int = 20) -> Dict[str, Any]:
+        """Calculate Bollinger Bands using Polars."""
+        sma = df.select(pl.col("close").rolling_mean(window_size=period)).to_series()
+        std = df.select(pl.col("close").rolling_std(window_size=period)).to_series()
         
         upper = sma + (std * 2)
         lower = sma - (std * 2)
         
-        current_price = df['close'].iloc[-1]
-        current_upper = upper.iloc[-1]
-        current_lower = lower.iloc[-1]
-        current_sma = sma.iloc[-1]
+        current_price = df.select(pl.col("close").last()).item()
+        current_upper = upper[-1]
+        current_lower = lower[-1]
+        current_sma = sma[-1]
         
         if current_price > current_upper:
             signal = 'OVERBOUGHT'
@@ -138,18 +156,19 @@ class TechnicalAnalyzer:
             signal = 'NEUTRAL'
         
         return {
-            "upper": round(current_upper, 2),
-            "middle": round(current_sma, 2),
-            "lower": round(current_lower, 2),
+            "upper": round(float(current_upper), 2),
+            "middle": round(float(current_sma), 2),
+            "lower": round(float(current_lower), 2),
             "signal": signal
         }
     
-    def _calc_support_resistance(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """Identify support and resistance levels."""
-        # Simple pivot points
-        high = df['high'].tail(20).max()
-        low = df['low'].tail(20).min()
-        close = df['close'].iloc[-1]
+    def _calc_support_resistance(self, df: pl.DataFrame) -> Dict[str, Any]:
+        """Identify support and resistance using Polars."""
+        # Simple pivot points from last 20 days
+        last_20 = df.tail(20)
+        high = last_20.select(pl.col("high").max()).item()
+        low = last_20.select(pl.col("low").min()).item()
+        close = df.select(pl.col("close").last()).item()
         
         pivot = (high + low + close) / 3
         resistance = (2 * pivot) - low

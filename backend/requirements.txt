@@ -18,6 +18,7 @@ beautifulsoup4
 lxml
 requests
 fake-useragent
+polars
 
 # Security & Auth
 python-jose[cryptography]

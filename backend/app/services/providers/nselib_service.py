@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from app.interfaces.market_data import BaseDataSource
-from nselib import capital_market
+# nselib imported lazily to save memory
 import logging
 import asyncio
 
@@ -15,7 +15,12 @@ class NSELibProvider(BaseDataSource):
         try:
             # Run blocking call in executor
             loop = asyncio.get_event_loop()
-            data = await loop.run_in_executor(None, lambda: capital_market.price_volume_and_deliverable_position_data(symbol=symbol, period='1D'))
+            
+            def fetch_price():
+                from nselib import capital_market
+                return capital_market.price_volume_and_deliverable_position_data(symbol=symbol, period='1D')
+            
+            data = await loop.run_in_executor(None, fetch_price)
             
             # Validate DataFrame
             if data is None or data.empty:
@@ -54,7 +59,13 @@ class NSELibProvider(BaseDataSource):
     async def get_stock_details(self, symbol: str) -> Dict[str, Any]:
         try:
             loop = asyncio.get_event_loop()
-            data = await loop.run_in_executor(None, lambda: capital_market.price_volume_and_deliverable_position_data(symbol=symbol, period='1D'))
+            loop = asyncio.get_event_loop()
+            
+            def fetch_details():
+                from nselib import capital_market
+                return capital_market.price_volume_and_deliverable_position_data(symbol=symbol, period='1D')
+            
+            data = await loop.run_in_executor(None, fetch_details)
             
             if data is not None and not data.empty:
                 latest = data.iloc[-1].to_dict()
