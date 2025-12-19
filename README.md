@@ -1,4 +1,4 @@
-# Clarity Financial AI 🚀
+# Clarity Financial Analysis 🚀
 
 Clarity is an advanced AI-powered financial analytics platform dedicated to the Indian Stock Market. It combines real-time data, complex quantitative analysis, and generative AI to provide actionable investment insights.
 
