@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str
     SUPABASE_JWT_SECRET: str | None = None
     LOG_LEVEL: str = "WARNING"
-    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173,https://clarity-invest.vercel.app"
 
     @property
     def origins_list(self) -> list[str]:
