@@ -8,8 +8,8 @@ import FloatingAdvisor from '@/components/ui/FloatingAdvisor'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Clarity AI | Financial Advisor',
-  description: 'AI-powered financial insights for the Indian market',
+  title: 'Clarity | The Ease of Stock Research',
+  description: 'Uncomplicate the market with AI-powered financial insights.',
 }
 
 export default function RootLayout({
