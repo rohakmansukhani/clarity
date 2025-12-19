@@ -13,7 +13,7 @@ def setup_logging():
     
     # Configure root logger
     logging.basicConfig(
-        level=logging.INFO,
+        level=log_level,
         format='%(levelname)s:%(name)s:%(message)s',
         handlers=[
             logging.StreamHandler()
@@ -29,8 +29,9 @@ def setup_logging():
     logging.getLogger('httpcore').setLevel(logging.WARNING)
     
     # Set specific loggers
-    logging.getLogger("uvicorn").setLevel(logging.INFO)
-    logging.getLogger("fastapi").setLevel(logging.INFO)
+    logging.getLogger("uvicorn").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING) # Disable access logs
+    logging.getLogger("fastapi").setLevel(logging.WARNING)
     
     # Silence noisy libraries
     logging.getLogger("httpcore").setLevel(logging.WARNING)
