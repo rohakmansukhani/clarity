@@ -253,33 +253,50 @@ class AIService:
             if "tool_use_failed" in error_str and "failed_generation" in error_str:
                 logger.warning(f"Intercepted Tool Use Failure: {e}")
                 
-                # Attempt to extract the raw generation
-                import re
-                try:
-                    # Parse out the 'failed_generation' content from the stringified dict/error
-                    # This is a heuristic based on the error message structure
-                    match = re.search(r"'failed_generation':\s*'([^']*)'", error_str)
+                # Attempt to extract the raw generation safely
+                raw_gen = None
+                
+                # 1. Try accessing the structure directly (Best method)
+                if hasattr(e, 'body') and isinstance(e.body, dict):
+                    # structure: {'error': {'failed_generation': '...'}}
+                    raw_gen = e.body.get('error', {}).get('failed_generation')
+                elif hasattr(e, 'response') and hasattr(e.response, 'json'):
+                    try:
+                        err_json = e.response.json()
+                        raw_gen = err_json.get('error', {}).get('failed_generation')
+                    except:
+                        pass
+                
+                # 2. Key-based extraction if body access failed
+                if not raw_gen:
+                    import re
+                    # Improved regex to handle escaped quotes: 'failed_generation': '...content...'
+                    # Matches content until a non-escaped quote
+                    match = re.search(r"'failed_generation':\s*'((?:[^'\\]|\\.)*)'", error_str)
                     if not match:
-                        match = re.search(r'"failed_generation":\s*"([^"]*)"', error_str)
+                        match = re.search(r'"failed_generation":\s*"((?:[^"\\]|\\.)*)"', error_str)
                     
                     if match:
                         raw_gen = match.group(1)
-                        # Remove newlines for easier regex
-                        raw_gen = raw_gen.replace("\\n", "")
+                
+                if raw_gen:
+                        # Remove newlines for easier regex in the function matcher
+                        # formatting cleaned_gen for processing
+                        cleaned_gen = raw_gen.replace("\\n", " ").replace("\n", " ")
                         
                         # Regex to parse <function=NAME{ARGS}></function>
                         # We extract the name first, then find the JSON block {}
-                        name_match = re.search(r"<function=(\w+)", raw_gen)
+                        name_match = re.search(r"<function=(\w+)", cleaned_gen)
                         
                         if name_match:
                             func_name = name_match.group(1)
                             
                             # Find the JSON part: Look for the first '{' and the last '}'
-                            start_idx = raw_gen.find('{')
-                            end_idx = raw_gen.rfind('}')
+                            start_idx = cleaned_gen.find('{')
+                            end_idx = cleaned_gen.rfind('}')
                             
                             if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-                                args_str = raw_gen[start_idx:end_idx+1]
+                                args_str = cleaned_gen[start_idx:end_idx+1]
                                 
                                 # Try to fix truncated JSON if necessary, though usually it's complete enough
                                 try:
