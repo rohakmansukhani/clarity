@@ -91,14 +91,30 @@ export default function AnalysisPage() {
             setToast({ open: true, message: 'Maximum 5 stocks allowed', severity: 'error' });
             return;
         }
-        setSelectedStocks([...selectedStocks, upperTicker]);
+
+        const newStocks = [...selectedStocks, upperTicker];
+        setSelectedStocks(newStocks);
         setSearch('');
         setSearchResults([]);
         setShowSearchOverlay(false);
+
+        // Auto-update comparison if already active
+        if (isComparing) {
+            handleCompare(newStocks);
+        }
     };
 
     const handleRemoveStock = (ticker: string) => {
-        setSelectedStocks(selectedStocks.filter(s => s !== ticker));
+        const newStocks = selectedStocks.filter(s => s !== ticker);
+        setSelectedStocks(newStocks);
+
+        // Auto-update comparison if already active
+        if (isComparing && newStocks.length >= 2) {
+            handleCompare(newStocks);
+        } else if (isComparing && newStocks.length < 2) {
+            // Exit comparison if less than 2 stocks
+            setIsComparing(false);
+        }
     };
 
 
@@ -149,7 +165,7 @@ export default function AnalysisPage() {
                     {!isComparing && (
                         <Box sx={{ textAlign: 'center', mb: 10, mt: 4 }}>
                             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }}>
-                                <Typography variant="overline" sx={{ color: '#00E5FF', fontWeight: 700, letterSpacing: '0.2em', mb: 1, display: 'block' }}>
+                                <Typography variant="overline" sx={{ color: '#00E5FF', fontWeight: 700, letterSpacing: '0.2em', mb: 1, display: 'block', textShadow: '0 0 40px rgba(0, 229, 255, 0.5)' }}>
                                     MARKET INTELLIGENCE
                                 </Typography>
                                 <Typography variant="h2" sx={{ fontWeight: 800, letterSpacing: '-0.03em', mb: 2, background: '#ffffff', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
