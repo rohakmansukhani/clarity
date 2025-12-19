@@ -90,6 +90,10 @@ NICKNAME_MAP = {
     "TITAN": "TITAN",
     "SUN PHARMA": "SUNPHARMA",
     "ULTRATECH": "ULTRACEMCO",
+    # Reliance variations
+    "RELIANCE INDUSTRIES": "RELIANCE",
+    "RELIANCE INDUSTRIES LTD": "RELIANCE",
+    "RELIANCE IND": "RELIANCE",
     # Tata Motors demerger (Dec 2024)
     "TATA MOTORS": "TMPV",  # Default to Passenger Vehicles
     "TATAMOTORS": "TMPV",
