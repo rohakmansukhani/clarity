@@ -184,6 +184,8 @@ class AIService:
                     elif function_name == "compare_stocks":
                         from app.services.recommendation.comparison_engine import ComparisonEngine
                         tool_output = await ComparisonEngine().compare_stocks(function_args.get("symbols"))
+                    elif function_name == "get_top_movers":
+                        tool_output = await market_service.get_top_movers()
                     
                     messages.append({
                         "tool_call_id": tool_call.id,

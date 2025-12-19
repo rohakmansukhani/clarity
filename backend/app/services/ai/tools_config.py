@@ -88,5 +88,13 @@ TOOLS_CONFIG = [
                 "required": ["symbols"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_top_movers",
+            "description": "Get top gaining and losing stocks in the market (Nifty 50). Use this when user asks for 'market movers', 'top gainers', or 'top losers'.",
+            "parameters": {"type": "object", "properties": {}}
+        }
     }
 ]

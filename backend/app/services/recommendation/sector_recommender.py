@@ -44,10 +44,16 @@ class SectorRecommender:
             logger.info(f"Analyzing {len(stocks)} stocks in {matched_sector} sector")
             
             # Step 2: Analyze stocks (limit to top 20 for performance)
-            # If sector has 100 stocks, analyze top 20 by market cap first
             stocks_to_analyze = stocks[:20]
             
-            tasks = [self.market_service.get_comprehensive_analysis(sym) for sym in stocks_to_analyze]
+            # Use Semaphore to limit concurrency (Memory Safety)
+            sem = asyncio.Semaphore(5)
+            
+            async def limited_analyze(symbol):
+                async with sem:
+                    return await self.market_service.get_comprehensive_analysis(symbol)
+            
+            tasks = [limited_analyze(sym) for sym in stocks_to_analyze]
             analyses = await asyncio.gather(*tasks, return_exceptions=True)
             
             # Step 3: Score and rank
