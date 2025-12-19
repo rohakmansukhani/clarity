@@ -31,9 +31,10 @@ interface DiscoveryChatProps {
 export default function DiscoveryChat({
     messages,
     onCreatePortfolio,
-    loading // Destructure loading if needed or add to interface if missing in component signature modification
+    loading
 }: DiscoveryChatProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [userInitial, setUserInitial] = React.useState('R'); // Default fallback
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,6 +43,26 @@ export default function DiscoveryChat({
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    // Load User Initial from LocalStorage (Matches Dashboard Logic)
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                const parsedUser = JSON.parse(storedUser);
+                const name = parsedUser.user_metadata?.full_name ||
+                    parsedUser.user_metadata?.display_name ||
+                    parsedUser.full_name ||
+                    parsedUser.email;
+
+                if (name) {
+                    setUserInitial(name.charAt(0).toUpperCase());
+                }
+            } catch (e) {
+                console.error("Failed to parse user for avatar", e);
+            }
+        }
+    }, []);
 
     return (
         <Box sx={{
@@ -86,7 +107,7 @@ export default function DiscoveryChat({
                                     {message.role === 'assistant' ? (
                                         <ClarityLogoPurple size={24} />
                                     ) : (
-                                        'R'
+                                        userInitial
                                     )}
                                 </Avatar>
 
