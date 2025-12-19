@@ -57,7 +57,8 @@ def login(request: Request, user: UserAuth, supabase: Client = Depends(get_supab
             "expires_in": response.session.expires_in,
             "user": {
                 "id": response.user.id,
-                "email": response.user.email
+                "email": response.user.email,
+                "user_metadata": response.user.user_metadata
             }
         }
     except Exception as e:

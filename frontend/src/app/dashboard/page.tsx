@@ -24,9 +24,20 @@ export default function DashboardPage() {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
             const parsedUser = JSON.parse(storedUser);
-            // Check for metadata name first, then fallback
-            const name = parsedUser.user_metadata?.full_name || parsedUser.user_metadata?.display_name || parsedUser.full_name || parsedUser.email?.split('@')[0] || 'Trader';
-            // Store simplified object for display if needed, or just use parsedUser
+
+            // Determine Display Name (Strict: Metadata Only)
+            let name = parsedUser.user_metadata?.full_name ||
+                parsedUser.user_metadata?.display_name ||
+                parsedUser.full_name;
+
+            // If name exists, take the First Name only
+            if (name) {
+                name = name.split(' ')[0];
+                // Capitalize first letter just in case
+                name = name.charAt(0).toUpperCase() + name.slice(1);
+            }
+
+            // If no name found, display_name will be undefined/null -> falls back to 'Trader' in JSX
             setUser({ ...parsedUser, display_name: name });
         }
 
@@ -92,7 +103,7 @@ export default function DashboardPage() {
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: { xs: 4, md: 8 }, gap: { xs: 3, md: 0 } }}>
                 <Box>
                     <Typography variant="h3" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 0.5, color: '#fff', fontSize: { xs: '2rem', md: '3rem' } }}>
-                        {greeting}, {user?.display_name?.split(' ')[0] || 'Trader'}
+                        {greeting}, {user?.display_name || 'Trader'}
                     </Typography>
                     <Typography variant="body1" sx={{ color: '#666', fontWeight: 500 }}>
                         Market is <span style={{ color: statusObj.color, fontWeight: 700 }}>{statusObj.text}</span> ({statusObj.sub}).
