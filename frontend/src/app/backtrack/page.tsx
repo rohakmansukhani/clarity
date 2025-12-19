@@ -252,7 +252,7 @@ export default function BacktrackPage() {
                                 </Box>
 
                                 <Box>
-                                    <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+                                    <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
                                         <Typography
                                             onClick={() => setInputMode('shares')}
                                             sx={{
