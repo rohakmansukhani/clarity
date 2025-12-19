@@ -12,7 +12,7 @@ class NSELibProvider(BaseDataSource):
     BROKEN_TICKERS = [
         'PPAP', 'AXISBANK', 'BANKA', 'CAPITALSFB', '21STCENMGM', '20MICRONS', 
         '3PLAND', 'A2ZINFRA', 'AAATECH', 'AAKASH', 'AARON', 'AARTISURF', 
-        'AARVI', 'ANUHPHR'
+        'AARVI', 'ANUHPHR','BALPHARMA','BIOFILCHEM''
     ]
 
     @property
