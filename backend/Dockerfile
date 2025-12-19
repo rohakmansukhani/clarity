@@ -1,6 +1,10 @@
 # Use official Python runtime as a parent image
 FROM python:3.9-slim
 
+# Set Timezone to IST
+ENV TZ=Asia/Kolkata
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 # Set work directory
 WORKDIR /app
 
