@@ -325,9 +325,26 @@ class AIService:
                                         max_tokens=1500
                                     )
                                     
+                                    response_text = final_completion.choices[0].message.content.strip()
+
+                                    # Detect switch suggestions (COPY OF MAIN LOGIC)
+                                    suggest_switch = None
+                                    if "__SUGGEST_SWITCH_TO_DISCOVERY_HUB__" in response_text:
+                                        suggest_switch = {
+                                            "to": "discovery_hub",
+                                            "reason": "sector_research"
+                                        }
+                                        response_text = response_text.replace("__SUGGEST_SWITCH_TO_DISCOVERY_HUB__", "").strip()
+                                    elif "__SUGGEST_SWITCH_TO_ADVISOR__" in response_text:
+                                        suggest_switch = {
+                                            "to": "advisor",
+                                            "reason": "stock_analysis"
+                                        }
+                                        response_text = response_text.replace("__SUGGEST_SWITCH_TO_ADVISOR__", "").strip()
+                                    
                                     return {
-                                        "response": final_completion.choices[0].message.content.strip(),
-                                        "suggest_switch": None
+                                        "response": response_text,
+                                        "suggest_switch": suggest_switch
                                     }
                                     
                                 except json.JSONDecodeError:
