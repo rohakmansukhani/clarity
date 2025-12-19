@@ -9,6 +9,7 @@ router = APIRouter()
 class UserAuth(BaseModel):
     email: str
     password: str
+    full_name: str | None = None
 
 @router.post("/register", summary="Register a new user via Supabase")
 @limiter.limit("5/minute")
@@ -17,7 +18,13 @@ def register(request: Request, user: UserAuth, supabase: Client = Depends(get_su
         # Supabase Auth Sign Up
         response = supabase.auth.sign_up({
             "email": user.email, 
-            "password": user.password
+            "password": user.password,
+            "options": {
+                "data": {
+                    "full_name": user.full_name,
+                    "display_name": user.full_name # Some providers look for this
+                }
+            }
         })
         
         # Check if user is created

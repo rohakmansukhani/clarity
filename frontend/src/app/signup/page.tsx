@@ -24,7 +24,8 @@ export default function SignupPage() {
         try {
             await api.post('/auth/register', {
                 email,
-                password
+                password,
+                full_name: name
             });
             // Redirect to "Check Email" page
             router.push('/auth/check-email');

@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogActions, Button, Typography, Box } from '@mui/material';
+import { Dialog, DialogContent, DialogActions, Button, Typography, Box, useTheme, useMediaQuery } from '@mui/material';
 import { AlertTriangle } from 'lucide-react';
 
 export default function DisclaimerModal() {
     const [open, setOpen] = useState(false);
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     useEffect(() => {
         // Check if user has already acknowledged the disclaimer IN THIS SESSION
@@ -23,14 +25,19 @@ export default function DisclaimerModal() {
     return (
         <Dialog
             open={open}
-            fullScreen
+            fullScreen={isMobile}
+            maxWidth="md"
+            fullWidth
             PaperProps={{
                 sx: {
                     bgcolor: '#0B0B0B',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    border: { md: '1px solid #333' },
+                    borderRadius: { md: 4 },
+                    maxHeight: { md: '600px' } // Prevent it from being too tall on desktop
                 }
             }}
         >
