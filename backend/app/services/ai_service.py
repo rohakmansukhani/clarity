@@ -372,8 +372,7 @@ class AIService:
                                     logger.error(f"Failed to parse args from hallucination: {args_str}")
                             else:
                                 logger.warning(f"Could not find JSON args in: {raw_gen}")
-                except Exception as parse_error:
-                    logger.error(f"Fallback parsing failed: {parse_error}")
+
 
             logger.error(f"Groq Agent Error: {e}")
             return {
