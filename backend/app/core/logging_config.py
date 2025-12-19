@@ -1,15 +1,13 @@
-import logging
-import sys
-from app.core.config import settings
+import warnings
+
+# Suppress all warnings (including pandas FutureWarnings)
+warnings.filterwarnings("ignore")
 
 def setup_logging():
     """Configure application logging."""
     
     # Log level from config
-    log_level = getattr(logging, settings.LOG_LEVEL, logging.INFO)
-    
-    # Format
-    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    log_level = getattr(logging, settings.LOG_LEVEL, logging.WARNING)
     
     # Configure root logger
     logging.basicConfig(
@@ -17,7 +15,8 @@ def setup_logging():
         format='%(levelname)s:%(name)s:%(message)s',
         handlers=[
             logging.StreamHandler()
-        ]
+        ],
+        force=True # Ensure we overwrite any existing handlers (e.g. from Uvicorn)
     )
     
     # Disable verbose DEBUG logging from third-party libraries
