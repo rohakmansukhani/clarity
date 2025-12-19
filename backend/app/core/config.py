@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     
     # Other Services
     GROQ_API_KEY: str | None = None
-    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_URL: str
     DATABASE_URL: str | None = None # Kept for reference or explicit DB access if needed
     
     class Config:
