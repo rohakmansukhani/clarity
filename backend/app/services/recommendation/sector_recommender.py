@@ -47,11 +47,19 @@ class SectorRecommender:
             stocks_to_analyze = stocks[:20]
             
             # Use Semaphore to limit concurrency (Memory Safety)
-            sem = asyncio.Semaphore(5)
+            # Reduced from 5 -> 3 based on 500MB constraint
+            sem = asyncio.Semaphore(3)
+            
+            import gc
             
             async def limited_analyze(symbol):
                 async with sem:
-                    return await self.market_service.get_comprehensive_analysis(symbol)
+                    try:
+                        result = await self.market_service.get_comprehensive_analysis(symbol)
+                        return result
+                    finally:
+                        # Force garbage collection after EACH stock to free DataFrame memory immediately
+                        gc.collect()
             
             tasks = [limited_analyze(sym) for sym in stocks_to_analyze]
             analyses = await asyncio.gather(*tasks, return_exceptions=True)

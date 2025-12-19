@@ -5,6 +5,10 @@ from app.core.config import settings
 from app.core.redis_client import RedisService
 from app.services.consensus_engine import ConsensusEngine
 from app.core.scheduler import scheduler
+import pandas as pd
+
+# OPTIMIZATION: Disable Pandas Copy-on-Write to reduce memory overhead
+pd.options.mode.copy_on_write = False
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

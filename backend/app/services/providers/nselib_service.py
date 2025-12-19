@@ -44,7 +44,11 @@ class NSELibProvider(BaseDataSource):
                 
             return price
         except Exception as e:
-            logger.error(f"NSELib Error for {symbol}: {e}")
+            # NSELib library internal errors are common for some tickers
+            if "str accessor with string values" in str(e):
+                logger.warning(f"NSELib parsing issue for {symbol}: {e}")
+            else:
+                logger.warning(f"NSELib Error for {symbol}: {e}")
             return 0.0
 
     async def get_stock_details(self, symbol: str) -> Dict[str, Any]:
@@ -72,5 +76,8 @@ class NSELibProvider(BaseDataSource):
                 return latest
             return {}
         except Exception as e:
-            logger.error(f"NSELib Details Error for {symbol}: {e}")
+            if "str accessor with string values" in str(e):
+                logger.warning(f"NSELib parsing issue for {symbol}: {e}")
+            else:
+                logger.warning(f"NSELib Details Error for {symbol}: {e}")
             return {}
