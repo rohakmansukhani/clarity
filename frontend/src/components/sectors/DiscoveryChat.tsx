@@ -150,9 +150,15 @@ export default function DiscoveryChat({
                                         <ReactMarkdown>{message.content}</ReactMarkdown>
                                     </Box>
 
-                                    {/* Switch AI Button Removed as per request */}
-
-
+                                    <Box sx={{ mt: 2 }}>
+                                        {message.suggest_switch && (
+                                            <SwitchAIButton
+                                                target={message.suggest_switch.to}
+                                                originalQuery={message.suggest_switch.original_query || ''}
+                                                reason={message.suggest_switch.reason}
+                                            />
+                                        )}
+                                    </Box>
                                     <Typography
                                         variant="caption"
                                         sx={{
@@ -229,6 +235,6 @@ export default function DiscoveryChat({
 
                 <div ref={messagesEndRef} />
             </Box>
-        </Box>
+        </Box >
     );
 }
