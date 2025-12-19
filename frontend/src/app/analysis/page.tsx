@@ -134,7 +134,7 @@ export default function AnalysisPage() {
     const quickInfo = stockPrices[search.toUpperCase()];
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#000' }}>
+        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#000000' }}>
             <Sidebar />
             <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 6 }, ml: { md: '140px' }, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
@@ -295,7 +295,7 @@ export default function AnalysisPage() {
                             </Box>
 
                             {/* AI Verdict */}
-                            <Paper sx={{ p: 4, borderRadius: 6, bgcolor: 'rgba(0, 229, 255, 0.03)', border: '1px solid rgba(0, 229, 255, 0.1)', mb: 4 }}>
+                            <Paper sx={{ p: 4, borderRadius: 6, bgcolor: '#0A0A0A', border: '1px solid #222', mb: 4 }}>
                                 <AIVerdict comparisonData={comparisonData} selectedStocks={selectedStocks} />
                             </Paper>
                         </motion.div>

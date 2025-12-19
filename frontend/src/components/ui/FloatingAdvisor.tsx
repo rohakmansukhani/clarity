@@ -264,7 +264,7 @@ export default function FloatingAdvisor() {
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => openQuickChat()}
-                            className="fixed bottom-6 right-6 z-50 bg-[#1A1A1A] border border-white/10 p-3 rounded-full shadow-2xl hover:border-[#00E5FF] transition-colors group"
+                            className="fixed bottom-6 right-6 z-50 bg-[#1A1A1A] border border-white/10 p-3 rounded-full shadow-2xl hover:border-[#00E5FF] transition-colors group hidden md:flex"
                         >
                             <div className="absolute inset-0 rounded-full bg-[#00E5FF] opacity-0 group-hover:opacity-10 transition-opacity" />
                             <ClarityLogo size={32} />

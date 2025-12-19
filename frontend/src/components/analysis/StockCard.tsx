@@ -30,7 +30,7 @@ export function StockCard({ symbol, companyName, stockData, isComparing, onRemov
                         bgcolor: '#0A0A0A',
                         border: '1px solid #222',
                         borderRadius: 4,
-                        height: 240,
+                        height: { xs: 180, md: 240 },
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
