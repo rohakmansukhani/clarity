@@ -114,6 +114,26 @@ class ComparisonEngine:
             equity_to_debt_stocks = [(k, v['equity_to_debt']) for k, v in data.items() if isinstance(v['equity_to_debt'], (int, float))]
             if equity_to_debt_stocks:
                 winners["best_equity_to_debt"] = max(equity_to_debt_stocks, key=lambda x: x[1])[0]
+
+            # Highest Market Cap
+            mcap_stocks = [(k, v['market_cap']) for k, v in data.items() if isinstance(v['market_cap'], (int, float))]
+            if mcap_stocks:
+                winners["highest_market_cap"] = max(mcap_stocks, key=lambda x: x[1])[0]
+
+            # Lowest P/E (Value) - Filter > 0
+            pe_stocks = [(k, v['pe_ratio']) for k, v in data.items() if isinstance(v['pe_ratio'], (int, float)) and v['pe_ratio'] > 0]
+            if pe_stocks:
+                winners["lowest_pe"] = min(pe_stocks, key=lambda x: x[1])[0]
+            
+            # Highest ROE
+            roe_stocks = [(k, v['roe']) for k, v in data.items() if isinstance(v['roe'], (int, float))]
+            if roe_stocks:
+                winners["highest_roe"] = max(roe_stocks, key=lambda x: x[1])[0]
+
+            # Highest Dividend Yield
+            div_stocks = [(k, v['dividend_yield']) for k, v in data.items() if isinstance(v['dividend_yield'], (int, float))]
+            if div_stocks:
+                winners["highest_dividend"] = max(div_stocks, key=lambda x: x[1])[0]
             
             return winners
         except Exception as e:

@@ -127,7 +127,7 @@ export default function BacktrackPage() {
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 6 }}>
                     {/* Input Section */}
                     <Box component={motion.div} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-                        <Card sx={{ bgcolor: '#0A0A0A', border: '1px solid #222', borderRadius: 4, p: 2, overflow: 'visible' }}>
+                        <Card sx={{ bgcolor: '#0A0A0A', border: '1px solid #222', borderRadius: 4, p: 4, overflow: 'visible' }}>
                             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 <Autocomplete
                                     freeSolo

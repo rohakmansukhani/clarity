@@ -41,7 +41,7 @@ export function ComparisonTable({ comparisonData, selectedStocks }: { comparison
             key: 'market_cap',
             label: 'Market Cap',
             format: (v: any) => typeof v === 'string' ? v : `₹${v}`,
-            winnerKey: null,
+            winnerKey: 'highest_market_cap',
             tooltip: 'Total market value of the company. Large cap (>₹20,000 Cr) is more stable, small cap (<₹5,000 Cr) has higher growth potential.',
             sortable: false
         },
@@ -49,7 +49,7 @@ export function ComparisonTable({ comparisonData, selectedStocks }: { comparison
             key: 'pe_ratio',
             label: 'P/E Ratio',
             format: (v: any) => typeof v === 'number' ? v.toFixed(2) : v,
-            winnerKey: null,
+            winnerKey: 'lowest_pe',
             tooltip: 'Price-to-Earnings ratio. Lower generally means better value. Industry average is 15-25. High P/E may indicate overvaluation or high growth expectations.',
             sortable: true
         },
@@ -57,7 +57,7 @@ export function ComparisonTable({ comparisonData, selectedStocks }: { comparison
             key: 'roe',
             label: 'ROE (%)',
             format: (v: any) => typeof v === 'number' ? v.toFixed(2) + '%' : v,
-            winnerKey: null,
+            winnerKey: 'highest_roe',
             tooltip: 'Return on Equity - how efficiently the company uses shareholder money. Higher is better. > 15% is good, > 20% is excellent.',
             sortable: true
         },
@@ -65,7 +65,7 @@ export function ComparisonTable({ comparisonData, selectedStocks }: { comparison
             key: 'debt_to_equity',
             label: 'Debt/Equity',
             format: (v: any) => typeof v === 'number' ? v.toFixed(2) : v,
-            winnerKey: null,
+            winnerKey: 'best_equity_to_debt',
             tooltip: 'Debt-to-Equity ratio measures financial leverage. Lower is generally safer. < 1 is good, < 0.5 is very safe, > 2 may be risky.',
             sortable: true
         },
@@ -73,7 +73,7 @@ export function ComparisonTable({ comparisonData, selectedStocks }: { comparison
             key: 'dividend_yield',
             label: 'Div Yield (%)',
             format: (v: any) => typeof v === 'number' ? v.toFixed(2) + '%' : v,
-            winnerKey: null,
+            winnerKey: 'highest_dividend',
             tooltip: 'Annual dividend as % of stock price. Higher means more income. 2-4% is typical, > 5% is high (but check sustainability).',
             sortable: true
         },
