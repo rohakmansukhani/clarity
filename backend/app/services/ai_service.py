@@ -327,20 +327,24 @@ class AIService:
                                     
                                     response_text = final_completion.choices[0].message.content.strip()
 
-                                    # Detect switch suggestions (COPY OF MAIN LOGIC)
+                                    # Detect switch suggestions (COPY OF MAIN LOGIC + Phrase Detection)
                                     suggest_switch = None
+                                    
+                                    # 1. Discovery Hub Switch
                                     if "__SUGGEST_SWITCH_TO_DISCOVERY_HUB__" in response_text:
-                                        suggest_switch = {
-                                            "to": "discovery_hub",
-                                            "reason": "sector_research"
-                                        }
+                                        suggest_switch = {"to": "discovery_hub", "reason": "sector_research"}
                                         response_text = response_text.replace("__SUGGEST_SWITCH_TO_DISCOVERY_HUB__", "").strip()
+                                    elif "try the **Discovery Hub**" in response_text or "try the Discovery Hub" in response_text:
+                                        # Fallback phrase detection
+                                        suggest_switch = {"to": "discovery_hub", "reason": "sector_research"}
+                                    
+                                    # 2. Advisor Switch
                                     elif "__SUGGEST_SWITCH_TO_ADVISOR__" in response_text:
-                                        suggest_switch = {
-                                            "to": "advisor",
-                                            "reason": "stock_analysis"
-                                        }
+                                        suggest_switch = {"to": "advisor", "reason": "stock_analysis"}
                                         response_text = response_text.replace("__SUGGEST_SWITCH_TO_ADVISOR__", "").strip()
+                                    elif "try the **Clarity Advisor**" in response_text or "try the Clarity Advisor" in response_text:
+                                        # Fallback phrase detection
+                                        suggest_switch = {"to": "advisor", "reason": "stock_analysis"}
                                     
                                     return {
                                         "response": response_text,
