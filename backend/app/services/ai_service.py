@@ -247,8 +247,91 @@ class AIService:
             }
             
         except Exception as e:
+            # Check for Groq Tool Use Failed Error (Hallucinated XML format)
+            # Error format: 400 - {'error': {'code': 'tool_use_failed', 'failed_generation': '<function=...>'}}
+            error_str = str(e)
+            if "tool_use_failed" in error_str and "failed_generation" in error_str:
+                logger.warning(f"Intercepted Tool Use Failure: {e}")
+                
+                # Attempt to extract the raw generation
+                import re
+                try:
+                    # Parse out the 'failed_generation' content from the stringified dict/error
+                    # This is a heuristic based on the error message structure
+                    match = re.search(r"'failed_generation':\s*'([^']*)'", error_str)
+                    if not match:
+                        match = re.search(r'"failed_generation":\s*"([^"]*)"', error_str)
+                    
+                    if match:
+                        raw_gen = match.group(1)
+                        # Remove newlines for easier regex
+                        raw_gen = raw_gen.replace("\\n", "")
+                        
+                        # Regex to parse <function=NAME{ARGS}></function> or <function=NAME{ARGS}>
+                        # Matches: <function=get_stock_details{"symbol": "MRF"}>
+                        # Or: <function=get_stock_details{"symbol": "MRF"}>...</function>
+                        tool_match = re.search(r"<function=(\w+)(.*?)>(?:</function>)?", raw_gen)
+                        
+                        if tool_match:
+                            func_name = tool_match.group(1)
+                            args_str = tool_match.group(2).strip()
+                            
+                            # Try to fix truncated JSON if necessary, though usually it's complete enough
+                            try:
+                                func_args = json.loads(args_str)
+                                logger.info(f"Analyzed Hallucinated Tool Call: {func_name}({func_args})")
+                                
+                                # MANUALLY EXECUTE TOOL
+                                tool_output = None
+                                if func_name == "get_stock_details":
+                                    tool_output = await market_service.get_aggregated_details(func_args.get("symbol"))
+                                elif func_name == "get_comprehensive_analysis":
+                                    tool_output = await market_service.get_comprehensive_analysis(func_args.get("symbol"))
+                                elif func_name == "search_stocks":
+                                    tool_output = await market_service.search_stocks(func_args.get("query"))
+                                elif func_name == "get_market_status":
+                                    tool_output = await market_service.get_market_status()
+                                elif func_name == "get_sector_recommendations":
+                                    from app.services.recommendation.sector_recommender import SectorRecommender
+                                    sector_query = func_args.get("sector_query")
+                                    criteria = func_args.get("criteria", "balanced")
+                                    tool_output = await SectorRecommender().get_top_picks(sector_query, limit=5, criteria=criteria)
+                                elif func_name == "compare_stocks":
+                                    from app.services.recommendation.comparison_engine import ComparisonEngine
+                                    tool_output = await ComparisonEngine().compare_stocks(func_args.get("symbols"))
+                                elif func_name == "get_top_movers":
+                                    tool_output = await market_service.get_top_movers()
+                                
+                                # Add the tool output to messages and get final response
+                                # We treat it as if the model had correctly called it
+                                # But since we can't "insert" a fake tool call into the history easily without ID,
+                                # we just send the output as a system context update or new user message context?
+                                # Better: just ask LLM to synthesize response from this data
+                                
+                                # Construct synthetic prompt for final answer
+                                context_prompt = f"The user asked: '{user_query}'.\nHere is the data from the tool '{func_name}':\n{json.dumps(tool_output, default=str)}\n\nProvide the final answer to the user based on this."
+                                
+                                final_completion = self.client.chat.completions.create(
+                                    messages=[
+                                        {"role": "system", "content": system_prompt},
+                                        {"role": "user", "content": context_prompt}
+                                    ],
+                                    model=self.model,
+                                    max_tokens=1500
+                                )
+                                
+                                return {
+                                    "response": final_completion.choices[0].message.content.strip(),
+                                    "suggest_switch": None
+                                }
+                                
+                            except json.JSONDecodeError:
+                                logger.error(f"Failed to parse args from hallucination: {args_str}")
+                except Exception as parse_error:
+                    logger.error(f"Fallback parsing failed: {parse_error}")
+
             logger.error(f"Groq Agent Error: {e}")
             return {
-                "response": f"I encountered an error: {str(e)}",
+                "response": "I encountered a technical error connecting to the AI service. Please try again.",
                 "suggest_switch": None
             }
