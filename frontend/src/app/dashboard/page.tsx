@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Box, Typography, Grid, Paper, IconButton, TextField, InputAdornment, Button, Tooltip, CircularProgress, Autocomplete } from '@mui/material';
+import { Box, Typography, Grid, Paper, IconButton, TextField, InputAdornment, Button, Tooltip, CircularProgress, Autocomplete, Snackbar, Alert } from '@mui/material';
 import { Search, Bell, Settings, TrendingUp, ArrowUpRight, ArrowDownRight, Zap, MessageSquare, PieChart, Lightbulb } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -15,6 +15,7 @@ export default function DashboardPage() {
     const [topMovers, setTopMovers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchOptions, setSearchOptions] = useState<any[]>([]); // Search Suggestions State
+    const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'warning' | 'error' });
 
     const [user, setUser] = useState<any>(null);
 
@@ -76,6 +77,8 @@ export default function DashboardPage() {
     };
 
     const statusObj = getMarketStatusMessage();
+
+    const handleCloseToast = () => setToast({ ...toast, open: false });
 
     return (
         <Box sx={{ maxWidth: 1600, mx: 'auto', px: { xs: 2, md: 6 }, pb: 4 }}>
@@ -196,7 +199,13 @@ export default function DashboardPage() {
                             icon={Zap}
                             title="Compare Stocks"
                             desc="Compare performance & AI insights"
-                            onClick={() => router.push('/analysis')}
+                            onClick={() => {
+                                if (window.innerWidth < 768) {
+                                    setToast({ open: true, message: 'For the best analytical experience, please access this feature on a tablet or desktop.', severity: 'info' });
+                                } else {
+                                    router.push('/analysis');
+                                }
+                            }}
                             delay={0.1}
                         />
                         <ActionCard
@@ -260,6 +269,12 @@ export default function DashboardPage() {
                 </Grid>
             </Grid>
 
+            {/* Notification Toast */}
+            <Snackbar open={toast.open} autoHideDuration={6000} onClose={handleCloseToast} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+                <Alert onClose={handleCloseToast} severity={toast.severity} sx={{ width: '100%', bgcolor: '#1A1A1A', color: '#fff', '& .MuiAlert-icon': { color: toast.severity === 'error' ? '#EF4444' : '#00E5FF' } }}>
+                    {toast.message}
+                </Alert>
+            </Snackbar>
 
         </Box>
     );

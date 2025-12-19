@@ -13,8 +13,8 @@ export function ComparisonChart({ chartData, selectedStocks, chartPeriod }: Comp
 
     return (
         <>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, pt: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff', letterSpacing: '-0.01em' }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: 2, pt: 2, px: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff', letterSpacing: '-0.01em', mb: { xs: 1, md: 0 } }}>
                     Relative Performance
                 </Typography>
             </Box>

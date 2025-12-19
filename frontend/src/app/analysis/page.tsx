@@ -103,6 +103,12 @@ export default function AnalysisPage() {
 
 
     const handleCompare = async (stocks: string[] = selectedStocks) => {
+        // Feature Restriction: PC/Tablet Only
+        if (window.innerWidth < 768) {
+            setToast({ open: true, message: 'For the best analytical experience, please access this feature on a tablet or desktop.', severity: 'info' });
+            return;
+        }
+
         if (stocks.length >= 2) {
             setIsComparing(true);
             setLoadingComparison(true);
@@ -231,9 +237,9 @@ export default function AnalysisPage() {
                             )}
 
                             {/* Chart */}
-                            <Box sx={{ bgcolor: '#0A0A0A', borderRadius: 6, border: '1px solid #222', p: 3, height: { xs: 350, sm: 450, md: 500 }, mb: 4, position: 'relative' }}>
+                            <Box sx={{ bgcolor: '#0A0A0A', borderRadius: 6, border: '1px solid #222', p: { xs: 1, md: 3 }, height: { xs: 400, sm: 450, md: 500 }, mb: 4, position: 'relative', overflow: 'hidden' }}>
                                 {/* Date Range Selector */}
-                                <Box sx={{ position: 'absolute', top: 20, right: 24, zIndex: 10, display: 'flex', gap: 1 }}>
+                                <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10, display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '60%' }}>
                                     {['1mo', '3mo', '6mo', '1y', '5y'].map((range) => (
                                         <Button
                                             key={range}
