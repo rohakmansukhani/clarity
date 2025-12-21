@@ -291,8 +291,8 @@ class AIService:
                         if name_match:
                             func_name = name_match.group(1)
                             
-                            # Find the JSON part: Look for the first '{' and the last '}'
-                            start_idx = cleaned_gen.find('{')
+                            # Find the JSON part: Look for the first '{' AFTER the function name
+                            start_idx = cleaned_gen.find('{', name_match.end())
                             end_idx = cleaned_gen.rfind('}')
                             
                             if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
