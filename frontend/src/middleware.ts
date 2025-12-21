@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
     // Public paths that don't require authentication
-    const publicPaths = ['/login', '/signup', '/auth/check-email'];
+    const publicPaths = ['/login', '/signup', '/auth/check-email', '/auth/callback'];
     const path = request.nextUrl.pathname;
 
     // Check if the path is static resource or public
