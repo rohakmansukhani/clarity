@@ -21,7 +21,7 @@ export default function LoginPage() {
     const [error, setError] = useState<string | null>(null);
     const controls = useAnimation();
 
-    const handleSocialLogin = async (provider: 'google' | 'apple') => {
+    const handleSocialLogin = async (provider: 'google') => {
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: provider,

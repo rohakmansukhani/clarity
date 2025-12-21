@@ -18,7 +18,7 @@ export default function SignupPage() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
 
-    const handleSocialLogin = async (provider: 'google' | 'apple') => {
+    const handleSocialLogin = async (provider: 'google') => {
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: provider,
