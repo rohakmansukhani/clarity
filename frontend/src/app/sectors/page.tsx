@@ -378,7 +378,7 @@ export default function DiscoveryHubPage() {
                     left: 0,
                     right: 0,
                     zIndex: 10,
-                    pl: { xs: 2, md: '120px' }
+                    pl: { xs: '80px', md: '120px' }
                 }}>
                     <IconButton
                         onClick={toggleHistory}

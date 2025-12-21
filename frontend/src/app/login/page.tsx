@@ -72,14 +72,16 @@ export default function LoginPage() {
     return (
         <Box
             sx={{
-                minHeight: '100vh',
-                bgcolor: '#0B0B0B', // Almost black, deeper than slate
+                minHeight: '100dvh',
+                bgcolor: '#0B0B0B',
                 color: '#FFFFFF',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
-                overflow: 'hidden',
-                position: 'relative'
+                overflowY: { xs: 'auto', md: 'hidden' },
+                overflowX: 'hidden',
+                position: 'relative',
+                py: { xs: 4, md: 0 }
             }}
         >
             <Container maxWidth="lg">
@@ -234,8 +236,9 @@ export default function LoginPage() {
             {/* Decorative Grid Lines or Footer */}
             <Box
                 sx={{
-                    position: 'absolute', // Fixed causing issues on small screens overlap
-                    bottom: { xs: 20, md: 40 },
+                    position: { xs: 'relative', md: 'absolute' },
+                    mt: { xs: 8, md: 0 },
+                    bottom: { xs: 'auto', md: 40 },
                     left: { xs: 20, md: 40 },
                     right: { xs: 20, md: 40 },
                     display: 'flex',
