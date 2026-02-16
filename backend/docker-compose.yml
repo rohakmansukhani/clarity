@@ -1,24 +1,14 @@
 services:
-  redis:
-    image: redis:alpine
-    container_name: clarity-redis
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
-    networks:
-      - clarity-network
-
   backend:
     build: .
     container_name: clarity-backend
     ports:
       - "8000:8000"
     env_file: .env
-    depends_on:
-      - redis
-    environment:
-      - REDIS_URL=redis://redis:6379/0
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     networks:
       - clarity-network
 
