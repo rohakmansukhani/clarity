@@ -1,0 +1,25 @@
+<svg width="512" height="512" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Blue/Cyan Gradient Definition -->
+    <defs>
+        <linearGradient id="main-gradient" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#00E5FF" />
+            <stop offset="1" stop-color="#2979FF" />
+        </linearGradient>
+        <radialGradient id="msg-gradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(50 50) rotate(90) scale(50)">
+            <stop stop-color="#00E5FF" />
+            <stop offset="1" stop-color="#00E5FF" stop-opacity="0" />
+        </radialGradient>
+    </defs>
+
+    <!-- Outer Glow (Soft Blue) -->
+    <circle cx="50" cy="50" r="45" fill="url(#msg-gradient)" opacity="0.3" />
+
+    <!-- Main Star Shape -->
+    <path
+        d="M50 0L61 39L100 50L61 61L50 100L39 61L0 50L39 39L50 0Z"
+        fill="url(#main-gradient)"
+    />
+
+    <!-- Inner Dot -->
+    <circle cx="50" cy="50" r="10" fill="#ffffff" fill-opacity="0.9" />
+</svg>
