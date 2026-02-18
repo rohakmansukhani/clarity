@@ -1,12 +1,25 @@
-import React from 'react';
-import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, IconButton, Menu, MenuItem, ListItemIcon } from '@mui/material';
 import { motion } from 'framer-motion';
+import { MoreVertical, Trash2, TrendingDown } from 'lucide-react';
 
 interface HoldingsTableProps {
-    portfolio: any; // Type 'Portfolio' should ideally be imported
+    portfolio: any;
+    onDelete?: (holdingId: string) => void;
+    onSell?: (holdingId: string, holding: any) => void;
 }
 
-export default function HoldingsTable({ portfolio }: HoldingsTableProps) {
+export default function HoldingsTable({ portfolio, onDelete, onSell }: HoldingsTableProps) {
+    const [anchorEl, setAnchorEl] = useState<{ [key: string]: HTMLElement | null }>({});
+
+    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, id: string) => {
+        setAnchorEl({ ...anchorEl, [id]: event.currentTarget });
+    };
+
+    const handleMenuClose = (id: string) => {
+        setAnchorEl({ ...anchorEl, [id]: null });
+    };
+
     if (!portfolio || !portfolio.holdings) return null;
 
     return (
@@ -21,6 +34,7 @@ export default function HoldingsTable({ portfolio }: HoldingsTableProps) {
                         <TableCell align="right">INVESTED</TableCell>
                         <TableCell align="right">CURRENT</TableCell>
                         <TableCell align="right">RETURN</TableCell>
+                        <TableCell align="center" sx={{ width: 60 }}></TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -70,11 +84,54 @@ export default function HoldingsTable({ portfolio }: HoldingsTableProps) {
                                     </Typography>
                                 </Box>
                             </TableCell>
+                            <TableCell align="center">
+                                <IconButton
+                                    size="small"
+                                    onClick={(e) => handleMenuOpen(e, stock.id || stock.ticker)} // Fallback to ticker if id missing
+                                    sx={{ color: '#444', '&:hover': { color: '#fff' } }}
+                                >
+                                    <MoreVertical size={18} />
+                                </IconButton>
+                                <Menu
+                                    anchorEl={anchorEl[stock.id || stock.ticker]}
+                                    open={Boolean(anchorEl[stock.id || stock.ticker])}
+                                    onClose={() => handleMenuClose(stock.id || stock.ticker)}
+                                    PaperProps={{
+                                        sx: {
+                                            bgcolor: '#111',
+                                            border: '1px solid #333',
+                                            minWidth: 140
+                                        }
+                                    }}
+                                >
+                                    <MenuItem
+                                        onClick={() => {
+                                            handleMenuClose(stock.id || stock.ticker);
+                                            // TODO: Implement Sell logic
+                                            if (onSell) onSell(stock.id, stock);
+                                        }}
+                                        sx={{ color: '#ccc', '&:hover': { bgcolor: '#222', color: '#fff' } }}
+                                    >
+                                        <ListItemIcon><TrendingDown size={16} color="#F59E0B" /></ListItemIcon>
+                                        <Typography variant="body2">Sell</Typography>
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={() => {
+                                            handleMenuClose(stock.id || stock.ticker);
+                                            if (onDelete && stock.id) onDelete(stock.id);
+                                        }}
+                                        sx={{ color: '#EF4444', '&:hover': { bgcolor: 'rgba(239,68,68,0.1)' } }}
+                                    >
+                                        <ListItemIcon><Trash2 size={16} color="#EF4444" /></ListItemIcon>
+                                        <Typography variant="body2">Delete</Typography>
+                                    </MenuItem>
+                                </Menu>
+                            </TableCell>
                         </TableRow>
                     ))}
                     {portfolio.holdings.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={7} align="center" sx={{ py: 8, color: '#666' }}>
+                            <TableCell colSpan={8} align="center" sx={{ py: 8, color: '#666' }}>
                                 No holdings in {portfolio.name}. Click "Add Transaction" to start.
                             </TableCell>
                         </TableRow>

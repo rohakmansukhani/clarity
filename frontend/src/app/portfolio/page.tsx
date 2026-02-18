@@ -163,6 +163,28 @@ export default function PortfolioPage() {
         }
     };
 
+    const handleDeleteHolding = async (holdingId: string) => {
+        if (!confirm("Are you sure you want to delete this holding?")) return;
+        try {
+            await portfolioService.deleteHolding(holdingId);
+            // Refresh
+            if (activeId) {
+                const perf = await portfolioService.getPortfolioPerformance(activeId);
+                setPortfolios(prev => prev.map(p => p.id === activeId ? { ...p, ...perf } : p));
+            }
+        } catch (e) {
+            console.error("Delete holding failed", e);
+        }
+    };
+
+    const handleSellHolding = (holdingId: string, holding: any) => {
+        // Trigger sell flow - reusing AddTransactionModal with SELL type
+        // Wait, AddTransactionModal currently only supports BUY in some parts, but we can adapt it
+        // Or for now, simplest is to alert or open the modal pre-filled
+        // Let's open the modal pre-filled with ticker and set to SELL mode if we supported it
+        alert("Sell flow to be implemented fully. For now, please use 'Add Transaction' to add a negative quantity or SELL type.");
+    };
+
     // ... existing code ...
 
     // --- At the bottom, fix subcomponents --- (Removed duplicates)
@@ -436,7 +458,11 @@ export default function PortfolioPage() {
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                     >
-                                        <HoldingsTable portfolio={activePortfolio} />
+                                        <HoldingsTable
+                                            portfolio={activePortfolio}
+                                            onDelete={handleDeleteHolding}
+                                            onSell={handleSellHolding}
+                                        />
                                     </motion.div>
                                 ) : (
                                     <Box sx={{ height: 400, width: '100%' }}>
@@ -452,7 +478,6 @@ export default function PortfolioPage() {
                                         <Typography variant="overline" sx={{ color: '#666', fontWeight: 700, letterSpacing: '0.1em' }}>PORTFOLIO HEALTH</Typography>
                                         <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
                                             <StatBar label="Equity Allocation" value={activePortfolio.total_value > 0 ? 100 : 0} color="#00E5FF" />
-                                            <StatBar label="Cash Balance" value={0} color="#333" />
                                         </Box>
                                     </Box>
                                     {/* Additional metrics can go here */}
