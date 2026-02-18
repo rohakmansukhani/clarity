@@ -30,6 +30,7 @@ class HoldingCreate(BaseModel):
     shares: float
     avg_price: float = 0.0
     allocation_percent: float = 0.0
+    purchase_date: Optional[str] = None
 
 @router.get("", response_model=List[PortfolioResponse])
 @limiter.limit("30/minute")
@@ -109,7 +110,8 @@ def add_holding(
                 "exchange": holding.exchange,
                 "shares": holding.shares,
                 "avg_price": holding.avg_price,
-                "allocation_percent": holding.allocation_percent
+                "allocation_percent": holding.allocation_percent,
+                "created_at": holding.purchase_date if holding.purchase_date else "now()"
             }
             res = supabase.table("holdings").insert(data).execute()
             return res.data[0]
@@ -181,6 +183,7 @@ async def get_portfolio_performance(
 
         total_curr_value = 0.0
         total_invested = 0.0
+        total_day_change = 0.0
         
         detailed_holdings = []
         
@@ -192,10 +195,17 @@ async def get_portfolio_performance(
             symbol = h['ticker']
             try:
                 price_info = await market_service.get_aggregated_details(symbol)
-                curr_price = price_info.get('market_data', {}).get('price', 0.0)
+                m_data = price_info.get('market_data', {})
+                curr_price = m_data.get('price', 0.0)
+                
+                # Get Day Change Info
+                change = m_data.get('change', 0.0)
+                change_pct = m_data.get('changePercent', 0.0)
             except Exception as e:
                 logger.error(f"Failed to fetch price for {symbol}: {e}")
                 curr_price = 0.0 # Fallback
+                change = 0.0
+                change_pct = 0.0
             
             shares = float(h.get('shares', 0))
             avg_price = float(h.get('avg_price', 0))
@@ -204,6 +214,9 @@ async def get_portfolio_performance(
             invested_val = shares * avg_price
             gain = curr_val - invested_val
             gain_pct = (gain / invested_val * 100) if invested_val > 0 else 0.0
+            
+            # Day Change Value = Change per share * Shares
+            day_change = change * shares
             
             return {
                 "ticker": symbol,
@@ -214,6 +227,8 @@ async def get_portfolio_performance(
                 "invested_value": invested_val,
                 "gain": gain,
                 "gain_pct": gain_pct,
+                "day_change": day_change,
+                "day_change_pct": change_pct, # This is per stock, so it's the stock's change %
                 "error": curr_price == 0.0
             }
             
@@ -224,9 +239,18 @@ async def get_portfolio_performance(
         for h in detailed_holdings:
             total_curr_value += h['current_value']
             total_invested += h['invested_value']
+            total_day_change += h['day_change']
             
         total_gain = total_curr_value - total_invested
         total_return_pct = (total_gain / total_invested * 100) if total_invested > 0 else 0.0
+        
+        # Calculate Weighted Portfolio Day Change %
+        # (Total Day Change / (Total Value - Total Day Change)) * 100  <-- roughly previous day status
+        # OR just (Total Day Change / Total Current Value) * 100 ?
+        # Standard: (Total Day Change / Previous Day Value) * 100
+        # Previous Day Value = Total Current Value - Total Day Change
+        prev_day_value = total_curr_value - total_day_change
+        total_day_change_pct = (total_day_change / prev_day_value * 100) if prev_day_value > 0 else 0.0
         
         return {
             "portfolio_id": portfolio_id,
@@ -238,13 +262,17 @@ async def get_portfolio_performance(
             "total_gain_formatted": format_inr(total_gain),
             "return_pct": round(total_return_pct, 2),
             "return_pct_formatted": format_percent(total_return_pct),
+            "day_change": round(total_day_change, 2),
+            "day_change_pct": round(total_day_change_pct, 2),
             "holdings": [
                 {
                     **h,
                     "current_value_formatted": format_inr(h["current_value"]),
                     "invested_value_formatted": format_inr(h["invested_value"]),
                     "gain_formatted": format_inr(h["gain"]),
-                    "gain_pct_formatted": format_percent(h["gain_pct"])
+                    "gain_pct_formatted": format_percent(h["gain_pct"]),
+                    "day_change_formatted": format_inr(h["day_change"]),
+                    "day_change_pct_formatted": format_percent(h["day_change_pct"])
                 }
                 for h in detailed_holdings
             ]

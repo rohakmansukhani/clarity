@@ -44,8 +44,8 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert }: Holdings
                         // Simulated Day Change (Since backend might not send it yet, we calculate or mock)
                         // If backend doesn't send day_change, we mock it for UI demo as requested "make it more comprehensive"
                         // ideally this comes from 'current_price' - 'previous_close'
-                        const dayChangePct = stock.day_change_pct || (Math.random() * 4 - 2); // Mock if missing
-                        const dayChangeVal = (stock.current_price * dayChangePct) / 100;
+                        const dayChangePct = stock.day_change_pct || 0;
+                        const dayChangeVal = stock.day_change || 0;
 
                         return (
                             <TableRow
