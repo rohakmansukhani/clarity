@@ -214,7 +214,7 @@ export default function StockPage() {
                                 </Tooltip>
                             </Box>
 
-                            <Box sx={{ width: '100%', height: '100%', pt: 4 }}>
+                            <Box sx={{ width: '100%', height: 'calc(100% - 32px)', mt: 4 }}>
                                 {/* Chart uses chartData state which matches backend format (date, open, close...) */}
                                 {chartData && chartData.length > 0 ? (
                                     (() => {
