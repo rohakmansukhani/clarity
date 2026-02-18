@@ -19,7 +19,7 @@ class WatchlistCreate(BaseModel):
     notes: Optional[str] = None
 
 # --- Endpoints ---
-@router.get("/", response_model=List[Dict[str, Any]])
+@router.get("", response_model=List[Dict[str, Any]])
 @limiter.limit("30/minute")
 def get_watchlist(
     request: Request,
@@ -34,7 +34,7 @@ def get_watchlist(
         logger.error(f"Error fetching watchlist: {e}")
         return []
 
-@router.post("/")
+@router.post("")
 @limiter.limit("20/minute")
 def add_to_watchlist(
     request: Request,
