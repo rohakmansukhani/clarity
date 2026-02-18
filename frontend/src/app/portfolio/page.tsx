@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
-import { Box, Typography, Grid, Button, LinearProgress, Chip, IconButton, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, InputAdornment, Menu, ListItemIcon, Divider, Card, CardContent, CardActionArea, Autocomplete, Paper, Tooltip } from '@mui/material';
-import { TrendingUp, TrendingDown, Plus, Wallet, PieChart as PieChartIcon, X, Search, ChevronDown, FolderPlus, Folder, Trash2, ArrowLeft, ArrowRight, MoreVertical } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Box, Typography, Grid, Button, LinearProgress, Chip, IconButton, CircularProgress, Tooltip, Card, CardContent } from '@mui/material';
+import { TrendingUp, TrendingDown, Plus, Wallet, PieChart as PieChartIcon, ArrowLeft, FolderPlus, Folder, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import { portfolioService } from '@/services/portfolioService';
@@ -14,18 +14,20 @@ import PortfolioChart from '@/components/portfolio/PortfolioChart';
 import AddTransactionModal from '@/components/portfolio/AddTransactionModal';
 import { formatIndianCurrencyDynamic } from '@/utils/currency';
 import CreatePortfolioModal from '@/components/portfolio/CreatePortfolioModal';
-
+import SetAlertModal from '@/components/portfolio/SetAlertModal';
 
 // --- Interfaces ---
 interface Holding {
+    id?: string;
     ticker: string;
     shares: number;
     avg_price: number;
-    current_price: number; // Simulated "Live" price
+    current_price: number;
     current_value: number;
     invested_value: number;
     gain: number;
     gain_pct: number;
+    day_change_pct?: number;
 }
 
 interface Portfolio {
@@ -50,32 +52,25 @@ export default function PortfolioPage() {
 
     // Multi-Portfolio State
     const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
-
-    // ... (rest of state items are unchanged, I will skip them in replacement if possible, but I need to be careful with context)
-    // Wait, replace_file_content replaces the whole chunk. I should target specific blocks. 
-    // I will restart the tool call strategy to be safer and avoid rewriting huge chunks of state.
     const [activeId, setActiveId] = useState<string>('');
 
     // Modals & Menus
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [portfolioMenuAnchor, setPortfolioMenuAnchor] = useState<null | HTMLElement>(null);
+    const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+    const [alertTicker, setAlertTicker] = useState<{ ticker: string, price: number } | null>(null);
+
+    // Delete Confirmation
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [portfolioToDelete, setPortfolioToDelete] = useState<string | null>(null);
 
-    // --- Simulation Init ---
     // --- Actions ---
     const fetchPortfolios = async () => {
         try {
             setLoading(true);
             const data = await portfolioService.listPortfolios();
-            // The list endpoint returns basic info. We might need to map it to our UI model.
-            // But for the list view, we need total_value etc.
-            // Currently backend list endpoint returns just ID/Name.
-            // We probably need to fetch performance for ALL portfolios or just the active one?
-            // For the "My Portfolios" card view, we show totals.
-            // Let's fetch performance for each portfolio in parallel to populate the cards.
 
+            // Fetch performance for each portfolio in parallel
             const detailedPortfolios = await Promise.all(data.map(async (p) => {
                 try {
                     const perf = await portfolioService.getPortfolioPerformance(p.id);
@@ -177,23 +172,10 @@ export default function PortfolioPage() {
         }
     };
 
-    const handleSellHolding = (holdingId: string, holding: any) => {
-        // Trigger sell flow - reusing AddTransactionModal with SELL type
-        // Wait, AddTransactionModal currently only supports BUY in some parts, but we can adapt it
-        // Or for now, simplest is to alert or open the modal pre-filled
-        // Let's open the modal pre-filled with ticker and set to SELL mode if we supported it
-        alert("Sell flow to be implemented fully. For now, please use 'Add Transaction' to add a negative quantity or SELL type.");
-    };
-
-    // ... existing code ...
-
-    // --- At the bottom, fix subcomponents --- (Removed duplicates)
-
     const handleAddTransaction = async (ticker: string, shares: number, price: number, type: 'BUY' | 'SELL', date?: string) => {
         if (!activeId) return;
 
         try {
-            // ... (Sell logic check) ...
             if (type === 'SELL') {
                 alert("Sell transactions not yet fully supported. Please delete the holding or update shares manually.");
                 return;
@@ -216,6 +198,11 @@ export default function PortfolioPage() {
         } catch (e) {
             console.error("Transaction failed", e);
         }
+    };
+
+    const handleAlertClick = (ticker: string, currentPrice: number) => {
+        setAlertTicker({ ticker, price: currentPrice });
+        setIsAlertModalOpen(true);
     };
 
     if (loading) {
@@ -292,7 +279,7 @@ export default function PortfolioPage() {
 
                         <Grid container spacing={3}>
                             {portfolios.map((p, i) => (
-                                <Grid size={{ xs: 12, md: 6, lg: 4 }} key={p.id}>
+                                <Grid item xs={12} md={6} lg={4} key={p.id}>
                                     <Card
                                         onClick={() => handlePortfolioClick(p.id)}
                                         sx={{
@@ -356,7 +343,7 @@ export default function PortfolioPage() {
                                 </Grid>
                             ))}
 
-                            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                            <Grid item xs={12} md={6} lg={4}>
                                 <Button
                                     onClick={() => setIsCreateModalOpen(true)}
                                     sx={{
@@ -445,7 +432,7 @@ export default function PortfolioPage() {
 
                         <Grid container spacing={6}>
                             {/* Main Content Area */}
-                            <Grid size={{ xs: 12, md: 8 }}>
+                            <Grid item xs={12} md={8}>
                                 {/* View Toggle */}
                                 <Box sx={{ display: 'flex', gap: 3, mb: 4, borderBottom: '1px solid rgba(255,255,255,0.1)', pb: 0 }}>
                                     <TabButton active={view === 'holdings'} onClick={() => setView('holdings')} label="Holdings" icon={Wallet} />
@@ -461,7 +448,7 @@ export default function PortfolioPage() {
                                         <HoldingsTable
                                             portfolio={activePortfolio}
                                             onDelete={handleDeleteHolding}
-                                            onSell={handleSellHolding}
+                                            onAlert={handleAlertClick}
                                         />
                                     </motion.div>
                                 ) : (
@@ -472,7 +459,7 @@ export default function PortfolioPage() {
                             </Grid>
 
                             {/* Sidebar Stats */}
-                            <Grid size={{ xs: 12, md: 4 }}>
+                            <Grid item xs={12} md={4}>
                                 <Box component={motion.div} initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
                                     <Box sx={{ bgcolor: 'transparent', mb: 4 }}>
                                         <Typography variant="overline" sx={{ color: '#666', fontWeight: 700, letterSpacing: '0.1em' }}>PORTFOLIO HEALTH</Typography>
@@ -480,7 +467,7 @@ export default function PortfolioPage() {
                                             <StatBar label="Equity Allocation" value={activePortfolio.total_value > 0 ? 100 : 0} color="#00E5FF" />
                                         </Box>
                                     </Box>
-                                    {/* Additional metrics can go here */}
+
                                     <Box sx={{ borderTop: '1px solid #222', pt: 4 }}>
                                         <Typography variant="overline" sx={{ color: '#666', fontWeight: 700, letterSpacing: '0.1em' }}>KEY METRICS</Typography>
                                         <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
@@ -508,7 +495,7 @@ export default function PortfolioPage() {
                     </motion.div>
                 )}
 
-                {/* Add Transaction Modal & Create Portfolio Modal */}
+                {/* Add Transaction Modal & Create Portfolio Modal & Alert Modal */}
                 <AddTransactionModal
                     open={isTxModalOpen}
                     onClose={() => setIsTxModalOpen(false)}
@@ -520,6 +507,18 @@ export default function PortfolioPage() {
                     onClose={() => setIsCreateModalOpen(false)}
                     onCreate={handleCreatePortfolio}
                 />
+
+                {alertTicker && (
+                    <SetAlertModal
+                        open={isAlertModalOpen}
+                        onClose={() => setIsAlertModalOpen(false)}
+                        ticker={alertTicker.ticker}
+                        currentPrice={alertTicker.price}
+                        onAlertSet={() => {
+                            console.log("Alert Set!");
+                        }}
+                    />
+                )}
 
                 <ConfirmDialog
                     open={deleteConfirmOpen}
