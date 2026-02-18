@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Tooltip, IconButton } from '@mui/material';
+import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, IconButton, Switch, FormControlLabel } from '@mui/material';
 import { X } from 'lucide-react';
 import StockSearchInput from '@/components/market/StockSearchInput';
 import { ErrorBanner } from '@/components/common/ErrorBanner';
@@ -16,7 +16,7 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
     const [ticker, setTicker] = useState('');
     const [shares, setShares] = useState('');
     const [price, setPrice] = useState('');
-    const [type, setType] = useState<'BUY' | 'SELL'>('BUY');
+    const [useCustomPrice, setUseCustomPrice] = useState(false);
     const [fetchingPrice, setFetchingPrice] = useState(false);
     const [priceError, setPriceError] = useState('');
 
@@ -28,14 +28,18 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
         }
     }, [open, initialTicker]);
 
-    // Auto-fetch price when ticker changes
+    // Auto-fetch price when ticker changes or when switching back to auto mode
     useEffect(() => {
         const fetchPrice = async () => {
             if (!ticker || ticker.length < 2) {
-                setPrice('');
+                if (!useCustomPrice) setPrice('');
                 setPriceError('');
                 return;
             }
+
+            // If using custom price, don't overwrite user input unless it's empty? 
+            // Actually, if custom is on, we shouldn't auto-fetch to overwrite.
+            if (useCustomPrice) return;
 
             setFetchingPrice(true);
             setPriceError('');
@@ -62,16 +66,16 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
 
         const timer = setTimeout(fetchPrice, 500);
         return () => clearTimeout(timer);
-    }, [ticker]);
+    }, [ticker, useCustomPrice]);
 
     const handleSubmit = () => {
         if (ticker && shares && price && Number(shares) > 0 && Number(price) > 0) {
-            onSubmit(ticker.toUpperCase(), Number(shares), Number(price), type);
+            onSubmit(ticker.toUpperCase(), Number(shares), Number(price), 'BUY');
             // Reset
             if (!initialTicker) setTicker('');
             setShares('');
             setPrice('');
-            setType('BUY');
+            setUseCustomPrice(false);
             setPriceError('');
         }
     };
@@ -80,7 +84,7 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
         if (!initialTicker) setTicker('');
         setShares('');
         setPrice('');
-        setType('BUY');
+        setUseCustomPrice(false);
         setPriceError('');
         onClose();
     };
@@ -105,42 +109,6 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
             </DialogTitle>
             <DialogContent>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
-                    {/* Buy/Sell buttons */}
-                    <Box sx={{ display: 'flex', gap: 1, bgcolor: '#111', p: 0.5, borderRadius: 2 }}>
-                        {['BUY', 'SELL'].map((t) => (
-                            <Tooltip
-                                key={t}
-                                title={t === 'SELL' ? 'Short selling coming soon' : ''}
-                                arrow
-                                placement="top"
-                            >
-                                <span style={{ flex: 1 }}>
-                                    <Button
-                                        fullWidth
-                                        onClick={() => setType(t as any)}
-                                        disabled={t === 'SELL'}
-                                        sx={{
-                                            bgcolor: type === t ? (t === 'BUY' ? '#10B981' : '#EF4444') : 'transparent',
-                                            color: type === t ? '#000' : t === 'SELL' ? '#444' : '#666',
-                                            fontWeight: 700,
-                                            borderRadius: 1.5,
-                                            cursor: t === 'SELL' ? 'not-allowed' : 'pointer',
-                                            opacity: t === 'SELL' ? 0.4 : 1,
-                                            '&:hover': {
-                                                bgcolor: t === 'SELL' ? 'transparent' : (type === t ? (t === 'BUY' ? '#059669' : '#DC2626') : 'rgba(255,255,255,0.05)')
-                                            },
-                                            '&.Mui-disabled': {
-                                                color: '#444',
-                                                bgcolor: 'transparent'
-                                            }
-                                        }}
-                                    >
-                                        {t}
-                                    </Button>
-                                </span>
-                            </Tooltip>
-                        ))}
-                    </Box>
 
                     {/* Stock Search via Reusable Component - Hide if initialTicker is set */}
                     {!initialTicker ? (
@@ -186,12 +154,32 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                             InputProps={{ sx: { color: '#fff', bgcolor: '#111', borderRadius: 2, '& fieldset': { borderColor: '#333' } } }}
                             InputLabelProps={{ sx: { color: '#666' } }}
                         />
+                    </Box>
+
+                    <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={useCustomPrice}
+                                        onChange={(e) => setUseCustomPrice(e.target.checked)}
+                                        sx={{
+                                            '& .MuiSwitch-switchBase.Mui-checked': { color: '#00E5FF' },
+                                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#00E5FF' },
+                                        }}
+                                    />
+                                }
+                                label={<Typography sx={{ color: '#666', fontSize: '0.9rem' }}>Add older purchase at specific price</Typography>}
+                            />
+                        </Box>
+
                         <TextField
-                            label="Current Price"
-                            type="text"
+                            label={useCustomPrice ? "Buy Price (Historical)" : "Market Price (Live)"}
+                            type="number"
                             fullWidth
-                            value={fetchingPrice ? 'Fetching...' : price ? `₹${Number(price).toLocaleString()}` : ''}
-                            disabled
+                            value={price} // Display raw price for editing
+                            disabled={!useCustomPrice}
+                            onChange={(e) => setPrice(e.target.value)}
                             InputProps={{
                                 sx: {
                                     color: '#00E5FF',
@@ -199,10 +187,11 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                                     borderRadius: 2,
                                     '& fieldset': { borderColor: '#333' },
                                     fontWeight: 700
-                                }
+                                },
+                                startAdornment: <Typography sx={{ color: '#00E5FF', mr: 1 }}>₹</Typography>
                             }}
                             InputLabelProps={{ sx: { color: '#666' } }}
-                            helperText="Auto-fetched from market"
+                            helperText={useCustomPrice ? "Enter the price you bought this share at" : (fetchingPrice ? "Fetching..." : "Auto-fetched from market")}
                             FormHelperTextProps={{ sx: { color: '#666', fontSize: '0.7rem' } }}
                         />
                     </Box>
@@ -224,14 +213,14 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                     fullWidth
                     variant="contained"
                     onClick={handleSubmit}
-                    disabled={!ticker || !shares || !price || Number(shares) <= 0 || Number(price) <= 0 || fetchingPrice || !!priceError}
+                    disabled={!ticker || !shares || !price || Number(shares) <= 0 || Number(price) <= 0 || (fetchingPrice && !useCustomPrice) || (!useCustomPrice && !!priceError)}
                     sx={{
                         bgcolor: '#fff', color: '#000', fontWeight: 700, py: 1.5, borderRadius: 3,
                         '&:hover': { bgcolor: '#e0e0e0' },
                         '&:disabled': { bgcolor: '#333', color: '#666' }
                     }}
                 >
-                    {fetchingPrice ? 'Fetching Price...' : 'Confirm Transaction'}
+                    {fetchingPrice && !useCustomPrice ? 'Fetching Price...' : 'Confirm Transaction'}
                 </Button>
             </DialogActions>
         </Dialog>
