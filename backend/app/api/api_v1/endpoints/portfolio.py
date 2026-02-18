@@ -147,6 +147,38 @@ async def get_portfolio_performance(
         if not holdings:
             return {"total_value": 0.0, "total_invested": 0.0, "total_gain": 0.0, "return_pct": 0.0, "holdings": []}
 
+        # Aggregation Logic: Merge duplicates by ticker
+        aggregated_holdings_map = {}
+        for h in holdings:
+            ticker = h['ticker']
+            if ticker not in aggregated_holdings_map:
+                aggregated_holdings_map[ticker] = {
+                    **h,
+                    'shares': 0.0,
+                    'invested_value_temp': 0.0 # To calc weighted avg price
+                }
+            
+            s = float(h['shares'])
+            p = float(h['avg_price'])
+            aggregated_holdings_map[ticker]['shares'] += s
+            aggregated_holdings_map[ticker]['invested_value_temp'] += (s * p)
+
+        # Reconstruct list with correct avg_price
+        unique_holdings = []
+        for ticker, data in aggregated_holdings_map.items():
+            total_s = data['shares']
+            if total_s > 0:
+                data['avg_price'] = data['invested_value_temp'] / total_s
+            else:
+                data['avg_price'] = 0.0
+            
+            # Cleanup temp field
+            del data['invested_value_temp']
+            unique_holdings.append(data)
+
+        # Use unique_holdings for downstream processing
+        holdings = unique_holdings
+
         total_curr_value = 0.0
         total_invested = 0.0
         
