@@ -167,28 +167,13 @@ export default function PortfolioPage() {
 
     // --- At the bottom, fix subcomponents --- (Removed duplicates)
 
-    const handleAddTransaction = async (ticker: string, shares: number, price: number, type: 'BUY' | 'SELL') => {
+    const handleAddTransaction = async (ticker: string, shares: number, price: number, type: 'BUY' | 'SELL', date?: string) => {
         if (!activeId) return;
 
         try {
-            // Backend "Add Holding" is basically designed for initial add, 
-            // but we can use it. However, properly we should check if exists and update shares?
-            // The backend `add_holding` just inserts a new row. 
-            // If we want to support multiple lots, that's fine (FIFO).
-            // But our UI currently aggregates by ticker.
-
-            // For simplicity in this version, we will just INSERT a new holding row.
-            // The Backend Performance endpoint aggregates them? 
-            // Let's check backend... `get_portfolio_performance` loops through holdings.
-            // If we have multiple rows for RELIANCE, it will calculate each separately.
-            // The UI might show duplicate rows if we don't aggregate.
-            // The backend returns `detailed_holdings` list.
-
-            // Implementation: Just add it.
-            // Note: SELL logic isn't fully supported by backend `add_holding` unless we send negative shares?
-
+            // ... (Sell logic check) ...
             if (type === 'SELL') {
-                alert("Sell transactions not yet fully supported in this version. Please delete the holding or update shares manually.");
+                alert("Sell transactions not yet fully supported. Please delete the holding or update shares manually.");
                 return;
             }
 
@@ -197,7 +182,8 @@ export default function PortfolioPage() {
                 shares,
                 avg_price: price,
                 exchange: "NSE",
-                allocation_percent: 0
+                allocation_percent: 0,
+                purchase_date: date
             });
 
             // Refresh data

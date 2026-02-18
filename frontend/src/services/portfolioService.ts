@@ -13,6 +13,7 @@ export interface HoldingCreate {
     shares: number;
     avg_price: number;
     allocation_percent: number;
+    purchase_date?: string;
 }
 
 export interface PortfolioPerformance {
