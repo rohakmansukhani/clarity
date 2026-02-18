@@ -2,36 +2,33 @@ import axios from 'axios';
 import { supabase } from '@/lib/supabase';
 
 // Create Axios instance with base URL
+// Helper to determine base URL
 const getBaseUrl = () => {
-    // In the browser, always use relative path to route through Next.js proxy
     if (typeof window !== 'undefined') {
         return '/api/v1';
     }
-
-    // Server-side (SSR)
-    if (process.env.BACKEND_SERVER_URL) {
-        return `${process.env.BACKEND_SERVER_URL}/api/v1`;
-    }
-
-    return 'http://localhost:8000/api/v1';
+    return process.env.BACKEND_SERVER_URL
+        ? `${process.env.BACKEND_SERVER_URL}/api/v1`
+        : 'http://localhost:8000/api/v1';
 };
 
 const api = axios.create({
-    baseURL: getBaseUrl(),
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-// Request Interceptor — attach auth token to every request
+// Request Interceptor
 api.interceptors.request.use(
     async (config) => {
+        // Dynamic baseURL assignment to prevent build-time/init-time mismatches
+        config.baseURL = getBaseUrl();
+
         try {
-            // First try to get token from Supabase client session
+            // Auth Token Logic
             const { data: { session } } = await supabase.auth.getSession();
             let token = session?.access_token;
 
-            // Fallback to localStorage 'token' (used by custom backend login in LoginPage.tsx)
             if (!token && typeof window !== 'undefined') {
                 token = localStorage.getItem('token') || undefined;
             }
@@ -50,9 +47,7 @@ api.interceptors.request.use(
 // Response Interceptor
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
 export default api;

@@ -453,7 +453,9 @@ export default function PortfolioPage() {
                                         <HoldingsTable portfolio={activePortfolio} />
                                     </motion.div>
                                 ) : (
-                                    <PortfolioChart data={allocationData} />
+                                    <Box sx={{ height: 400, width: '100%' }}>
+                                        <PortfolioChart data={allocationData} />
+                                    </Box>
                                 )}
                             </Grid>
 
@@ -526,8 +528,6 @@ export default function PortfolioPage() {
         </>
     );
 }
-
-// --- Subcomponents ---
 
 // --- Subcomponents ---
 
