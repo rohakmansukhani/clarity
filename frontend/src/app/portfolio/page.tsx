@@ -279,7 +279,7 @@ export default function PortfolioPage() {
 
                         <Grid container spacing={3}>
                             {portfolios.map((p, i) => (
-                                <Grid item xs={12} md={6} lg={4} key={p.id}>
+                                <Grid size={{ xs: 12, md: 6, lg: 4 }} key={p.id}>
                                     <Card
                                         onClick={() => handlePortfolioClick(p.id)}
                                         sx={{
@@ -343,7 +343,7 @@ export default function PortfolioPage() {
                                 </Grid>
                             ))}
 
-                            <Grid item xs={12} md={6} lg={4}>
+                            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
                                 <Button
                                     onClick={() => setIsCreateModalOpen(true)}
                                     sx={{
@@ -432,7 +432,7 @@ export default function PortfolioPage() {
 
                         <Grid container spacing={6}>
                             {/* Main Content Area */}
-                            <Grid item xs={12} md={8}>
+                            <Grid size={{ xs: 12, md: 8 }}>
                                 {/* View Toggle */}
                                 <Box sx={{ display: 'flex', gap: 3, mb: 4, borderBottom: '1px solid rgba(255,255,255,0.1)', pb: 0 }}>
                                     <TabButton active={view === 'holdings'} onClick={() => setView('holdings')} label="Holdings" icon={Wallet} />
@@ -459,7 +459,7 @@ export default function PortfolioPage() {
                             </Grid>
 
                             {/* Sidebar Stats */}
-                            <Grid item xs={12} md={4}>
+                            <Grid size={{ xs: 12, md: 4 }}>
                                 <Box component={motion.div} initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
                                     <Box sx={{ bgcolor: 'transparent', mb: 4 }}>
                                         <Typography variant="overline" sx={{ color: '#666', fontWeight: 700, letterSpacing: '0.1em' }}>PORTFOLIO HEALTH</Typography>
