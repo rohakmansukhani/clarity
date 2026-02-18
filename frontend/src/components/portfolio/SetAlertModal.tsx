@@ -99,7 +99,19 @@ export default function SetAlertModal({ open, onClose, ticker, currentPrice, onA
                             onChange={(e) => setTargetPrice(e.target.value)}
                             InputProps={{
                                 startAdornment: <InputAdornment position="start"><Typography sx={{ color: '#666' }}>₹</Typography></InputAdornment>,
-                                sx: { color: '#fff', bgcolor: '#111', borderRadius: 2, '& fieldset': { borderColor: '#333' } }
+                                sx: {
+                                    color: '#fff',
+                                    bgcolor: '#111',
+                                    borderRadius: 2,
+                                    height: 56, // Explicit height
+                                    alignItems: 'center',
+                                    '& .MuiInputBase-input': {
+                                        height: '100%',
+                                        boxSizing: 'border-box',
+                                        py: 0
+                                    },
+                                    '& fieldset': { borderColor: '#333' }
+                                }
                             }}
                             InputLabelProps={{ sx: { color: '#666' } }}
                         />
@@ -113,7 +125,19 @@ export default function SetAlertModal({ open, onClose, ticker, currentPrice, onA
                             onChange={(e) => setPercent(e.target.value)}
                             InputProps={{
                                 endAdornment: <InputAdornment position="end"><Typography sx={{ color: '#666' }}>%</Typography></InputAdornment>,
-                                sx: { color: '#fff', bgcolor: '#111', borderRadius: 2, '& fieldset': { borderColor: '#333' } }
+                                sx: {
+                                    color: '#fff',
+                                    bgcolor: '#111',
+                                    borderRadius: 2,
+                                    height: 56,
+                                    alignItems: 'center',
+                                    '& .MuiInputBase-input': {
+                                        height: '100%',
+                                        boxSizing: 'border-box',
+                                        py: 0
+                                    },
+                                    '& fieldset': { borderColor: '#333' }
+                                }
                             }}
                             InputLabelProps={{ sx: { color: '#666' } }}
                             helperText="Enter positive for gain, negative for loss"
