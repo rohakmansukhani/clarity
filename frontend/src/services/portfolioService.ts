@@ -87,5 +87,22 @@ export const portfolioService = {
     removeFromWatchlist: async (ticker: string) => {
         const response = await api.delete(`/portfolios/watchlists/${ticker}`);
         return response.data;
+    },
+
+    // --- Alerts ---
+
+    getAlerts: async () => {
+        const response = await api.get('/alerts/');
+        return response.data;
+    },
+
+    createAlert: async (alert: { ticker: string; target_price?: number; target_percent_change?: number; initial_price?: number; condition: string }) => {
+        const response = await api.post('/alerts/', alert);
+        return response.data;
+    },
+
+    deleteAlert: async (alertId: string) => {
+        const response = await api.delete(`/alerts/${alertId}`);
+        return response.data;
     }
 };
