@@ -12,6 +12,15 @@ services:
     networks:
       - clarity-network
 
+  redis:
+    image: redis:alpine
+    container_name: clarity-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - clarity-network
+
 networks:
   clarity-network:
     driver: bridge

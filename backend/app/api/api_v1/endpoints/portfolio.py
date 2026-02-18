@@ -31,7 +31,7 @@ class HoldingCreate(BaseModel):
     avg_price: float = 0.0
     allocation_percent: float = 0.0
 
-@router.get("/", response_model=List[PortfolioResponse])
+@router.get("", response_model=List[PortfolioResponse])
 @limiter.limit("30/minute")
 def list_portfolios(
     request: Request,
@@ -221,7 +221,7 @@ async def get_portfolio_performance(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/", response_model=PortfolioResponse)
+@router.post("", response_model=PortfolioResponse)
 @limiter.limit("10/minute")
 def create_portfolio(
     request: Request,
@@ -324,7 +324,7 @@ class WatchlistCreate(BaseModel):
     ticker: str
     exchange: str = "NSE"
 
-@router.get("/watchlists/")
+@router.get("/watchlists")
 @limiter.limit("30/minute")
 def get_watchlist(
     request: Request,
@@ -337,7 +337,7 @@ def get_watchlist(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/watchlists/")
+@router.post("/watchlists")
 @limiter.limit("20/minute")
 def add_to_watchlist(
     request: Request,

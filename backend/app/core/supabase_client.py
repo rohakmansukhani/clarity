@@ -7,12 +7,12 @@ class SupabaseService:
     @classmethod
     def get_client(cls) -> Client:
         if cls._instance is None:
-            if not settings.SUPABASE_URL or not settings.SUPABASE_KEY:
-                raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in config")
+            if not settings.SUPABASE_URL or not settings.SUPABASE_SECRET_KEY:
+                raise ValueError("SUPABASE_URL and SUPABASE_SECRET_KEY must be set in config")
             
             cls._instance = create_client(
                 settings.SUPABASE_URL, 
-                settings.SUPABASE_KEY
+                settings.SUPABASE_SECRET_KEY
             )
         return cls._instance
 
