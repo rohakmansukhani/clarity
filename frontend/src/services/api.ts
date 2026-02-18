@@ -4,12 +4,16 @@ import { supabase } from '@/lib/supabase';
 // Create Axios instance with base URL
 const getBaseUrl = () => {
     // In the browser, always use relative path to route through Next.js proxy
-    // This avoids Mixed Content errors (HTTPS -> HTTP) and CORS issues
     if (typeof window !== 'undefined') {
         return '/api/v1';
     }
-    // Server-side (SSR), use the full URL from env or default
-    return process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_SERVER_URL || 'http://localhost:8000/api/v1';
+
+    // Server-side (SSR)
+    if (process.env.BACKEND_SERVER_URL) {
+        return `${process.env.BACKEND_SERVER_URL}/api/v1`;
+    }
+
+    return 'http://localhost:8000/api/v1';
 };
 
 const api = axios.create({

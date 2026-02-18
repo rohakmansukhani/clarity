@@ -627,9 +627,9 @@ export default function DiscoveryHubPage() {
                 {viewMode === 'chat' && (
                     <Box sx={{
                         p: { xs: 3, md: 4 },
-                        backdropFilter: 'blur(20px)',
-                        bgcolor: 'rgba(0, 0, 0, 0.6)',
-                        borderTop: '1px solid rgba(255, 255, 255, 0.06)'
+                        backdropFilter: 'none',
+                        bgcolor: 'transparent',
+                        borderTop: 'none'
                     }}>
                         <Box sx={{ maxWidth: 800, mx: 'auto' }}>
                             <Paper sx={{
