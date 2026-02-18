@@ -2,17 +2,9 @@ import axios from 'axios';
 import { supabase } from '@/lib/supabase';
 
 // Create Axios instance with base URL
-// Helper to determine base URL
-const getBaseUrl = () => {
-    if (typeof window !== 'undefined') {
-        return '/api/v1';
-    }
-    return process.env.BACKEND_SERVER_URL
-        ? `${process.env.BACKEND_SERVER_URL}/api/v1`
-        : 'http://localhost:8000/api/v1';
-};
-
+// Default to relative path (Browser-safe)
 const api = axios.create({
+    baseURL: '/api/v1',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -21,8 +13,11 @@ const api = axios.create({
 // Request Interceptor
 api.interceptors.request.use(
     async (config) => {
-        // Dynamic baseURL assignment to prevent build-time/init-time mismatches
-        config.baseURL = getBaseUrl();
+        // OVERRIDE for Server-Side only
+        if (typeof window === 'undefined') {
+            const serverUrl = process.env.BACKEND_SERVER_URL || 'http://localhost:8000';
+            config.baseURL = `${serverUrl}/api/v1`;
+        }
 
         try {
             // Auth Token Logic
