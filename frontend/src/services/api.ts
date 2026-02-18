@@ -13,10 +13,14 @@ const api = axios.create({
 // Request Interceptor
 api.interceptors.request.use(
     async (config) => {
-        // OVERRIDE for Server-Side only
-        if (typeof window === 'undefined') {
+        // "Brutal Fix": Force baseURL at request time to prevent any shared state/build issues
+        if (typeof window !== 'undefined') {
+            config.baseURL = '/api/v1';
+            // console.debug('API Request (Browser):', config.url, 'Base:', config.baseURL);
+        } else {
             const serverUrl = process.env.BACKEND_SERVER_URL || 'http://localhost:8000';
             config.baseURL = `${serverUrl}/api/v1`;
+            // console.debug('API Request (Server):', config.url, 'Base:', config.baseURL);
         }
 
         try {
