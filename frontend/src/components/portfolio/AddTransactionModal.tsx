@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, IconButton, Tabs, Tab } from '@mui/material';
-import { X, Calendar as CalendarIcon } from 'lucide-react';
+import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, IconButton, Tooltip } from '@mui/material';
+import { X } from 'lucide-react';
 import StockSearchInput from '@/components/market/StockSearchInput';
 import { ErrorBanner } from '@/components/common/ErrorBanner';
 import { marketService } from '@/services/marketService';
+import CustomDatePicker from '@/components/ui/CustomDatePicker';
 
 interface AddTransactionModalProps {
     open: boolean;
@@ -13,11 +14,11 @@ interface AddTransactionModalProps {
 }
 
 export default function AddTransactionModal({ open, onClose, onSubmit, initialTicker }: AddTransactionModalProps) {
-    const [tab, setTab] = useState(0); // 0: Present, 1: Historical
+    const [mode, setMode] = useState<'PRESENT' | 'HISTORICAL'>('PRESENT');
     const [ticker, setTicker] = useState('');
     const [shares, setShares] = useState('');
     const [price, setPrice] = useState('');
-    const [date, setDate] = useState('');
+    const [date, setDate] = useState<Date | undefined>(undefined);
     const [fetchingPrice, setFetchingPrice] = useState(false);
     const [priceError, setPriceError] = useState('');
 
@@ -33,30 +34,24 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
     useEffect(() => {
         const fetchPrice = async () => {
             if (!ticker || ticker.length < 2) {
-                if (tab === 0) setPrice(''); // Only clear if in Present mode
-                setPriceError(''); // Clear error if ticker is invalid
+                if (mode === 'PRESENT') setPrice('');
+                setPriceError('');
                 return;
             }
 
             setFetchingPrice(true);
-            setPriceError(''); // Clear previous errors
+            setPriceError('');
 
             try {
                 let fetchedPrice = 0;
-                if (tab === 0) {
-                    // Present mode: fetch live price
+                if (mode === 'PRESENT') {
                     const data = await marketService.getStockDetails(ticker.toUpperCase());
                     fetchedPrice = data.market_data?.price || data.price || data.current_price || 0;
-                } else if (tab === 1 && date) {
-                    // Historical mode with date: fetch price at date
-                    // Assuming marketService.getPriceAtDate exists and returns a number
-                    // If not, this part might need adjustment based on actual API
-                    // For now, let's assume we just want to allow manual entry if date is set, 
-                    // or try to fetch if we have the capability. 
-                    // Since getPriceAtDate isn't strictly verified in marketService, let's warn but allow manual.
+                } else if (mode === 'HISTORICAL' && date) {
+                    const dateStr = date.toISOString().split('T')[0];
                     try {
                         if (marketService.getPriceAtDate) {
-                            fetchedPrice = await marketService.getPriceAtDate(ticker.toUpperCase(), date);
+                            fetchedPrice = await marketService.getPriceAtDate(ticker.toUpperCase(), dateStr);
                         }
                     } catch (e) {
                         console.warn("Historical price fetch failed", e);
@@ -66,23 +61,18 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                 if (fetchedPrice > 0) {
                     setPrice(fetchedPrice.toString());
                 } else {
-                    // If no price fetched, clear price field and set error if in Present mode
-                    // In Historical mode, allow manual entry if auto-fetch fails
-                    if (tab === 0) {
+                    if (mode === 'PRESENT') {
                         setPrice('');
-                        setPriceError('Price unavailable or stock not found');
+                        setPriceError('Price unavailable');
                     } else {
-                        // For historical, if date fetch fails, just clear price and let user enter
-                        // Don't error out, just let them type
                         if (!price) setPrice('');
                     }
                 }
             } catch (error) {
                 console.error('Failed to fetch price:', error);
-                if (tab === 0) {
-                    setPriceError('Stock not found or failed to fetch live price');
+                if (mode === 'PRESENT') {
+                    setPriceError('Stock not found');
                 }
-                // Historical: silent fail, allow manual
             } finally {
                 setFetchingPrice(false);
             }
@@ -90,12 +80,11 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
 
         const timer = setTimeout(fetchPrice, 500);
         return () => clearTimeout(timer);
-    }, [ticker, tab, date]);
+    }, [ticker, mode, date]);
 
     const handleSubmit = () => {
         if (ticker && shares && price && Number(shares) > 0 && Number(price) > 0) {
-            // If historical, pass the date. If present, pass today/undefined
-            const txDate = tab === 1 ? date : new Date().toISOString().split('T')[0];
+            const txDate = mode === 'HISTORICAL' && date ? date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
             onSubmit(ticker.toUpperCase(), Number(shares), Number(price), 'BUY', txDate);
             handleClose();
         }
@@ -105,8 +94,8 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
         if (!initialTicker) setTicker('');
         setShares('');
         setPrice('');
-        setDate('');
-        setTab(0);
+        setDate(undefined);
+        setMode('PRESENT');
         setPriceError('');
         onClose();
     };
@@ -125,34 +114,40 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                 }
             }}
         >
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', fontWeight: 700, pb: 0 }}>
-                {initialTicker ? `Add ${initialTicker} ` : 'Add Transaction'}
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', fontWeight: 700 }}>
+                {initialTicker ? `Add ${initialTicker}` : 'Add Transaction'}
                 <IconButton onClick={handleClose} size="small" sx={{ color: '#666' }}><X size={20} /></IconButton>
             </DialogTitle>
+            <DialogContent>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
 
-            <Tabs
-                value={tab}
-                onChange={(_, v) => {
-                    setTab(v);
-                    setPrice(''); // Clear price when switching tabs to re-evaluate
-                    setPriceError(''); // Clear price error
-                }}
-                sx={{
-                    borderBottom: '1px solid #222',
-                    mx: 3,
-                    mt: 1,
-                    '& .MuiTab-root': { color: '#666', fontWeight: 600 },
-                    '& .Mui-selected': { color: '#00E5FF' },
-                    '& .MuiTabs-indicator': { bgcolor: '#00E5FF' }
-                }}
-            >
-                <Tab label="Present (Live)" />
-                <Tab label="Historical" />
-            </Tabs>
+                    {/* Toggle Buttons */}
+                    <Box sx={{ display: 'flex', gap: 1, bgcolor: '#111', p: 0.5, borderRadius: 2 }}>
+                        {['PRESENT', 'HISTORICAL'].map((m) => (
+                            <Button
+                                key={m}
+                                fullWidth
+                                onClick={() => {
+                                    setMode(m as any);
+                                    setPrice('');
+                                    setPriceError('');
+                                }}
+                                sx={{
+                                    bgcolor: mode === m ? '#00E5FF' : 'transparent',
+                                    color: mode === m ? '#000' : '#666',
+                                    fontWeight: 700,
+                                    borderRadius: 1.5,
+                                    '&:hover': {
+                                        bgcolor: mode === m ? '#00B8CC' : 'rgba(255,255,255,0.05)'
+                                    }
+                                }}
+                            >
+                                {m}
+                            </Button>
+                        ))}
+                    </Box>
 
-            <DialogContent sx={{ mt: 2 }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-
+                    {/* Stock Search via Reusable Component - Hide if initialTicker is set */}
                     {!initialTicker ? (
                         <StockSearchInput
                             value={ticker}
@@ -195,26 +190,23 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                         />
                     </Box>
 
-                    {tab === 1 && (
-                        <TextField
-                            label="Purchase Date"
-                            type="date"
-                            fullWidth
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                            InputProps={{ sx: { color: '#fff', bgcolor: '#111', borderRadius: 2, '& fieldset': { borderColor: '#333' } } }}
-                            InputLabelProps={{ sx: { color: '#666' }, shrink: true }}
-                            helperText="Approx. price will be fetched if available"
-                            FormHelperTextProps={{ sx: { color: '#666' } }}
-                        />
+                    {mode === 'HISTORICAL' && (
+                        <Box>
+                            <Typography sx={{ color: '#666', fontSize: '0.8rem', mb: 1, ml: 1 }}>Purchase Date</Typography>
+                            <CustomDatePicker
+                                selectedDate={date}
+                                onChange={(d) => setDate(d || undefined)}
+                                placeholder="Select purchase date"
+                            />
+                        </Box>
                     )}
 
                     <TextField
-                        label={tab === 0 ? "Current Price" : "Buy Price"}
+                        label={mode === 'PRESENT' ? "Current Price" : "Buy Price"}
                         type="number"
                         fullWidth
                         value={price}
-                        disabled={tab === 0 && !priceError} // Disabled in Present mode unless there's an error
+                        disabled={mode === 'PRESENT' && !priceError}
                         onChange={(e) => setPrice(e.target.value)}
                         InputProps={{
                             sx: {
@@ -227,15 +219,13 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                             startAdornment: <Typography sx={{ color: '#00E5FF', mr: 1 }}>₹</Typography>
                         }}
                         InputLabelProps={{ sx: { color: '#666' } }}
-                        helperText={fetchingPrice ? "Fetching..." : (tab === 0 ? "Auto-updates with market" : "Enter manually or select date")}
+                        helperText={fetchingPrice ? "Fetching..." : (mode === 'PRESENT' ? "Auto-updates with market" : "Enter manually or select date")}
                         FormHelperTextProps={{ sx: { color: '#666', fontSize: '0.7rem' } }}
                     />
 
                     {price && shares && (
                         <Box sx={{ p: 2, bgcolor: 'rgba(0, 229, 255, 0.05)', borderRadius: 2, border: '1px solid rgba(0, 229, 255, 0.2)' }}>
-                            <Typography variant="caption" sx={{ color: '#888' }}>
-                                Total Investment
-                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#888' }}>Total Investment</Typography>
                             <Typography variant="h5" sx={{ color: '#00E5FF', fontWeight: 700 }}>
                                 ₹{(Number(price) * Number(shares)).toLocaleString()}
                             </Typography>
@@ -248,17 +238,15 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                     fullWidth
                     variant="contained"
                     onClick={handleSubmit}
-                    disabled={!ticker || !shares || !price || Number(shares) <= 0 || Number(price) <= 0 || (fetchingPrice && tab === 0) || (tab === 1 && !date && !price)}
+                    disabled={!ticker || !shares || !price || Number(shares) <= 0 || Number(price) <= 0 || (fetchingPrice && mode === 'PRESENT') || (mode === 'HISTORICAL' && !date && !price)}
                     sx={{
                         bgcolor: '#fff', color: '#000', fontWeight: 700, py: 1.5, borderRadius: 3,
-                        '&:hover': { bgcolor: '#e0e0e0' },
-                        '&:disabled': { bgcolor: '#333', color: '#666' }
+                        '&:hover': { bgcolor: '#e0e0e0' }
                     }}
                 >
-                    {fetchingPrice && tab === 0 ? 'Fetching Price...' : 'Confirm Transaction'}
+                    {fetchingPrice && mode === 'PRESENT' ? 'Fetching Price...' : 'Confirm Transaction'}
                 </Button>
             </DialogActions>
         </Dialog>
     );
 }
-
