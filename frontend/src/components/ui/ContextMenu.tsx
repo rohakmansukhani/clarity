@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '@/lib/ui-store';
 
 export default function ContextMenu() {
     const router = useRouter();
+    const pathname = usePathname();
     const [visible, setVisible] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [selectedText, setSelectedText] = useState('');
@@ -16,6 +17,7 @@ export default function ContextMenu() {
     const lastRightClickTimeRef = useRef(0);
 
     const openQuickChat = useUIStore((state) => state.openQuickChat);
+    const setAdvisorQuery = useUIStore((state) => state.setAdvisorQuery);
 
     useEffect(() => {
         const handleContextMenu = (e: MouseEvent) => {
@@ -23,25 +25,16 @@ export default function ContextMenu() {
             const now = Date.now();
             const timeSinceLastClick = now - lastRightClickTimeRef.current;
 
-            console.log('Right click detected', {
-                isMenuVisible: isMenuVisibleRef.current,
-                timeSinceLastClick,
-                hasSelection: !!selection
-            });
-
             // If menu is already visible and user right-clicks again within 2 seconds, allow native menu
             if (isMenuVisibleRef.current && timeSinceLastClick < 2000) {
-                console.log('Second click detected - allowing native menu');
                 setVisible(false);
                 isMenuVisibleRef.current = false;
                 lastRightClickTimeRef.current = 0;
-                // Don't call e.preventDefault() - this allows native menu
                 return;
             }
 
             // Show custom menu if text is selected
             if (selection && selection.length > 2) {
-                console.log('Showing custom menu');
                 e.preventDefault();
                 setSelectedText(selection);
                 setPosition({ x: e.clientX, y: e.clientY });
@@ -49,8 +42,6 @@ export default function ContextMenu() {
                 isMenuVisibleRef.current = true;
                 lastRightClickTimeRef.current = now;
             } else {
-                // No text selected - allow native menu
-                console.log('No selection - allowing native menu');
                 setVisible(false);
                 isMenuVisibleRef.current = false;
                 lastRightClickTimeRef.current = 0;
@@ -58,7 +49,6 @@ export default function ContextMenu() {
         };
 
         const handleClick = (e: MouseEvent) => {
-            // Close menu on any click
             if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
                 setVisible(false);
                 isMenuVisibleRef.current = false;
@@ -66,12 +56,11 @@ export default function ContextMenu() {
         };
 
         const handleScroll = () => {
-            // Close menu on scroll
             if (visible) {
                 setVisible(false);
                 isMenuVisibleRef.current = false;
             }
-        }
+        };
 
         document.addEventListener('contextmenu', handleContextMenu);
         document.addEventListener('click', handleClick);
@@ -87,14 +76,20 @@ export default function ContextMenu() {
     const handleAskAI = () => {
         if (!selectedText) return;
 
-        // Mobile: Redirect directly to Advisor (since Quick Advisor is hidden)
-        if (window.innerWidth < 768) {
-            const query = encodeURIComponent(`Explain "${selectedText.length > 100 ? selectedText.substring(0, 100) + '...' : selectedText}" and its impact on the market.`);
-            router.push(`/advisor?query=${query}`);
+        const query = `Explain "${selectedText.length > 100 ? selectedText.substring(0, 100) + '...' : selectedText}" and its impact on the market.`;
+
+        // If already on the Advisor page, inject directly into the open chat
+        // instead of navigating (which would crash by re-mounting the page)
+        if (pathname === '/advisor') {
+            setAdvisorQuery(query);
+        } else if (window.innerWidth < 768) {
+            // Mobile: navigate to Advisor
+            router.push(`/advisor?query=${encodeURIComponent(query)}`);
         } else {
-            // Desktop: Open Quick Chat
-            openQuickChat(`Explain "${selectedText}" and its impact.`);
+            // Desktop: open Quick Chat sidebar
+            openQuickChat(query);
         }
+
         setVisible(false);
     };
 

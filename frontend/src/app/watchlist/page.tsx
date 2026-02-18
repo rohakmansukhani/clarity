@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Grid, Card, CardContent, IconButton, Button, CircularProgress } from '@mui/material';
+import { Box, Typography, Grid, Card, CardContent, IconButton, Button, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { marketService } from '@/services/marketService';
-import { Trash2, TrendingUp, ArrowUpRight, ArrowDownRight, Eye } from 'lucide-react';
+import { Trash2, ArrowUpRight, ArrowDownRight, Eye, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { motion } from 'framer-motion';
 import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
+import AddToWatchlistModal from '@/components/watchlist/AddToWatchlistModal';
 
 export default function WatchlistPage() {
     const router = useRouter();
@@ -17,6 +18,8 @@ export default function WatchlistPage() {
     const [prices, setPrices] = useState<Record<string, any>>({});
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [tickerToDelete, setTickerToDelete] = useState<string | null>(null);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
     const fetchWatchlist = async () => {
         try {
@@ -61,12 +64,20 @@ export default function WatchlistPage() {
         try {
             await marketService.removeFromWatchlist(tickerToDelete);
             setWatchlist(prev => prev.filter(i => i.ticker !== tickerToDelete));
+            setToast({ open: true, message: `${tickerToDelete} removed from Buy List`, severity: 'success' });
         } catch (err) {
             console.error(err);
+            setToast({ open: true, message: 'Failed to remove from Buy List', severity: 'error' });
         } finally {
             setDeleteConfirmOpen(false);
             setTickerToDelete(null);
         }
+    };
+
+    const handleAddToWatchlist = async (ticker: string, options: { target_buy_price?: number; target_sell_price?: number; notes?: string }) => {
+        await marketService.addToWatchlist(ticker, options);
+        setToast({ open: true, message: `${ticker} added to Buy List`, severity: 'success' });
+        await fetchWatchlist();
     };
 
     if (loading) {
@@ -81,10 +92,29 @@ export default function WatchlistPage() {
         <Box sx={{ display: 'flex', bgcolor: '#000', minHeight: '100vh' }}>
             <Sidebar />
             <Box sx={{ flexGrow: 1, p: 4, pl: { xs: 4, md: '140px' }, maxWidth: 1600, mx: 'auto' }}>
-                <Typography variant="h3" sx={{ color: '#fff', fontWeight: 700, mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Eye size={32} color="#00E5FF" />
-                    My Buy List
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+                    <Typography variant="h3" sx={{ color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Eye size={32} color="#00E5FF" />
+                        My Buy List
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        startIcon={<Plus size={18} />}
+                        onClick={() => setIsAddModalOpen(true)}
+                        sx={{
+                            bgcolor: '#00E5FF',
+                            color: '#000',
+                            fontWeight: 700,
+                            py: 1.5,
+                            px: 3,
+                            borderRadius: 3,
+                            textTransform: 'none',
+                            '&:hover': { bgcolor: '#00B2CC' }
+                        }}
+                    >
+                        Add Stock
+                    </Button>
+                </Box>
 
                 {watchlist.length === 0 ? (
                     <Box sx={{ py: 10, textAlign: 'center', border: '1px dashed #333', borderRadius: 4 }}>
@@ -196,8 +226,8 @@ export default function WatchlistPage() {
 
             <ConfirmDialog
                 open={deleteConfirmOpen}
-                title="Remove from Watchlist"
-                message={`Are you sure you want to remove ${tickerToDelete} from your watchlist?`}
+                title="Remove from Buy List"
+                message={`Are you sure you want to remove ${tickerToDelete} from your Buy List?`}
                 confirmText="Remove"
                 cancelText="Cancel"
                 confirmColor="error"
@@ -207,6 +237,23 @@ export default function WatchlistPage() {
                     setTickerToDelete(null);
                 }}
             />
+
+            <AddToWatchlistModal
+                open={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onAdd={handleAddToWatchlist}
+            />
+
+            <Snackbar
+                open={toast.open}
+                autoHideDuration={3000}
+                onClose={() => setToast(prev => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert severity={toast.severity} onClose={() => setToast(prev => ({ ...prev, open: false }))} sx={{ bgcolor: toast.severity === 'success' ? '#10B981' : '#EF4444', color: '#000', fontWeight: 600 }}>
+                    {toast.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }

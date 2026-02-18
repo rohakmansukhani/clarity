@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Box, List, ListItem, ListItemButton, Tooltip, IconButton, useMediaQuery, useTheme } from '@mui/material';
-import { LayoutDashboard, TrendingUp, PieChart, MessageSquare, LogOut, Menu, X, ChevronRight, ChevronLeft, Eye, RotateCcw } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, PieChart, MessageSquare, LogOut, Menu, X, ChevronRight, ChevronLeft, Eye, RotateCcw, BarChart2, Compass } from 'lucide-react';
 import { useUIStore } from '@/lib/ui-store';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,7 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 const MENU_ITEMS = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { label: 'Market', icon: TrendingUp, path: '/market' },
-    { label: 'Watchlist', icon: Eye, path: '/watchlist' },
+    { label: 'Analysis', icon: BarChart2, path: '/analysis' },
+    { label: 'Discovery Hub', icon: Compass, path: '/sectors' },
+    { label: 'Buy List', icon: Eye, path: '/watchlist' },
     { label: 'Backtrack', icon: RotateCcw, path: '/backtrack' },
     { label: 'Portfolio', icon: PieChart, path: '/portfolio' },
     { label: 'Advisor', icon: MessageSquare, path: '/advisor' },

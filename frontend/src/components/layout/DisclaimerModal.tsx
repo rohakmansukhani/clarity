@@ -10,7 +10,6 @@ export default function DisclaimerModal() {
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     useEffect(() => {
-        // Check if user has already acknowledged the disclaimer IN THIS SESSION
         const hasAcknowledged = sessionStorage.getItem('clarity_disclaimer_acknowledged');
         if (!hasAcknowledged) {
             setOpen(true);
@@ -31,17 +30,32 @@ export default function DisclaimerModal() {
             PaperProps={{
                 sx: {
                     bgcolor: '#0B0B0B',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
                     border: { md: '1px solid #333' },
                     borderRadius: { md: 4 },
-                    maxHeight: { md: '600px' } // Prevent it from being too tall on desktop
+                    // Let the dialog grow naturally — no fixed maxHeight that clips content
+                    maxHeight: '90vh',
+                    display: 'flex',
+                    flexDirection: 'column',
                 }
             }}
         >
-            <DialogContent sx={{ maxWidth: 600, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <DialogContent
+                sx={{
+                    maxWidth: 600,
+                    width: '100%',
+                    mx: 'auto',
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    // Start from top, not centre
+                    justifyContent: 'flex-start',
+                    pt: 6,
+                    pb: 4,
+                    // Allow scrolling if content overflows
+                    overflowY: 'auto',
+                }}
+            >
                 <Box sx={{ mb: 4, p: 2, bgcolor: 'rgba(0, 229, 255, 0.1)', borderRadius: '50%' }}>
                     <AlertTriangle size={64} color="#00E5FF" />
                 </Box>

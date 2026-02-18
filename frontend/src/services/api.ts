@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { supabase } from '@/lib/supabase';
 
 // Create Axios instance with base URL
 const api = axios.create({
@@ -8,13 +9,24 @@ const api = axios.create({
     },
 });
 
-// Request Interceptor
+// Request Interceptor — attach auth token to every request
 api.interceptors.request.use(
-    (config) => {
-        // Add auth token from localStorage
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+    async (config) => {
+        try {
+            // First try to get token from Supabase client session
+            const { data: { session } } = await supabase.auth.getSession();
+            let token = session?.access_token;
+
+            // Fallback to localStorage 'token' (used by custom backend login in LoginPage.tsx)
+            if (!token && typeof window !== 'undefined') {
+                token = localStorage.getItem('token') || undefined;
+            }
+
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+        } catch (error) {
+            console.error("Error setting auth header:", error);
         }
         return config;
     },
@@ -25,12 +37,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // Handle global errors (e.g., 401 Unauthorized)
-        if (error.response?.status === 401) {
-            if (typeof window !== 'undefined') {
-                window.location.href = '/login';
-            }
-        }
         return Promise.reject(error);
     }
 );

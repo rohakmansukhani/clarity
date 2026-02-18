@@ -149,7 +149,7 @@ function HistoryItem({ session, isActive, onClick, onPin, onDelete }: any) {
 export default function AdvisorClient() {
     const searchParams = useSearchParams();
     const initialQuery = searchParams.get('query');
-    const { quickChatMessages, resetQuickChat, openSidebar, closeSidebar } = useUIStore();
+    const { quickChatMessages, resetQuickChat, openSidebar, closeSidebar, advisorQuery, setAdvisorQuery } = useUIStore();
 
     // Chat State
     const [messages, setMessages] = useState<Message[]>([]);
@@ -166,6 +166,20 @@ export default function AdvisorClient() {
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const hasAutoQueried = useRef(false);
+
+    // Auto-scroll to bottom whenever messages update or AI is typing
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages, isTyping]);
+
+    // Handle query injected from ContextMenu when already on /advisor
+    useEffect(() => {
+        if (advisorQuery) {
+            setAdvisorQuery(null); // Clear immediately to prevent re-firing
+            handleSend(advisorQuery);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [advisorQuery]);
 
     // Helper to toggle history and main sidebar together
     const toggleHistory = () => {

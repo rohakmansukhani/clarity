@@ -170,7 +170,7 @@ export default function DashboardPage() {
                             );
                         }}
                     />
-                    <IconButton sx={{ color: '#666', '&:hover': { color: '#fff' } }}><Bell size={20} /></IconButton>
+
                     <Box sx={{ width: 36, height: 36, minWidth: 36, borderRadius: '50%', bgcolor: '#00E5FF', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem', border: '2px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
                         {(user?.full_name || user?.email || 'T').charAt(0).toUpperCase()}
                     </Box>

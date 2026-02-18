@@ -29,6 +29,11 @@ interface UIStore {
     incrementInteraction: () => void;
     setQuickSessionId: (id: string | null) => void;
     resetQuickChat: () => void;
+
+    // Used to inject a query directly into the open Advisor chat
+    // without navigating away (avoids crash when already on /advisor)
+    advisorQuery: string | null;
+    setAdvisorQuery: (query: string | null) => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -57,5 +62,8 @@ export const useUIStore = create<UIStore>((set) => ({
         interactionCount: 0,
         initialQuery: null,
         quickSessionId: null
-    })
+    }),
+
+    advisorQuery: null,
+    setAdvisorQuery: (query) => set({ advisorQuery: query }),
 }));

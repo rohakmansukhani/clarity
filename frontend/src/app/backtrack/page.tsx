@@ -351,7 +351,7 @@ export default function BacktrackPage() {
 
                                 <CardContent sx={{ p: 4, display: 'flex', flexDirection: 'column', gap: 4, height: '100%', justifyContent: 'center' }}>
                                     <Box sx={{ textAlign: 'center' }}>
-                                        <Typography variant="overline" sx={{ color: '#666', letterSpacing: '0.2em', fontWeight: 700 }}>NET PROFEIT / LOSS</Typography>
+                                        <Typography variant="overline" sx={{ color: '#666', letterSpacing: '0.2em', fontWeight: 700 }}>NET PROFIT / LOSS</Typography>
                                         <Typography variant="h1" sx={{ color: result.pnl >= 0 ? '#10B981' : '#EF4444', fontWeight: 800, fontSize: { xs: '3rem', md: '4rem' }, letterSpacing: '-0.02em', my: 2 }}>
                                             {result.pnl >= 0 ? '+' : ''}₹{Math.abs(result.pnl).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                         </Typography>
