@@ -16,7 +16,8 @@ export default function StockPage() {
     const symbol = (params.symbol as string).toUpperCase();
 
     // State
-    const [loading, setLoading] = useState(true);
+    const [initialLoading, setInitialLoading] = useState(true);
+    const [chartLoading, setChartLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<any>(null);
     const [chartData, setChartData] = useState<any[]>([]);
@@ -50,9 +51,13 @@ export default function StockPage() {
     }, []);
 
     // Fetch Data
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (isInitial = false) => {
         try {
-            setLoading(true);
+            if (isInitial) {
+                setInitialLoading(true);
+            } else {
+                setChartLoading(true);
+            }
             setError(null);
 
             // Parallel fetching for speed
@@ -75,23 +80,35 @@ export default function StockPage() {
             console.error("Failed to load stock data:", err);
             setError("Failed to load stock data. Please try again.");
         } finally {
-            setLoading(false);
+            if (isInitial) {
+                setInitialLoading(false);
+            } else {
+                setChartLoading(false);
+            }
         }
     }, [symbol, timeRange]);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        // Initial load
+        fetchData(true);
+    }, [symbol]); // Only on symbol change
+
+    useEffect(() => {
+        // Update on timeRange change (without full page reload)
+        if (!initialLoading) {
+            fetchData(false);
+        }
+    }, [timeRange]);
 
     // Wire update interval to actually re-fetch
     useEffect(() => {
         if (updateInterval <= 0) return;
         const intervalMs = updateInterval * 60 * 1000;
-        const id = setInterval(fetchData, intervalMs);
+        const id = setInterval(() => fetchData(false), intervalMs);
         return () => clearInterval(id);
     }, [updateInterval, fetchData]);
 
-    if (loading) {
+    if (initialLoading) {
         return (
             <Box sx={{ display: 'flex', height: '80vh', justifyContent: 'center', alignItems: 'center' }}>
                 <CircularProgress size={24} sx={{ color: '#00E5FF' }} />
@@ -112,14 +129,10 @@ export default function StockPage() {
     // Fallback if API returns partial data
     const price = data.market_data?.price_formatted || `₹${data.market_data?.price?.toFixed(2) || '0.00'}`;
     const change = data.market_data?.change || 0;
-    const changePercent = data.market_data?.changePercent || 0; // Assuming backend sends this, or we calc it? 
-    // Wait, backend consensus doesn't send changePercent explicitly in top level market_data sometimes?
-    // Let's check: market_service.py says: "price_formatted": format_inr(price_data.get("price", 0.0)).
-    // It does NOT seem to send change/changePercent in market_data unless consensus engine does valid lookup.
-    // We should be safe with optionals.
+    const changePercent = data.market_data?.changePercent || 0;
 
     return (
-        <Box sx={{ display: 'flex', bgcolor: '#000', minHeight: '100vh' }}>
+        <Box sx={{ display: 'flex', bgcolor: '#0B0B0B', minHeight: '100vh' }}>
             <Sidebar />
             <Box sx={{ flexGrow: 1, maxWidth: 1600, mx: 'auto', pb: 10, pt: 6, pr: { xs: 2, md: 6 }, pl: { xs: 2, md: '140px' } }}>
                 {/* Minimal Header */}
@@ -150,6 +163,26 @@ export default function StockPage() {
                     <Grid size={{ xs: 12, md: 8 }}>
                         {/* Chart Container */}
                         <Box sx={{ height: 450, bgcolor: '#111', borderRadius: 4, p: 3, border: '1px solid #222', mb: 6, position: 'relative' }}>
+                            {/* Loading Overlay */}
+                            {chartLoading && (
+                                <Box sx={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    bgcolor: 'rgba(0,0,0,0.5)',
+                                    zIndex: 20,
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    borderRadius: 4,
+                                    backdropFilter: 'blur(2px)'
+                                }}>
+                                    <CircularProgress size={30} sx={{ color: '#00E5FF' }} />
+                                </Box>
+                            )}
+
                             {/* Time Range Selectors */}
                             <Box sx={{ position: 'absolute', top: 20, right: 24, zIndex: 10, display: 'flex', gap: 1 }}>
                                 {['1d', '5d', '1mo', '3mo', '6mo', '1y', 'ytd', 'max'].map((range) => (
@@ -202,20 +235,34 @@ export default function StockPage() {
                                                         dataKey="date"
                                                         tickFormatter={(val) => {
                                                             const d = new Date(val);
-                                                            return timeRange === '1d' ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                                                            // Better formatting based on range
+                                                            if (timeRange === '1d') return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                                            if (timeRange === '5d' || timeRange === '1mo') return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
+                                                            return d.toLocaleDateString([], { month: 'short', year: '2-digit' });
                                                         }}
-                                                        axisLine={false} tickLine={false} tick={{ fill: '#444' }} dy={10}
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#666', fontSize: 12 }}
+                                                        dy={10}
+                                                        minTickGap={30}
                                                     />
-                                                    <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={{ fill: '#444' }} width={45} />
+                                                    <YAxis
+                                                        domain={['auto', 'auto']}
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fill: '#666', fontSize: 12 }}
+                                                        width={45}
+                                                        tickFormatter={(val) => `₹${val}`}
+                                                    />
                                                     <RechartsTooltip content={<CustomTooltip timeRange={timeRange} showYear={showYear} />} cursor={{ stroke: 'rgba(255, 255, 255, 0.1)', strokeWidth: 1, strokeDasharray: '4 4' }} />
                                                     <Area
                                                         type="monotone"
                                                         dataKey="close"
                                                         stroke="#00E5FF"
-                                                        strokeWidth={3}
+                                                        strokeWidth={2}
                                                         fillOpacity={1}
                                                         fill="url(#colorPrice)"
-                                                        animationDuration={1000}
+                                                        animationDuration={500}
                                                     />
                                                 </AreaChart>
                                             </ResponsiveContainer>
