@@ -11,7 +11,7 @@ interface PortfolioChartProps {
 
 export default function PortfolioChart({ data }: PortfolioChartProps) {
     return (
-        <Box component={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }} sx={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box component={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }} sx={{ height: 400, width: '100%', minWidth: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                     <Pie

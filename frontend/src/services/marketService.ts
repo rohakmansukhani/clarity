@@ -136,7 +136,7 @@ export const marketService = {
 
     // --- Watchlist API ---
     getWatchlist: async () => {
-        const response = await api.get('/watchlists/');
+        const response = await api.get('/watchlists');
         return response.data;
     },
 
@@ -148,7 +148,7 @@ export const marketService = {
             target_sell_price: details?.target_sell_price,
             notes: details?.notes
         };
-        const response = await api.post('/watchlists/', payload);
+        const response = await api.post('/watchlists', payload);
         return response.data;
     },
 
@@ -171,12 +171,12 @@ export const marketService = {
 
     // --- Portfolio Management ---
     getPortfolios: async () => {
-        const response = await api.get('/portfolios/');
+        const response = await api.get('/portfolios');
         return response.data;
     },
 
     createPortfolio: async (name: string, currency: string = 'INR') => {
-        const response = await api.post('/portfolios/', { name, currency });
+        const response = await api.post('/portfolios', { name, currency });
         return response.data;
     },
 

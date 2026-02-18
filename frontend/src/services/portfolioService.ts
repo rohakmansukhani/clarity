@@ -31,13 +31,13 @@ export interface PortfolioPerformance {
 export const portfolioService = {
     // List all portfolios
     listPortfolios: async (): Promise<Portfolio[]> => {
-        const response = await api.get('/portfolios/');
+        const response = await api.get('/portfolios');
         return response.data;
     },
 
     // Create a new portfolio
     createPortfolio: async (name: string, currency: string = 'INR'): Promise<Portfolio> => {
-        const response = await api.post('/portfolios/', { name, currency });
+        const response = await api.post('/portfolios', { name, currency });
         return response.data;
     },
 
@@ -62,15 +62,8 @@ export const portfolioService = {
     // --- Holdings ---
 
     deleteHolding: async (holdingId: string) => {
-        const response = await api.delete(`/portfolios/holdings/${holdingId}`); // Note: Path adjusted to match likely router structure or need to check router
-        // Wait, in backend I defined it as @router.delete("/holdings/{holding_id}")
-        // The router prefix is likely /api/v1/portfolios if it's included in api.py
-        // Let me double check api.py or the router registration. 
-        // Assuming router is mounted at /portfolios.
-        // The backend code was: @router.delete("/holdings/{holding_id}")
-        // So the path is /portfolios/holdings/{holding_id}
-        const res = await api.delete(`/portfolios/holdings/${holdingId}`);
-        return res.data;
+        const response = await api.delete(`/portfolios/holdings/${holdingId}`);
+        return response.data;
     },
 
     updateHolding: async (holdingId: string, updates: { shares?: number; avg_price?: number }) => {
@@ -81,14 +74,12 @@ export const portfolioService = {
     // --- Watchlist ---
 
     getWatchlist: async () => {
-        const response = await api.get('/portfolios/watchlists/'); // Mounted under portfolios router?
-        // Checking backend code: @router.get("/watchlists/")
-        // If portfolio router is at /portfolios, then yes /portfolios/watchlists/
+        const response = await api.get('/portfolios/watchlists');
         return response.data;
     },
 
     addToWatchlist: async (ticker: string, exchange: string = 'NSE') => {
-        const response = await api.post('/portfolios/watchlists/', { ticker, exchange });
+        const response = await api.post('/portfolios/watchlists', { ticker, exchange });
         return response.data;
     },
 
