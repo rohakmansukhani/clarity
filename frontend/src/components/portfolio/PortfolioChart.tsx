@@ -98,9 +98,9 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                                             opacity: isDimmed ? 0.3 : 1,
                                         }}
                                         transition={{
-                                            strokeDasharray: { duration: 1.5, delay: 0.2 + i * 0.1, ease: "easeOut" },
-                                            strokeWidth: { type: "spring", stiffness: 300, damping: 20 },
-                                            opacity: { duration: 0.4 },
+                                            strokeDasharray: { duration: 0.8, ease: "easeInOut" }, // Faster, smoother
+                                            strokeWidth: { duration: 0.3 }, // Simple ease instead of spring
+                                            opacity: { duration: 0.3 },
                                         }}
                                         onMouseEnter={() => setActiveIndex(i)}
                                         onMouseLeave={() => setActiveIndex(null)}

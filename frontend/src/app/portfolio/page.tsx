@@ -452,7 +452,7 @@ export default function PortfolioPage() {
                                         />
                                     </motion.div>
                                 ) : (
-                                    <Box sx={{ height: 400, width: '100%' }}>
+                                    <Box sx={{ width: '100%', minHeight: 400 }}>
                                         <PortfolioChart data={allocationData} />
                                     </Box>
                                 )}
@@ -533,7 +533,9 @@ export default function PortfolioPage() {
                         setPortfolioToDelete(null);
                     }}
                 />
-                <DisclaimerFooter />
+                <Box sx={{ mt: 8 }}>
+                    <DisclaimerFooter />
+                </Box>
             </Box>
         </>
     );
