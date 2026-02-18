@@ -353,18 +353,18 @@ export default function DiscoveryHubPage() {
     };
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#000' }}>
+        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#0B0B0B' }}>
             <Sidebar />
 
             <Box sx={{
                 flexGrow: 1,
                 height: '100vh',
-                bgcolor: '#000',
+                bgcolor: '#0B0B0B',
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
                 overflow: 'hidden',
-                background: 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #000 70%)'
+                background: 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #0B0B0B 70%)'
             }}>
                 {/* Header */}
                 <Box sx={{
@@ -380,25 +380,46 @@ export default function DiscoveryHubPage() {
                     zIndex: 10,
                     pl: { xs: '80px', md: '120px' }
                 }}>
-                    <IconButton
-                        onClick={toggleHistory}
-                        sx={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: '50%',
-                            color: '#fff',
-                            bgcolor: isHistoryOpen ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255,255,255,0.05)',
-                            border: isHistoryOpen ? '1px solid rgba(139, 92, 246, 0.4)' : '1px solid rgba(255,255,255,0.1)',
-                            backdropFilter: 'blur(10px)',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                                bgcolor: 'rgba(255,255,255,0.1)',
-                                transform: 'scale(1.05)'
-                            }
-                        }}
-                    >
-                        <History size={20} />
-                    </IconButton>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <IconButton
+                            onClick={() => {
+                                if (viewMode !== 'chat') {
+                                    setViewMode('chat');
+                                } else {
+                                    router.back();
+                                }
+                            }}
+                            sx={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: '50%',
+                                color: '#fff',
+                                bgcolor: 'rgba(255,255,255,0.05)',
+                                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                            }}
+                        >
+                            <ArrowRight className="rotate-180" size={20} />
+                        </IconButton>
+                        <IconButton
+                            onClick={toggleHistory}
+                            sx={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: '50%',
+                                color: '#fff',
+                                bgcolor: isHistoryOpen ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255,255,255,0.05)',
+                                border: isHistoryOpen ? '1px solid rgba(139, 92, 246, 0.4)' : '1px solid rgba(255,255,255,0.1)',
+                                backdropFilter: 'blur(10px)',
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                    bgcolor: 'rgba(255,255,255,0.1)',
+                                    transform: 'scale(1.05)'
+                                }
+                            }}
+                        >
+                            <History size={20} />
+                        </IconButton>
+                    </Box>
 
                     {/* Breadcrumbs / View Indicator */}
                     {(viewMode !== 'chat' || !isInitial) && (

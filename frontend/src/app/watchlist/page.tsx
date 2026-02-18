@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Card, CardContent, IconButton, Button, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { marketService } from '@/services/marketService';
-import { Trash2, ArrowUpRight, ArrowDownRight, Eye, Plus } from 'lucide-react';
+import { Trash2, ArrowUpRight, ArrowDownRight, Eye, Plus, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
@@ -82,16 +82,28 @@ export default function WatchlistPage() {
 
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', bgcolor: '#000' }}>
+            <Box sx={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', bgcolor: '#0B0B0B' }}>
                 <CircularProgress size={24} sx={{ color: '#00E5FF' }} />
             </Box>
         );
     }
 
     return (
-        <Box sx={{ display: 'flex', bgcolor: '#000', minHeight: '100vh' }}>
+        <Box sx={{ display: 'flex', bgcolor: '#0B0B0B', minHeight: '100vh' }}>
             <Sidebar />
             <Box sx={{ flexGrow: 1, p: 4, pl: { xs: 4, md: '140px' }, maxWidth: 1600, mx: 'auto' }}>
+                <Button
+                    startIcon={<ArrowLeft size={20} />}
+                    onClick={() => router.back()}
+                    sx={{
+                        color: '#666',
+                        mb: 2,
+                        pl: 0,
+                        '&:hover': { color: '#fff', bgcolor: 'transparent' }
+                    }}
+                >
+                    Back
+                </Button>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
                     <Typography variant="h3" sx={{ color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Eye size={32} color="#00E5FF" />

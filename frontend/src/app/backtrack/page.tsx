@@ -4,13 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, TextField, Button, Card, CardContent, CircularProgress, Autocomplete, Paper } from '@mui/material';
 import Sidebar from '@/components/layout/Sidebar';
 import { marketService } from '@/services/marketService';
-import { RotateCcw, TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
+import { RotateCcw, TrendingUp, TrendingDown, DollarSign, Calendar, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import CustomDatePicker from '@/components/ui/CustomDatePicker';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
 
 export default function BacktrackPage() {
+    const router = useRouter();
     const [ticker, setTicker] = useState('');
     const [searchOptions, setSearchOptions] = useState<any[]>([]);
     const [date, setDate] = useState('');
@@ -113,9 +115,21 @@ export default function BacktrackPage() {
     };
 
     return (
-        <Box sx={{ display: 'flex', bgcolor: '#000', minHeight: '100vh' }}>
+        <Box sx={{ display: 'flex', bgcolor: '#0B0B0B', minHeight: '100vh' }}>
             <Sidebar />
             <Box sx={{ flexGrow: 1, p: 4, pl: { xs: 4, md: '140px' }, maxWidth: 1200, mx: 'auto' }}>
+                <Button
+                    startIcon={<ArrowLeft size={20} />}
+                    onClick={() => router.back()}
+                    sx={{
+                        color: '#666',
+                        mb: 2,
+                        pl: 0,
+                        '&:hover': { color: '#fff', bgcolor: 'transparent' }
+                    }}
+                >
+                    Back
+                </Button>
                 <Typography variant="h3" sx={{ color: '#fff', fontWeight: 700, mb: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
                     <RotateCcw size={32} color="#00E5FF" />
                     Backtrack

@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { Box, Typography, Grid, Chip, CircularProgress, Button, Tab, Tabs, Tooltip, Menu, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert } from '@mui/material';
-import { ArrowUpRight, ArrowDownRight, Zap, TrendingUp, Activity, Newspaper, Brain, Info } from 'lucide-react';
-import { useParams } from 'next/navigation';
+import { ArrowUpRight, ArrowDownRight, Zap, TrendingUp, Activity, Newspaper, Brain, Info, ArrowLeft } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { marketService } from '@/services/marketService';
 import AddTransactionModal from '@/components/portfolio/AddTransactionModal';
@@ -13,6 +13,7 @@ import Sidebar from '@/components/layout/Sidebar';
 
 export default function StockPage() {
     const params = useParams();
+    const router = useRouter();
     const symbol = (params.symbol as string).toUpperCase();
 
     // State
@@ -135,6 +136,20 @@ export default function StockPage() {
         <Box sx={{ display: 'flex', bgcolor: '#0B0B0B', minHeight: '100vh' }}>
             <Sidebar />
             <Box sx={{ flexGrow: 1, maxWidth: 1600, mx: 'auto', pb: 10, pt: 6, pr: { xs: 2, md: 6 }, pl: { xs: 2, md: '140px' } }}>
+                {/* Back Button */}
+                <Button
+                    startIcon={<ArrowLeft size={20} />}
+                    onClick={() => router.back()}
+                    sx={{
+                        color: '#666',
+                        mb: 2,
+                        pl: 0,
+                        '&:hover': { color: '#fff', bgcolor: 'transparent' }
+                    }}
+                >
+                    Back
+                </Button>
+
                 {/* Minimal Header */}
                 <Box sx={{ mb: 6 }}>
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 1 }}>

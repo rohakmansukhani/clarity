@@ -5,6 +5,7 @@ import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
 import { Box, Typography, Grid, Button, LinearProgress, Chip, IconButton, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, InputAdornment, Menu, ListItemIcon, Divider, Card, CardContent, CardActionArea, Autocomplete, Paper, Tooltip } from '@mui/material';
 import { TrendingUp, TrendingDown, Plus, Wallet, PieChart as PieChartIcon, X, Search, ChevronDown, FolderPlus, Folder, Trash2, ArrowLeft, ArrowRight, MoreVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import { portfolioService } from '@/services/portfolioService';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
@@ -42,12 +43,17 @@ const SECTOR_COLORS = ['#00E5FF', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#
 
 export default function PortfolioPage() {
     // --- State ---
+    const router = useRouter();
     const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
     const [view, setView] = useState<'holdings' | 'allocation'>('holdings'); // Detail sub-view
     const [loading, setLoading] = useState(true);
 
     // Multi-Portfolio State
     const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+
+    // ... (rest of state items are unchanged, I will skip them in replacement if possible, but I need to be careful with context)
+    // Wait, replace_file_content replaces the whole chunk. I should target specific blocks. 
+    // I will restart the tool call strategy to be safer and avoid rewriting huge chunks of state.
     const [activeId, setActiveId] = useState<string>('');
 
     // Modals & Menus
@@ -206,7 +212,7 @@ export default function PortfolioPage() {
 
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', bgcolor: '#000' }}>
+            <Box sx={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', bgcolor: '#0B0B0B' }}>
                 <CircularProgress size={24} sx={{ color: '#00E5FF' }} />
             </Box>
         );
@@ -230,7 +236,7 @@ export default function PortfolioPage() {
                     mx: 'auto',
                     pb: 10,
                     pt: 6,
-                    bgcolor: '#000',
+                    bgcolor: '#0B0B0B',
                     minHeight: '100vh',
                     pr: { xs: 2, md: 6 },
                     pl: { xs: 2, md: '140px' }
@@ -239,6 +245,19 @@ export default function PortfolioPage() {
                 {/* --- LIST VIEW --- */}
                 {viewMode === 'list' && (
                     <Box>
+                        {/* Back Button */}
+                        <Button
+                            startIcon={<ArrowLeft size={20} />}
+                            onClick={() => router.back()}
+                            sx={{
+                                color: '#666',
+                                mb: 2,
+                                pl: 0,
+                                '&:hover': { color: '#fff', bgcolor: 'transparent' }
+                            }}
+                        >
+                            Back
+                        </Button>
                         <Box sx={{ mb: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Box>
                                 <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700, mb: 1 }}>My Portfolios</Typography>

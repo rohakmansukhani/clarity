@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Paper, IconButton, Button, Avatar, Snackbar, Alert } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Scale } from 'lucide-react';
+import { Plus, Scale, ArrowLeft } from 'lucide-react';
 import Sidebar from '@/components/layout/Sidebar';
 import { useRouter } from 'next/navigation';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -156,9 +156,23 @@ export default function AnalysisPage() {
     const quickInfo = stockPrices[search.toUpperCase()];
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#000000' }}>
+        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#0B0B0B' }}>
             <Sidebar />
             <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 6 }, ml: { md: '140px' }, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <Box sx={{ width: '100%', maxWidth: 1200, mb: 2 }}>
+                    <Button
+                        startIcon={<ArrowLeft size={20} />}
+                        onClick={() => router.back()}
+                        sx={{
+                            color: '#666',
+                            pl: 0,
+                            '&:hover': { color: '#fff', bgcolor: 'transparent' },
+                            alignSelf: 'flex-start'
+                        }}
+                    >
+                        Back
+                    </Button>
+                </Box>
 
                 {/* Header */}
                 <AnimatePresence>

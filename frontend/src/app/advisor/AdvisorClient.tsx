@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Typography, TextField, IconButton, CircularProgress, Paper, Drawer, List, ListItem, ListItemText, ListItemButton, Divider, Menu, MenuItem } from '@mui/material';
-import { Send, Paperclip, Bot, User, Sparkles, Zap, TrendingUp, History, Plus, MoreVertical, Pin, Trash2 } from 'lucide-react';
+import { Send, Paperclip, Bot, User, Sparkles, Zap, TrendingUp, History, Plus, MoreVertical, Pin, Trash2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/layout/Sidebar';
 import ClarityLogo from '@/components/ui/ClarityLogo';
@@ -396,12 +396,12 @@ export default function AdvisorClient() {
             <Box sx={{
                 pl: { xs: 0, md: '100px' }, // Main Sidebar width
                 height: '100vh',
-                bgcolor: '#000',
+                bgcolor: '#0B0B0B',
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
                 overflow: 'hidden',
-                background: 'radial-gradient(circle at 50% 0%, #051a24 0%, #000 70%)'
+                background: 'radial-gradient(circle at 50% 0%, #051a24 0%, #0B0B0B 70%)'
             }}>
                 {/* Header */}
                 <Box sx={{
@@ -417,17 +417,29 @@ export default function AdvisorClient() {
                     zIndex: 10,
                     pl: { xs: '80px', md: '120px' }
                 }}>
-                    <IconButton
-                        onClick={toggleHistory}
-                        sx={{
-                            color: '#fff',
-                            bgcolor: isHistoryOpen ? 'rgba(0, 229, 255, 0.2)' : 'rgba(255,255,255,0.05)',
-                            border: isHistoryOpen ? '1px solid rgba(0, 229, 255, 0.4)' : '1px solid transparent',
-                            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-                        }}
-                    >
-                        <History size={20} />
-                    </IconButton>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <IconButton
+                            onClick={() => window.history.back()}
+                            sx={{
+                                color: '#fff',
+                                bgcolor: 'rgba(255,255,255,0.05)',
+                                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                            }}
+                        >
+                            <ArrowLeft size={20} />
+                        </IconButton>
+                        <IconButton
+                            onClick={toggleHistory}
+                            sx={{
+                                color: '#fff',
+                                bgcolor: isHistoryOpen ? 'rgba(0, 229, 255, 0.2)' : 'rgba(255,255,255,0.05)',
+                                border: isHistoryOpen ? '1px solid rgba(0, 229, 255, 0.4)' : '1px solid transparent',
+                                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                            }}
+                        >
+                            <History size={20} />
+                        </IconButton>
+                    </Box>
                 </Box>
 
                 {/* Custom Floating History Panel */}
