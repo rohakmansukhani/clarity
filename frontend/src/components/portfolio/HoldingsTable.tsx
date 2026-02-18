@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, IconButton, Menu, MenuItem, ListItemIcon, Tooltip } from '@mui/material';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { MoreVertical, Trash2, Bell } from 'lucide-react';
 
 interface HoldingsTableProps {
@@ -10,6 +11,7 @@ interface HoldingsTableProps {
 }
 
 export default function HoldingsTable({ portfolio, onDelete, onAlert }: HoldingsTableProps) {
+    const router = useRouter();
     const [anchorEl, setAnchorEl] = useState<{ [key: string]: HTMLElement | null }>({});
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, id: string) => {
@@ -52,7 +54,9 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert }: Holdings
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.05 }}
+                                onClick={() => router.push(`/market/${stock.ticker}`)}
                                 sx={{
+                                    cursor: 'pointer',
                                     '& td': { borderBottom: '1px solid rgba(255,255,255,0.05)', py: 2.5, color: '#ddd', fontSize: '0.95rem' },
                                     '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' },
                                     transition: 'background-color 0.2s'
@@ -106,7 +110,10 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert }: Holdings
                                         <Tooltip title="Set Alert">
                                             <IconButton
                                                 size="small"
-                                                onClick={() => onAlert && onAlert(stock.ticker, stock.current_price)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (onAlert) onAlert(stock.ticker, stock.current_price);
+                                                }}
                                                 sx={{ color: '#444', '&:hover': { color: '#00E5FF' }, mr: 1 }}
                                             >
                                                 <Bell size={16} />
@@ -115,7 +122,10 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert }: Holdings
 
                                         <IconButton
                                             size="small"
-                                            onClick={(e) => handleMenuOpen(e, stock.id || stock.ticker)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleMenuOpen(e, stock.id || stock.ticker);
+                                            }}
                                             sx={{ color: '#444', '&:hover': { color: '#fff' } }}
                                         >
                                             <MoreVertical size={16} />

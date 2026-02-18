@@ -52,12 +52,7 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                 style={{
                     width: "100%",
                     maxWidth: 600,
-                    padding: "44px",
-                    backgroundColor: "rgba(255, 255, 255, 0.03)", // Dark mode adjustment
-                    backdropFilter: "blur(40px)",
-                    borderRadius: 36,
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    boxShadow: "0 30px 80px -20px rgba(0,0,0,0.2)",
+                    padding: "0px",
                     position: "relative",
                 }}
             >
