@@ -194,9 +194,9 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                         <Box>
                             <Typography sx={{ color: '#666', fontSize: '0.8rem', mb: 1, ml: 1 }}>Purchase Date</Typography>
                             <CustomDatePicker
-                                selectedDate={date}
-                                onChange={(d) => setDate(d || undefined)}
-                                placeholder="Select purchase date"
+                                value={date ? date.toISOString().split('T')[0] : ''}
+                                onChange={(d) => setDate(d ? new Date(d) : undefined)}
+                                label="Select purchase date"
                             />
                         </Box>
                     )}
