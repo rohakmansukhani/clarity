@@ -319,7 +319,8 @@ export default function StockPage() {
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Typography sx={{ fontWeight: 600, color: '#fff' }}>
                                             {(() => {
-                                                const val = technicalData?.rsi;
+                                                const rsiObj = technicalData?.rsi;
+                                                const val = typeof rsiObj === 'object' ? rsiObj?.value : rsiObj;
                                                 if (val === undefined || val === null) return '-';
                                                 const num = Number(val);
                                                 return isNaN(num) ? '-' : num.toFixed(2);
