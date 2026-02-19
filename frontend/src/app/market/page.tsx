@@ -23,33 +23,6 @@ const TRENDING_STOCKS = [
 export default function MarketHome() {
     const router = useRouter();
     const [query, setQuery] = useState('');
-    const [rsiData, setRsiData] = React.useState<Record<string, any>>({});
-
-    React.useEffect(() => {
-        const fetchRSI = async () => {
-            const data: Record<string, any> = {};
-            // Fetch in parallel using authenticated proxy-aware service
-            await Promise.all(TRENDING_STOCKS.map(async (stock) => {
-                try {
-                    const result = await marketService.getTechnicalSummary(stock.symbol);
-                    if (result) {
-                        data[stock.symbol] = result;
-                    }
-                } catch (e) {
-                    // silently ignore — RSI badges are optional
-                }
-            }));
-            setRsiData(data);
-        };
-
-        fetchRSI();
-    }, []);
-
-    const getRSIColor = (rsi: number) => {
-        if (rsi < 30) return '#10B981'; // Oversold - Buy
-        if (rsi > 70) return '#EF4444'; // Overbought - Sell
-        return '#666';
-    };
 
     return (
         <Box
@@ -123,43 +96,29 @@ export default function MarketHome() {
                             </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-                            {TRENDING_STOCKS.map((stock, i) => {
-                                const rsi = rsiData[stock.symbol]?.rsi;
-                                const rsiColor = rsi ? getRSIColor(rsi) : '#666';
-
-                                return (
-                                    <motion.div
-                                        key={stock.symbol}
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        <Chip
-                                            label={
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                    {stock.label}
-                                                    {rsi && (
-                                                        <Typography variant="caption" sx={{ color: rsiColor, fontWeight: 700, fontSize: '0.65rem' }}>
-                                                            {Math.round(rsi)}
-                                                        </Typography>
-                                                    )}
-                                                </Box>
+                            {TRENDING_STOCKS.map((stock, i) => (
+                                <motion.div
+                                    key={stock.symbol}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <Chip
+                                        label={stock.label}
+                                        onClick={() => router.push(`/market/${stock.symbol}`)}
+                                        sx={{
+                                            bgcolor: '#111',
+                                            color: '#888',
+                                            border: '1px solid #333',
+                                            fontWeight: 500,
+                                            '&:hover': {
+                                                bgcolor: '#222',
+                                                color: '#fff',
+                                                borderColor: '#444'
                                             }
-                                            onClick={() => router.push(`/market/${stock.symbol}`)}
-                                            sx={{
-                                                bgcolor: '#111',
-                                                color: '#888',
-                                                border: '1px solid #333',
-                                                fontWeight: 500,
-                                                '&:hover': {
-                                                    bgcolor: '#222',
-                                                    color: '#fff',
-                                                    borderColor: '#444'
-                                                }
-                                            }}
-                                        />
-                                    </motion.div>
-                                );
-                            })}
+                                        }}
+                                    />
+                                </motion.div>
+                            ))}
                         </Box>
                     </Box>
                 </motion.div>

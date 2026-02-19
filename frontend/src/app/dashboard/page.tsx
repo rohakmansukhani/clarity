@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import {
     Box, Typography, Grid, Paper, Button, CircularProgress,
-    Autocomplete, TextField, Tabs, Tab, Chip, Snackbar, Alert
+    Autocomplete, TextField, Tabs, Tab, Snackbar, Alert
 } from '@mui/material';
 import {
     TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
-    Search, Eye, Activity, BarChart2, Clock
+    Search, Activity, Flame
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -20,9 +20,8 @@ export default function DashboardPage() {
     const [greeting, setGreeting] = useState('Good Morning');
     const [marketStatus, setMarketStatus] = useState<any[]>([]);
     const [topMovers, setTopMovers] = useState<any[]>([]);
-    const [watchlist, setWatchlist] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [moversTab, setMoversTab] = useState(0); // 0 = gainers, 1 = losers
+    const [moversTab, setMoversTab] = useState(0);
     const [searchOptions, setSearchOptions] = useState<any[]>([]);
     const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as any });
 
@@ -45,14 +44,12 @@ export default function DashboardPage() {
         // Fetch data
         const load = async () => {
             try {
-                const [status, movers, wl] = await Promise.allSettled([
+                const [status, movers] = await Promise.allSettled([
                     marketService.getMarketStatus(),
                     marketService.getTopMovers(),
-                    marketService.getWatchlist(),
                 ]);
                 if (status.status === 'fulfilled') setMarketStatus(status.value || []);
                 if (movers.status === 'fulfilled') setTopMovers(movers.value || []);
-                if (wl.status === 'fulfilled') setWatchlist(wl.value || []);
             } catch (_) { }
             finally { setLoading(false); }
         };
@@ -322,95 +319,67 @@ export default function DashboardPage() {
                     </Paper>
                 </Grid>
 
-                {/* Right: Buy List Snapshot */}
+                {/* Right: Trending Stocks */}
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <Paper elevation={0} sx={{ bgcolor: '#0A0A0A', border: '1px solid #1e1e1e', borderRadius: 4, overflow: 'hidden', height: '100%' }}>
+                    <Paper elevation={0} sx={{ bgcolor: '#0A0A0A', border: '1px solid #1e1e1e', borderRadius: 4, overflow: 'hidden' }}>
                         <Box sx={{ p: 3, borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <Eye size={18} color="#00E5FF" />
+                                <Flame size={18} color="#F59E0B" />
                                 <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff', fontSize: '1rem' }}>
-                                    Buy List
+                                    Trending
                                 </Typography>
-                                <Chip
-                                    label={watchlist.length}
-                                    size="small"
-                                    sx={{ bgcolor: '#1a1a1a', color: '#555', height: 18, fontSize: '0.65rem', '& .MuiChip-label': { px: 1 } }}
-                                />
                             </Box>
-                            <Button
-                                size="small"
-                                onClick={() => router.push('/watchlist')}
-                                sx={{ color: '#444', fontSize: '0.7rem', textTransform: 'none', '&:hover': { color: '#00E5FF' }, minWidth: 0 }}
-                            >
-                                View all
-                            </Button>
+                            <Typography variant="caption" sx={{ color: '#333', fontSize: '0.65rem', fontWeight: 600 }}>NSE LARGE CAP</Typography>
                         </Box>
 
-                        {loading ? (
-                            <Box sx={{ py: 6, display: 'flex', justifyContent: 'center' }}>
-                                <CircularProgress size={20} sx={{ color: '#333' }} />
-                            </Box>
-                        ) : watchlist.length === 0 ? (
-                            <Box sx={{ py: 6, px: 3, textAlign: 'center' }}>
-                                <Eye size={32} color="#222" />
-                                <Typography sx={{ color: '#444', mt: 2, fontSize: '0.85rem' }}>Your Buy List is empty.</Typography>
-                                <Button
-                                    size="small"
-                                    onClick={() => router.push('/market')}
-                                    sx={{ mt: 1.5, color: '#00E5FF', textTransform: 'none', fontSize: '0.8rem' }}
-                                >
-                                    Browse stocks →
-                                </Button>
-                            </Box>
-                        ) : (
-                            <Box>
-                                {watchlist.slice(0, 7).map((item, i) => (
-                                    <Box
-                                        key={item.ticker}
-                                        onClick={() => router.push(`/market/${item.ticker}`)}
-                                        sx={{
-                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                            px: 3, py: 2, cursor: 'pointer',
-                                            borderBottom: '1px solid #0f0f0f',
-                                            '&:hover': { bgcolor: 'rgba(0,229,255,0.03)' },
-                                            transition: 'background 0.15s'
-                                        }}
-                                    >
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                            <Box sx={{
-                                                width: 30, height: 30, borderRadius: 1.5,
-                                                bgcolor: 'rgba(0,229,255,0.07)',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '0.65rem', fontWeight: 800, color: '#00E5FF'
-                                            }}>
-                                                {item.ticker.slice(0, 2)}
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="body2" sx={{ fontWeight: 700, color: '#ddd', fontSize: '0.85rem' }}>{item.ticker}</Typography>
-                                                {item.target_price && (
-                                                    <Typography variant="caption" sx={{ color: '#444', fontSize: '0.65rem' }}>
-                                                        Target ₹{item.target_price}
-                                                    </Typography>
-                                                )}
-                                            </Box>
-                                        </Box>
-                                        {item.tags && item.tags.length > 0 && (
-                                            <Chip
-                                                label={item.tags[0]}
-                                                size="small"
-                                                sx={{ bgcolor: '#111', color: '#555', height: 18, fontSize: '0.6rem', '& .MuiChip-label': { px: 1 }, border: '1px solid #1e1e1e' }}
-                                            />
-                                        )}
+                        {[
+                            { symbol: 'RELIANCE', name: 'Reliance Industries' },
+                            { symbol: 'TCS', name: 'Tata Consultancy' },
+                            { symbol: 'HDFCBANK', name: 'HDFC Bank' },
+                            { symbol: 'INFY', name: 'Infosys' },
+                            { symbol: 'ICICIBANK', name: 'ICICI Bank' },
+                            { symbol: 'BAJFINANCE', name: 'Bajaj Finance' },
+                            { symbol: 'SBIN', name: 'State Bank of India' },
+                            { symbol: 'TATAMOTORS', name: 'Tata Motors' },
+                        ].map((stock, i) => (
+                            <Box
+                                key={stock.symbol}
+                                onClick={() => router.push(`/market/${stock.symbol}`)}
+                                sx={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    px: 3, py: 1.8, cursor: 'pointer',
+                                    borderBottom: '1px solid #0f0f0f',
+                                    transition: 'background 0.15s',
+                                    '&:hover': { bgcolor: 'rgba(245,158,11,0.03)' }
+                                }}
+                            >
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Box sx={{
+                                        width: 30, height: 30, borderRadius: 1.5,
+                                        bgcolor: 'rgba(245,158,11,0.08)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '0.65rem', fontWeight: 800, color: '#F59E0B'
+                                    }}>
+                                        {stock.symbol.slice(0, 2)}
                                     </Box>
-                                ))}
+                                    <Box>
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#ddd', fontSize: '0.85rem' }}>{stock.symbol}</Typography>
+                                        <Typography variant="caption" sx={{ color: '#444', fontSize: '0.65rem' }}>{stock.name}</Typography>
+                                    </Box>
+                                </Box>
+                                <ArrowUpRight size={14} color="#333" />
+                            </Box>
+                        ))}
 
-                                {watchlist.length > 7 && (
-                                    <Box sx={{ p: 2, textAlign: 'center' }}>
-                                        <Typography variant="caption" sx={{ color: '#333' }}>+{watchlist.length - 7} more</Typography>
-                                    </Box>
-                                )}
-                            </Box>
-                        )}
+                        <Box sx={{ p: 2, textAlign: 'center', borderTop: '1px solid #111' }}>
+                            <Button
+                                size="small"
+                                onClick={() => router.push('/market')}
+                                sx={{ color: '#444', fontSize: '0.75rem', textTransform: 'none', '&:hover': { color: '#F59E0B' } }}
+                            >
+                                Explore all stocks →
+                            </Button>
+                        </Box>
                     </Paper>
                 </Grid>
             </Grid>
