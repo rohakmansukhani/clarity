@@ -1,404 +1,382 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-    Box, Typography, Grid, Paper, Button, CircularProgress,
-    Autocomplete, TextField, Tabs, Tab, Snackbar, Alert
-} from '@mui/material';
-import {
-    TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
-    Search, Activity, Compass
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Box, Typography, Grid, Paper, IconButton, TextField, InputAdornment, Button, Tooltip, CircularProgress, Autocomplete, Snackbar, Alert } from '@mui/material';
+import { Search, Bell, Settings, TrendingUp, ArrowUpRight, ArrowDownRight, Zap, MessageSquare, PieChart, Lightbulb } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { marketService } from '@/services/marketService';
 
+
 export default function DashboardPage() {
     const router = useRouter();
-
-    const [user, setUser] = useState<any>(null);
-    const [greeting, setGreeting] = useState('Good Morning');
+    const [greeting, setGreeting] = useState('Good Evening');
     const [marketStatus, setMarketStatus] = useState<any[]>([]);
     const [topMovers, setTopMovers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [moversTab, setMoversTab] = useState(0);
-    const [searchOptions, setSearchOptions] = useState<any[]>([]);
-    const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as any });
+    const [searchOptions, setSearchOptions] = useState<any[]>([]); // Search Suggestions State
+    const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'warning' | 'error' });
+
+    const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
-        // Load user
-        try {
-            const stored = localStorage.getItem('user');
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                const rawName = parsed.user_metadata?.full_name || parsed.user_metadata?.display_name || parsed.full_name;
-                const name = rawName ? rawName.split(' ')[0] : null;
-                setUser({ ...parsed, display_name: name ? name.charAt(0).toUpperCase() + name.slice(1) : null });
+        // 0. Load User
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            const parsedUser = JSON.parse(storedUser);
+
+            // Determine Display Name (Strict: Metadata Only)
+            let name = parsedUser.user_metadata?.full_name ||
+                parsedUser.user_metadata?.display_name ||
+                parsedUser.full_name;
+
+            // If name exists, take the First Name only
+            if (name) {
+                name = name.split(' ')[0];
+                // Capitalize first letter just in case
+                name = name.charAt(0).toUpperCase() + name.slice(1);
             }
-        } catch (_) { }
 
-        // Greeting
-        const h = new Date().getHours();
-        setGreeting(h < 12 ? 'Good Morning' : h < 18 ? 'Good Afternoon' : 'Good Evening');
+            // If no name found, display_name will be undefined/null -> falls back to 'Trader' in JSX
+            setUser({ ...parsedUser, display_name: name });
+        }
 
-        // Fetch data
-        const load = async () => {
+        // 1. Time-based Greeting
+        const hour = new Date().getHours();
+        if (hour < 12) setGreeting('Good Morning');
+        else if (hour < 18) setGreeting('Good Afternoon');
+        else setGreeting('Good Evening');
+
+        // 2. Fetch Market Data (Status + Movers)
+        const fetchMarket = async () => {
+            // Fetch Status
             try {
-                const [status, movers] = await Promise.allSettled([
-                    marketService.getMarketStatus(),
-                    marketService.getTopMovers(),
-                ]);
-                if (status.status === 'fulfilled') setMarketStatus(status.value || []);
-                if (movers.status === 'fulfilled') setTopMovers(movers.value || []);
-            } catch (_) { }
-            finally { setLoading(false); }
+                const statusData = await marketService.getMarketStatus();
+                setMarketStatus(statusData);
+            } catch (e) {
+                console.error("Failed to fetch market status", e);
+            }
+
+            // Fetch Movers
+            try {
+                const moversData = await marketService.getTopMovers();
+                setTopMovers(moversData);
+            } catch (e) {
+                console.error("Failed to fetch top movers", e);
+            } finally {
+                setLoading(false);
+            }
         };
-        load();
+
+        fetchMarket();
     }, []);
 
-    const statusInfo = (() => {
-        const d = new Date(), day = d.getDay(), h = d.getHours(), m = d.getMinutes();
-        if (day === 0 || day === 6) return { text: 'Closed', sub: 'Weekend', color: '#EF4444', dot: '#EF4444' };
-        const tot = h * 60 + m;
-        if (tot >= 9 * 60 + 15 && tot <= 15 * 60 + 30) return { text: 'Market Open', sub: 'NSE · BSE Live', color: '#10B981', dot: '#10B981' };
-        return { text: 'Market Closed', sub: 'After Hours', color: '#F59E0B', dot: '#F59E0B' };
-    })();
+    // Dynamic Market Status Logic
+    const getMarketStatusMessage = () => {
+        const now = new Date();
+        const day = now.getDay();
+        const hour = now.getHours();
+        const minute = now.getMinutes();
 
-    const gainers = topMovers.filter(s => s.isUp).slice(0, 6);
-    const losers = topMovers.filter(s => !s.isUp).slice(0, 6);
-    const displayed = moversTab === 0 ? gainers : losers;
+        // Weekend Check
+        if (day === 0 || day === 6) return { text: 'Closed', color: '#EF4444', sub: 'Weekend' };
+
+        // Market Hours: 09:15 - 15:30
+        const totalMinutes = hour * 60 + minute;
+        const start = 9 * 60 + 15;
+        const end = 15 * 60 + 30;
+
+        if (totalMinutes >= start && totalMinutes <= end) {
+            return { text: 'Active', color: '#10B981', sub: 'Live' };
+        }
+
+        return { text: 'Closed', color: '#EF4444', sub: 'After Hours' };
+    };
+
+    const statusObj = getMarketStatusMessage();
+
+    const handleCloseToast = () => setToast({ ...toast, open: false });
 
     return (
-        <Box sx={{ maxWidth: 1400, mx: 'auto', px: { xs: 2, md: 4 }, pb: 8 }}>
-
-            {/* ── Header ── */}
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: 6, gap: 3, pt: 1 }}>
+        <Box sx={{ maxWidth: 1600, mx: 'auto', px: { xs: 2, md: 6 }, pb: 4 }}>
+            {/* Header: Minimal Greeting + Search */}
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: { xs: 4, md: 8 }, gap: { xs: 3, md: 0 } }}>
                 <Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 0.5 }}>
-                        <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-0.03em', color: '#fff', fontSize: { xs: '1.8rem', md: '2.5rem' }, lineHeight: 1.1 }}>
-                            {greeting},{' '}
-                            <Box component="span" sx={{ color: '#00E5FF' }}>{user?.display_name || 'Trader'}</Box>
-                        </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1 }}>
-                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: statusInfo.dot, boxShadow: `0 0 8px ${statusInfo.dot}`, animation: statusInfo.dot === '#10B981' ? 'pulse 2s infinite' : 'none' }} />
-                        <Typography variant="body2" sx={{ color: statusInfo.color, fontWeight: 700 }}>{statusInfo.text}</Typography>
-                        <Typography variant="body2" sx={{ color: '#444' }}>·</Typography>
-                        <Typography variant="body2" sx={{ color: '#555' }}>{statusInfo.sub}</Typography>
-                    </Box>
+                    <Typography variant="h3" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 0.5, color: '#fff', fontSize: { xs: '2rem', md: '3rem' } }}>
+                        {greeting}, {user?.display_name || 'Trader'}
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: '#666', fontWeight: 500 }}>
+                        Market is <span style={{ color: statusObj.color, fontWeight: 700 }}>{statusObj.text}</span> ({statusObj.sub}).
+                    </Typography>
                 </Box>
 
-                {/* Search */}
-                <Box sx={{ width: { xs: '100%', md: 360 } }}>
+                <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', width: { xs: '100%', md: 400 } }}>
                     <Autocomplete
                         freeSolo
-                        id="dashboard-search"
+                        id="dashboard-search-autocomplete"
                         options={searchOptions}
-                        getOptionLabel={(o: any) => typeof o === 'string' ? o : `${o.symbol} — ${o.name}`}
-                        filterOptions={(x) => x}
-                        onInputChange={async (_, v) => {
-                            if (v.length > 1) {
-                                try { setSearchOptions(await marketService.searchStocks(v) || []); } catch (_) { }
-                            } else setSearchOptions([]);
+                        getOptionLabel={(option: any) => typeof option === 'string' ? option : `${option.symbol} - ${option.name}`}
+                        filterOptions={(x) => x} // Disable built-in filter, we use backend search
+                        sx={{ width: '100%' }}
+                        onInputChange={async (event, newInputValue) => {
+                            if (newInputValue.length > 1) {
+                                try {
+                                    const results = await marketService.searchStocks(newInputValue);
+                                    setSearchOptions(results || []);
+                                } catch (e) {
+                                    console.error(e);
+                                }
+                            } else {
+                                setSearchOptions([]);
+                            }
                         }}
-                        onChange={(_, v: any) => {
-                            if (v) router.push(`/market/${typeof v === 'string' ? v : v.symbol}`);
+                        onChange={(event, value: any) => {
+                            if (value) {
+                                const symbol = typeof value === 'string' ? value : value.symbol;
+                                router.push(`/market/${symbol}`);
+                            }
                         }}
                         renderInput={(params) => (
                             <TextField
                                 {...params}
                                 variant="standard"
-                                placeholder="Search any stock or index..."
+                                placeholder="Search stocks..."
+                                fullWidth
                                 InputProps={{
                                     ...params.InputProps,
                                     disableUnderline: true,
-                                    startAdornment: <Search size={18} color="#555" style={{ marginRight: 10 }} />,
+                                    startAdornment: <Search size={20} color="#666" style={{ marginRight: 10 }} />,
                                     sx: {
-                                        fontSize: '0.95rem', color: '#fff',
-                                        borderBottom: '1px solid #333', pb: 0.5,
-                                        '&:hover': { borderBottom: '1px solid #555' },
+                                        fontSize: '1rem',
+                                        color: '#fff',
+                                        borderBottom: '1px solid #333',
+                                        pb: 0.5,
+                                        transition: 'all 0.2s',
+                                        '&:hover': { borderBottom: '1px solid #666' },
                                         '&.Mui-focused': { borderBottom: '1px solid #00E5FF' }
                                     }
                                 }}
                             />
                         )}
-                        renderOption={(props, o: any) => {
-                            const { key, ...rest } = props;
+                        renderOption={(props, option: any) => {
+                            const { key, ...otherProps } = props;
                             return (
-                                <li key={key} {...rest} style={{ background: '#111', color: '#fff', borderBottom: '1px solid #1a1a1a' }}>
-                                    <Box>
-                                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{o.symbol}</Typography>
-                                        <Typography variant="caption" sx={{ color: '#666' }}>{o.name}</Typography>
+                                <li key={key} {...otherProps} style={{ backgroundColor: '#111', color: '#fff', borderBottom: '1px solid #222' }}>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Typography variant="body1" sx={{ fontWeight: 600 }}>{option.symbol}</Typography>
+                                        <Typography variant="caption" sx={{ color: '#888' }}>{option.name}</Typography>
                                     </Box>
                                 </li>
                             );
                         }}
                     />
+
+                    <Box sx={{ width: 36, height: 36, minWidth: 36, borderRadius: '50%', bgcolor: '#00E5FF', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem', border: '2px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
+                        {(user?.full_name || user?.email || 'T').charAt(0).toUpperCase()}
+                    </Box>
                 </Box>
             </Box>
 
-            {/* ── Market Index Cards ── */}
-            <Box sx={{ mb: 6 }}>
-                <Typography variant="overline" sx={{ color: '#444', letterSpacing: '0.15em', fontWeight: 700, fontSize: '0.7rem', mb: 2, display: 'block' }}>
-                    MARKET INDICES
-                </Typography>
-                {loading ? (
-                    <Box sx={{ display: 'flex', gap: 2.5 }}>
-                        {[0, 1, 2].map(i => (
-                            <Box key={i} sx={{ flex: 1, height: 110, borderRadius: 3, bgcolor: '#111', border: '1px solid #1a1a1a', animation: 'pulse 1.5s infinite' }} />
-                        ))}
-                    </Box>
-                ) : (
-                    <Grid container spacing={3}>
-                        {marketStatus.length > 0 ? marketStatus.map((idx, i) => (
-                            <Grid size={{ xs: 12, sm: 4 }} key={idx.index}>
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.1 }}
-                                >
-                                    <Paper
-                                        elevation={0}
-                                        sx={{
-                                            p: 3, borderRadius: 4, bgcolor: '#0A0A0A',
-                                            border: '1px solid #1e1e1e',
-                                            position: 'relative', overflow: 'hidden',
-                                            '&:hover': { borderColor: '#333', transition: 'border-color 0.2s' }
-                                        }}
-                                    >
-                                        <Box sx={{
-                                            position: 'absolute', top: -40, right: -40,
-                                            width: 100, height: 100, borderRadius: '50%',
-                                            bgcolor: idx.change >= 0 ? '#10B981' : '#EF4444',
-                                            filter: 'blur(50px)', opacity: 0.07
-                                        }} />
-                                        <Typography variant="caption" sx={{ color: '#555', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: '0.65rem' }}>
-                                            {idx.index}
-                                        </Typography>
-                                        <Typography variant="h4" sx={{ fontWeight: 800, color: '#fff', mt: 0.5, letterSpacing: '-0.02em', fontSize: { xs: '1.6rem', md: '2rem' } }}>
-                                            {idx.current_formatted}
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                                            {idx.change >= 0
-                                                ? <ArrowUpRight size={16} color="#10B981" />
-                                                : <ArrowDownRight size={16} color="#EF4444" />}
-                                            <Typography variant="body2" sx={{ color: idx.change >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>
-                                                {idx.change >= 0 ? '+' : ''}{idx.change_formatted} ({idx.percent_change_formatted})
-                                            </Typography>
-                                        </Box>
-                                    </Paper>
-                                </motion.div>
-                            </Grid>
-                        )) : (
-                            <Grid size={{ xs: 12 }}>
-                                <Typography sx={{ color: '#444', py: 3 }}>Market data unavailable right now.</Typography>
-                            </Grid>
-                        )}
-                    </Grid>
-                )}
-            </Box>
-
-            {/* ── Main 2-Col Layout ── */}
-            <Grid container spacing={4}>
-
-                {/* Left: Top Movers */}
+            <Grid container spacing={{ xs: 3, md: 6 }}>
+                {/* Left Col: Main Stats (Portfolio) */}
                 <Grid size={{ xs: 12, md: 8 }}>
-                    <Paper elevation={0} sx={{ bgcolor: '#0A0A0A', border: '1px solid #1e1e1e', borderRadius: 4, overflow: 'hidden' }}>
-                        {/* Tab Header */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, pt: 3, pb: 0 }}>
-                            <Tabs
-                                value={moversTab}
-                                onChange={(_, v) => setMoversTab(v)}
-                                sx={{
-                                    '& .MuiTabs-indicator': { bgcolor: '#00E5FF', height: 2 },
-                                    minHeight: 36
-                                }}
-                            >
-                                <Tab
-                                    icon={<TrendingUp size={15} />}
-                                    iconPosition="start"
-                                    label="Top Gainers"
-                                    sx={{ color: '#555', '&.Mui-selected': { color: '#10B981' }, fontSize: '0.8rem', fontWeight: 700, minHeight: 36, textTransform: 'none', gap: 0.5 }}
-                                />
-                                <Tab
-                                    icon={<TrendingDown size={15} />}
-                                    iconPosition="start"
-                                    label="Top Losers"
-                                    sx={{ color: '#555', '&.Mui-selected': { color: '#EF4444' }, fontSize: '0.8rem', fontWeight: 700, minHeight: 36, textTransform: 'none', gap: 0.5 }}
-                                />
-                            </Tabs>
-                            <Typography variant="caption" sx={{ color: '#333', fontSize: '0.65rem', fontWeight: 600 }}>
-                                <Activity size={10} style={{ display: 'inline', marginRight: 4 }} />
-                                NSE · TODAY
-                            </Typography>
-                        </Box>
-
-                        {/* Table Header */}
-                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 100px 120px', px: 3, py: 1.5, borderBottom: '1px solid #111' }}>
-                            {['Stock', 'Price', 'Change'].map(h => (
-                                <Typography key={h} variant="caption" sx={{ color: '#333', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: '0.65rem', textAlign: h === 'Stock' ? 'left' : 'right' }}>
-                                    {h}
-                                </Typography>
-                            ))}
-                        </Box>
-
-                        {/* Rows */}
-                        <AnimatePresence mode="wait">
-                            <motion.div key={moversTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                                {loading ? (
-                                    <Box sx={{ py: 6, display: 'flex', justifyContent: 'center' }}>
-                                        <CircularProgress size={24} sx={{ color: '#333' }} />
-                                    </Box>
-                                ) : displayed.length === 0 ? (
-                                    <Box sx={{ py: 6, textAlign: 'center' }}>
-                                        <Typography sx={{ color: '#444' }}>No data available.</Typography>
-                                    </Box>
-                                ) : displayed.map((stock, i) => (
-                                    <motion.div
-                                        key={stock.symbol}
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: i * 0.04 }}
-                                    >
-                                        <Box
-                                            onClick={() => router.push(`/market/${stock.symbol}`)}
-                                            sx={{
-                                                display: 'grid', gridTemplateColumns: '1fr 100px 120px',
-                                                px: 3, py: 2, cursor: 'pointer',
-                                                borderBottom: '1px solid #0f0f0f',
-                                                borderLeft: '2px solid transparent',
-                                                transition: 'all 0.15s',
-                                                '&:hover': {
-                                                    borderLeftColor: '#00E5FF',
-                                                    bgcolor: 'rgba(0,229,255,0.02)'
-                                                }
-                                            }}
-                                        >
-                                            {/* Symbol */}
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <Box>
-                                                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#fff', letterSpacing: '0.01em' }}>{stock.symbol}</Typography>
-                                                    <Typography variant="caption" sx={{ color: '#333', fontSize: '0.65rem' }}>NSE</Typography>
-                                                </Box>
-                                            </Box>
-
-                                            {/* Price */}
-                                            <Typography variant="body2" sx={{ fontWeight: 500, color: '#888', textAlign: 'right', alignSelf: 'center', fontVariantNumeric: 'tabular-nums' }}>
-                                                ₹{stock.price}
-                                            </Typography>
-
-                                            {/* Change */}
-                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-                                                <Typography variant="body2" sx={{ fontWeight: 700, color: stock.isUp ? '#10B981' : '#EF4444', fontVariantNumeric: 'tabular-nums' }}>
-                                                    {stock.change}
+                    <Box sx={{ mb: 6 }}>
+                        <Typography variant="h5" sx={{ color: '#fff', fontWeight: 700, mb: 3 }}>Market Overview</Typography>
+                        {loading ? (
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <CircularProgress size={20} sx={{ color: '#444' }} />
+                                <Typography sx={{ color: '#666' }}>Loading market data...</Typography>
+                            </Box>
+                        ) : (
+                            <Grid container spacing={4}>
+                                {marketStatus.length > 0 ? marketStatus.map((index) => (
+                                    <Grid size={{ xs: 12, sm: 4 }} key={index.index}>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: '#888', fontWeight: 600, letterSpacing: '0.05em' }}>{index.index}</Typography>
+                                            <Typography variant="h3" sx={{ fontWeight: 700, my: 0.5, fontSize: '2.5rem' }}>{index.current_formatted}</Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                {index.change >= 0 ? <ArrowUpRight size={20} color="#10B981" /> : <ArrowDownRight size={20} color="#EF4444" />}
+                                                <Typography variant="body1" sx={{ color: index.change >= 0 ? '#10B981' : '#EF4444', fontWeight: 600 }}>
+                                                    {index.change >= 0 ? '+' : ''}{index.change_formatted} ({index.percent_change_formatted})
                                                 </Typography>
                                             </Box>
                                         </Box>
-                                    </motion.div>
-                                ))}
-                            </motion.div>
-                        </AnimatePresence>
+                                    </Grid>
+                                )) : (
+                                    <Typography sx={{ color: '#666' }}>Market data unavailable.</Typography>
+                                )}
+                            </Grid>
+                        )}
+                    </Box>
 
-                        <Box sx={{ p: 2, textAlign: 'center', borderTop: '1px solid #111' }}>
-                            <Button
-                                size="small"
-                                onClick={() => router.push('/market')}
-                                sx={{ color: '#444', fontSize: '0.75rem', textTransform: 'none', '&:hover': { color: '#00E5FF' } }}
-                            >
-                                Search all stocks →
-                            </Button>
-                        </Box>
-                    </Paper>
+                    {/* Quick Actions Grid */}
+                    <Typography variant="h6" sx={{ color: '#fff', mb: 3, fontWeight: 600 }}>Quick Actions</Typography>
+                    <Grid container spacing={3}>
+                        <ActionCard
+                            icon={Zap}
+                            title="Compare Stocks"
+                            desc="Compare performance & AI insights"
+                            onClick={() => {
+                                if (window.innerWidth < 768) {
+                                    setToast({ open: true, message: 'For the best analytical experience, please access this feature on a tablet or desktop.', severity: 'info' });
+                                } else {
+                                    router.push('/analysis');
+                                }
+                            }}
+                            delay={0.1}
+                        />
+                        <ActionCard
+                            icon={MessageSquare}
+                            title="Ask Advisor"
+                            desc="Chat with Clarity AI about strategy"
+                            onClick={() => router.push('/advisor')}
+                            delay={0.2}
+                        />
+                        <ActionCard
+                            icon={Lightbulb}
+                            title="Discovery Hub"
+                            desc="Research sectors & build portfolios"
+                            onClick={() => router.push('/sectors')}
+                            delay={0.3}
+                        />
+                    </Grid>
                 </Grid>
 
-                {/* Right: Explore panel */}
+                {/* Right Col: Top Movers */}
                 <Grid size={{ xs: 12, md: 4 }}>
-                    <Paper elevation={0} sx={{ bgcolor: '#0A0A0A', border: '1px solid #1e1e1e', borderRadius: 4, overflow: 'hidden' }}>
-                        {/* Header */}
-                        <Box sx={{ px: 3, pt: 3, pb: 2.5, borderBottom: '1px solid #0f0f0f' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-                                <Compass size={16} color="#00E5FF" strokeWidth={1.5} />
-                                <Typography sx={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', letterSpacing: '-0.01em' }}>
-                                    Explore
-                                </Typography>
-                            </Box>
-                            <Typography variant="caption" sx={{ color: '#333', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.1em' }}>
-                                NSE LARGE CAP · CLICK TO ANALYSE
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            p: 3,
+                            borderRadius: 4,
+                            bgcolor: '#0A0A0A',
+                            border: '1px solid #222',
+                            height: '100%',
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}
+                    >
+                        {/* Decorative Background Glow */}
+                        <Box sx={{ position: 'absolute', top: -100, right: -100, width: 200, height: 200, bgcolor: '#00E5FF', filter: 'blur(100px)', opacity: 0.1, borderRadius: '50%' }} />
+
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                            <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <TrendingUp size={20} className="text-[#00E5FF]" />
+                                Top Movers
                             </Typography>
                         </Box>
 
-                        {/* 2-column chip grid */}
-                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', p: 2, gap: 1 }}>
-                            {[
-                                { symbol: 'RELIANCE', name: 'Reliance Ind.' },
-                                { symbol: 'TCS', name: 'Tata Consult.' },
-                                { symbol: 'HDFCBANK', name: 'HDFC Bank' },
-                                { symbol: 'INFY', name: 'Infosys' },
-                                { symbol: 'ICICIBANK', name: 'ICICI Bank' },
-                                { symbol: 'BAJFINANCE', name: 'Bajaj Finance' },
-                                { symbol: 'SBIN', name: 'State Bank' },
-                                { symbol: 'TATAMOTORS', name: 'Tata Motors' },
-                                { symbol: 'HDFC', name: 'HDFC Ltd.' },
-                                { symbol: 'WIPRO', name: 'Wipro' },
-                                { symbol: 'ADANIENT', name: 'Adani Ent.' },
-                                { symbol: 'MARUTI', name: 'Maruti Suzuki' },
-                            ].map((stock) => (
-                                <Box
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            {topMovers.length > 0 ? topMovers.map((stock) => (
+                                <MoverRow
                                     key={stock.symbol}
+                                    symbol={stock.symbol}
+                                    price={stock.price}
+                                    change={stock.change}
+                                    isUp={stock.isUp}
                                     onClick={() => router.push(`/market/${stock.symbol}`)}
-                                    sx={{
-                                        px: 1.5, py: 1.2,
-                                        borderRadius: 2,
-                                        border: '1px solid #161616',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.15s',
-                                        '&:hover': {
-                                            borderColor: 'rgba(0,229,255,0.2)',
-                                            bgcolor: 'rgba(0,229,255,0.03)',
-                                            '& .sym': { color: '#00E5FF' }
-                                        }
-                                    }}
-                                >
-                                    <Typography className="sym" sx={{ fontWeight: 700, color: '#bbb', fontSize: '0.78rem', letterSpacing: '0.01em', transition: 'color 0.15s' }}>
-                                        {stock.symbol}
-                                    </Typography>
-                                    <Typography sx={{ color: '#2e2e2e', fontSize: '0.62rem', mt: 0.2, lineHeight: 1 }}>
-                                        {stock.name}
-                                    </Typography>
+                                />
+                            )) : (
+                                <Box sx={{ py: 4, textAlign: 'center' }}>
+                                    <CircularProgress size={20} color="inherit" sx={{ color: '#444' }} />
                                 </Box>
-                            ))}
-                        </Box>
-
-                        <Box sx={{ px: 3, pb: 2.5, pt: 0.5 }}>
-                            <Button
-                                fullWidth
-                                size="small"
-                                onClick={() => router.push('/market')}
-                                sx={{
-                                    color: '#2e2e2e', fontSize: '0.72rem', textTransform: 'none',
-                                    border: '1px solid #161616', borderRadius: 2, py: 1,
-                                    '&:hover': { color: '#00E5FF', borderColor: 'rgba(0,229,255,0.2)', bgcolor: 'rgba(0,229,255,0.03)' }
-                                }}
-                            >
-                                Browse all stocks
-                            </Button>
+                            )}
                         </Box>
                     </Paper>
                 </Grid>
             </Grid>
 
-            {/* Toast */}
-            <Snackbar open={toast.open} autoHideDuration={5000} onClose={() => setToast(t => ({ ...t, open: false }))} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-                <Alert severity={toast.severity} sx={{ bgcolor: '#1A1A1A', color: '#fff' }}>{toast.message}</Alert>
+            {/* Notification Toast */}
+            <Snackbar open={toast.open} autoHideDuration={6000} onClose={handleCloseToast} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+                <Alert onClose={handleCloseToast} severity={toast.severity} sx={{ width: '100%', bgcolor: '#1A1A1A', color: '#fff', '& .MuiAlert-icon': { color: toast.severity === 'error' ? '#EF4444' : '#00E5FF' } }}>
+                    {toast.message}
+                </Alert>
             </Snackbar>
 
-            {/* Pulse animation for live dot */}
-            <style>{`
-                @keyframes pulse {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.4; }
-                }
-            `}</style>
+        </Box>
+    );
+}
+
+function ActionCard({ icon: Icon, title, desc, onClick, delay }: any) {
+    return (
+        <Grid size={{ xs: 12, sm: 4 }}>
+            <Paper
+                component={motion.div}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay, duration: 0.5 }}
+                onClick={onClick}
+                sx={{
+                    p: 3,
+                    borderRadius: 3,
+                    bgcolor: '#111',
+                    border: '1px solid #222',
+                    cursor: 'pointer',
+                    height: '100%',
+                    minHeight: 160,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                        borderColor: '#00E5FF',
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 10px 30px -10px rgba(0, 229, 255, 0.1)'
+                    }
+                }}
+            >
+                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                    <Icon size={20} color="#fff" />
+                </Box>
+                <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600, mb: 0.5 }}>{title}</Typography>
+                <Typography variant="body2" sx={{ color: '#666', fontSize: '0.85rem' }}>{desc}</Typography>
+            </Paper>
+        </Grid>
+    );
+}
+
+function MarketRow({ name, value, change, isUp }: any) {
+    return (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: '#fff' }}>{name}</Typography>
+            <Box sx={{ textAlign: 'right' }}>
+                <Typography variant="body2" sx={{ fontWeight: 500, color: '#ddd' }}>{value}</Typography>
+                <Typography variant="caption" sx={{ color: isUp ? '#10B981' : '#EF4444', fontWeight: 600 }}>{change}</Typography>
+            </Box>
+        </Box>
+    );
+}
+
+function MoverRow({ symbol, price, change, isUp, onClick }: any) {
+    return (
+        <Box
+            onClick={onClick}
+            sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                p: 2,
+                borderRadius: 2,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.05)', transform: 'translateX(4px)' }
+            }}
+        >
+            <Box sx={{ display: 'flex', items: 'center', gap: 2 }}>
+                <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem', color: '#666' }}>
+                    {symbol[0]}
+                </Box>
+                <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#fff' }}>{symbol}</Typography>
+                    <Typography variant="caption" sx={{ color: '#666' }}>NSE</Typography>
+                </Box>
+            </Box>
+            <Box sx={{ textAlign: 'right' }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: '#fff' }}>₹{price}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                    {isUp ? <ArrowUpRight size={14} className="text-emerald-500" /> : <ArrowDownRight size={14} className="text-red-500" />}
+                    <Typography variant="caption" sx={{ color: isUp ? '#10B981' : '#EF4444', fontWeight: 700 }}>{change}</Typography>
+                </Box>
+            </Box>
         </Box>
     );
 }
