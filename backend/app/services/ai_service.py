@@ -209,12 +209,7 @@ class AIService:
                     "suggest_switch": None
                 }
                                     
-                                except json.JSONDecodeError:
-                                    logger.error(f"Failed to parse args from hallucination: {args_str}")
-                            else:
-                                logger.warning(f"Could not find JSON args in: {raw_gen}")
-
-
+        except Exception as e:
             logger.error(f"Groq Agent Error: {e}")
             return {
                 "response": "I encountered a technical error connecting to the AI service. Please try again.",
