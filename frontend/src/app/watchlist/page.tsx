@@ -117,9 +117,42 @@ export default function WatchlistPage() {
     }
 
     return (
-        <Box sx={{ display: 'flex', bgcolor: 'background.default', minHeight: '100vh' }}>
+        <Box sx={{
+            display: 'flex',
+            bgcolor: 'background.default',
+            minHeight: '100vh',
+            position: 'relative',
+            background: mode === 'dark'
+                ? 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #0B0B0B 70%)'
+                : 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05) 0%, #FFFFFF 70%)'
+        }}>
+            {/* Grid Decoration */}
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: mode === 'dark'
+                        ? 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)'
+                        : 'linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px)',
+                    backgroundSize: '40px 40px',
+                    maskImage: 'radial-gradient(circle at 50% 50%, black, transparent 80%)',
+                    pointerEvents: 'none',
+                    zIndex: 0
+                }}
+            />
             <Sidebar />
-            <Box sx={{ flexGrow: 1, p: 4, pl: { xs: 4, md: '140px' }, maxWidth: 1600, mx: 'auto' }}>
+            <Box sx={{
+                flexGrow: 1,
+                p: 4,
+                pl: { xs: 4, md: '140px' },
+                maxWidth: 1600,
+                mx: 'auto',
+                position: 'relative',
+                zIndex: 1
+            }}>
                 <Button
                     startIcon={<ArrowLeft size={20} />}
                     onClick={() => router.back()}

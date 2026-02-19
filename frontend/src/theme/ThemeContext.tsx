@@ -40,6 +40,18 @@ export const ColorModeProvider = ({ children }: { children: React.ReactNode }) =
         });
     };
 
+    // Update root background color
+    useEffect(() => {
+        const root = document.documentElement;
+        if (mode === 'dark') {
+            root.style.backgroundColor = '#0B0B0B';
+            root.classList.add('dark');
+        } else {
+            root.style.backgroundColor = '#FFFFFF';
+            root.classList.remove('dark');
+        }
+    }, [mode]);
+
     const theme = useMemo(() => createTheme(getThemeConfig(mode)), [mode]);
 
     return (

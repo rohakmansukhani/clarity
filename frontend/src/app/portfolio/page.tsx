@@ -227,7 +227,16 @@ export default function PortfolioPage() {
 
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', bgcolor: 'background.default' }}>
+            <Box sx={{
+                display: 'flex',
+                height: '100vh',
+                justifyContent: 'center',
+                alignItems: 'center',
+                bgcolor: 'background.default',
+                background: mode === 'dark'
+                    ? 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #0B0B0B 70%)'
+                    : 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05) 0%, #FFFFFF 70%)'
+            }}>
                 <CircularProgress size={24} sx={{ color: 'primary.main' }} />
             </Box>
         );
@@ -240,7 +249,31 @@ export default function PortfolioPage() {
     })) : [];
 
     return (
-        <>
+        <Box sx={{
+            bgcolor: 'background.default',
+            minHeight: '100vh',
+            position: 'relative',
+            background: mode === 'dark'
+                ? 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #0B0B0B 70%)'
+                : 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05) 0%, #FFFFFF 70%)'
+        }}>
+            {/* Grid Decoration */}
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: mode === 'dark'
+                        ? 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)'
+                        : 'linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px)',
+                    backgroundSize: '40px 40px',
+                    maskImage: 'radial-gradient(circle at 50% 50%, black, transparent 80%)',
+                    pointerEvents: 'none',
+                    zIndex: 0
+                }}
+            />
             <Sidebar />
             <Box
                 component={motion.div}
@@ -251,10 +284,11 @@ export default function PortfolioPage() {
                     mx: 'auto',
                     pb: 10,
                     pt: 6,
-                    bgcolor: 'background.default',
                     minHeight: '100vh',
                     pr: { xs: 2, md: 6 },
-                    pl: { xs: 2, md: '140px' }
+                    pl: { xs: 2, md: '140px' },
+                    position: 'relative',
+                    zIndex: 1
                 }}
             >
                 {/* --- LIST VIEW --- */}
@@ -598,7 +632,7 @@ export default function PortfolioPage() {
                     <DisclaimerFooter />
                 </Box>
             </Box>
-        </>
+        </Box>
     );
 }
 

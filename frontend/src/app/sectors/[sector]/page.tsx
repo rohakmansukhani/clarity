@@ -168,10 +168,25 @@ export default function SectorDetailPage({ params }: { params: { sector: string 
     };
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+        <Box sx={{
+            display: 'flex',
+            minHeight: '100vh',
+            bgcolor: 'background.default',
+            position: 'relative',
+            background: mode === 'dark'
+                ? 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #0B0B0B 70%)'
+                : 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05) 0%, #FFFFFF 70%)'
+        }}>
             <Sidebar />
 
-            <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 6 }, ml: { md: '140px' }, pb: 12 }}>
+            <Box component="main" sx={{
+                flexGrow: 1,
+                p: { xs: 2, md: 6 },
+                ml: { md: '140px' },
+                pb: 12,
+                position: 'relative',
+                zIndex: 1
+            }}>
                 {/* Header */}
                 <Box sx={{ mb: 6 }}>
                     <Button
