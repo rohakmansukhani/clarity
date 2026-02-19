@@ -18,7 +18,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </Typography>
             </Box>
 
-            <Box component="main" sx={{ flexGrow: 1, px: { xs: 2, md: 6 }, pl: { xs: 2, md: '144px' }, py: { xs: 10, md: 6 }, overflowX: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <Box component="main" sx={{ flexGrow: 1, px: { xs: 2, md: 4 }, pl: { xs: 2, md: '80px' }, py: { xs: 10, md: 6 }, overflowX: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <Box sx={{ flexGrow: 1 }}>{children}</Box>
                 <DisclaimerFooter />
             </Box>
