@@ -16,7 +16,7 @@ const MENU_ITEMS = [
     { label: 'Comparison', icon: BarChart2, path: '/analysis' },
     { label: 'Backtrack', icon: RotateCcw, path: '/backtrack' },
     { label: 'Advisor', icon: MessageSquare, path: '/advisor' },
-    { label: 'Discovery Hub', icon: Compass, path: '/sectors' },
+
 ];
 
 export default function Sidebar() {

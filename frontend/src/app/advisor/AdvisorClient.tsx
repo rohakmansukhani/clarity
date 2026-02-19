@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, Typography, TextField, IconButton, CircularProgress, Paper, Drawer, List, ListItem, ListItemText, ListItemButton, Divider, Menu, MenuItem } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useColorMode } from '@/theme/ThemeContext';
-import { Send, Paperclip, Bot, User, Sparkles, Zap, TrendingUp, History, Plus, MoreVertical, Pin, Trash2, ArrowLeft } from 'lucide-react';
+import { Send, Paperclip, Bot, User, Sparkles, Zap, TrendingUp, History, Plus, MoreVertical, Pin, Trash2, ArrowLeft, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/layout/Sidebar';
 import ClarityLogo from '@/components/ui/ClarityLogo';
@@ -33,11 +33,16 @@ const SUGGESTED_PROMPTS = [
     { icon: TrendingUp, text: "Analyze Reliance Industries" },
     { icon: Zap, text: "What moved the Nifty 50 today?" },
     { icon: Sparkles, text: "Explain 'Beta' in investing" },
+    { icon: Lightbulb, text: "Tell me about aluminium sector" },
+    { icon: TrendingUp, text: "EV battery sector trends" },
+    { icon: Zap, text: "Pharma sector opportunities" },
 ];
+
 
 function MsgGap(role: string) {
     return role === 'assistant' ? '16px' : '0px';
 }
+
 
 function HistoryItem({ session, isActive, onClick, onPin, onDelete }: any) {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -554,29 +559,40 @@ export default function AdvisorClient() {
                                     <ClarityLogo size={80} />
                                 </motion.div>
                                 <div>
-                                    <Typography variant="h3" sx={{ fontWeight: 800, background: 'linear-gradient(to right, #fff, #888)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', mb: 2 }}>
+                                    <Typography variant="h3" sx={{
+                                        fontWeight: 800,
+                                        background: mode === 'dark'
+                                            ? 'linear-gradient(to right, #fff, #888)'
+                                            : 'linear-gradient(to right, #0F172A, #64748B)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        mb: 2
+                                    }}>
                                         How can I help you?
                                     </Typography>
-                                    <Typography variant="body1" sx={{ color: '#666', maxWidth: 400, mx: 'auto' }}>
-                                        Ask about market trends, specific stocks, or financial concepts.
+                                    <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 400, mx: 'auto' }}>
+                                        Ask about market trends, specific stocks, sectors, or financial concepts.
                                     </Typography>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl px-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl px-4">
                                     {SUGGESTED_PROMPTS.map((prompt, i) => (
                                         <motion.button
                                             key={i}
-                                            whileHover={{ scale: 1.05, backgroundColor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
-                                            whileTap={{ scale: 0.95 }}
+                                            whileHover={{ scale: 1.02, backgroundColor: mode === 'dark' ? 'rgba(0, 229, 255, 0.08)' : 'rgba(0, 178, 204, 0.08)' }}
+                                            whileTap={{ scale: 0.98 }}
                                             onClick={() => handleSend(prompt.text)}
-                                            className="flex flex-col items-center justify-center p-6 gap-3 rounded-2xl border transition-colors group cursor-pointer text-left"
+                                            className="flex items-center p-4 gap-4 rounded-xl border transition-colors group cursor-pointer text-left"
                                             style={{
                                                 backgroundColor: theme.palette.background.paper,
-                                                borderColor: theme.palette.divider
+                                                borderColor: theme.palette.divider,
+                                                boxShadow: theme.shadows[1]
                                             }}
                                         >
-                                            <prompt.icon className="text-[#00E5FF] group-hover:text-primary-main transition-colors" size={24} />
-                                            <span className="text-sm font-medium transition-colors" style={{ color: theme.palette.text.secondary }}>{prompt.text}</span>
+                                            <div className="p-2 rounded-full bg-opacity-10" style={{ backgroundColor: 'rgba(0, 229, 255, 0.1)' }}>
+                                                <prompt.icon color={theme.palette.primary.main} size={20} />
+                                            </div>
+                                            <span className="text-sm font-medium" style={{ color: theme.palette.text.primary }}>{prompt.text}</span>
                                         </motion.button>
                                     ))}
                                 </div>
