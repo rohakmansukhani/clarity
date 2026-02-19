@@ -5,15 +5,19 @@ import { Box, Typography, IconButton, Paper, Grid } from '@mui/material';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { useTheme } from '@mui/material/styles';
+
 interface CustomDatePickerProps {
     value: string;
     onChange: (date: string) => void;
     label?: string;
+    minDate?: string;
 }
 
-export default function CustomDatePicker({ value, onChange, label = "Select Date", minDate }: CustomDatePickerProps & { minDate?: string }) {
+export default function CustomDatePicker({ value, onChange, label = "Select Date", minDate }: CustomDatePickerProps) {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const theme = useTheme();
 
     // Initial Date State
     const today = new Date();
@@ -114,7 +118,7 @@ export default function CustomDatePicker({ value, onChange, label = "Select Date
                                 : (minDate && currentYear <= new Date(minDate).getFullYear())
                         )}
                         size="small"
-                        sx={{ color: '#888', zIndex: 1, '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.1)' } }}
+                        sx={{ color: 'text.secondary', zIndex: 1, '&:hover': { color: 'text.primary', bgcolor: 'action.hover' } }}
                     >
                         <ChevronLeft size={20} />
                     </IconButton>
@@ -128,12 +132,12 @@ export default function CustomDatePicker({ value, onChange, label = "Select Date
                             else if (view === 'months') setView('years');
                         }}
                         sx={{
-                            color: '#fff',
+                            color: 'text.primary',
                             fontWeight: 700,
                             cursor: view === 'years' ? 'default' : 'pointer',
                             display: 'inline-block',
                             pointerEvents: view === 'years' ? 'none' : 'auto',
-                            '&:hover': { color: view === 'years' ? '#fff' : '#00E5FF' }
+                            '&:hover': { color: view === 'years' ? 'text.primary' : 'primary.main' }
                         }}
                     >
                         {view === 'days' && `${new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} ${currentYear}`}
@@ -152,7 +156,7 @@ export default function CustomDatePicker({ value, onChange, label = "Select Date
                                 ? (isDateDisabled(currentYear, currentMonth === 11 ? 0 : currentMonth + 1) && currentYear >= maxYear)
                                 : isNextYearDisabled
                         }
-                        sx={{ color: '#888', ml: 'auto', zIndex: 1, '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.1)' } }}
+                        sx={{ color: 'text.secondary', ml: 'auto', zIndex: 1, '&:hover': { color: 'text.primary', bgcolor: 'action.hover' } }}
                     >
                         <ChevronRight size={20} />
                     </IconButton>
@@ -171,7 +175,7 @@ export default function CustomDatePicker({ value, onChange, label = "Select Date
             <>
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 1, textAlign: 'center' }}>
                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                        <Typography key={i} variant="caption" sx={{ color: '#666', fontWeight: 700 }}>{d}</Typography>
+                        <Typography key={i} variant="caption" sx={{ color: 'text.secondary', fontWeight: 700 }}>{d}</Typography>
                     ))}
                 </Box>
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
@@ -194,16 +198,16 @@ export default function CustomDatePicker({ value, onChange, label = "Select Date
                                     justifyContent: 'center',
                                     cursor: disabled ? 'default' : 'pointer',
                                     borderRadius: '50%',
-                                    bgcolor: isSelected ? '#00E5FF' : 'transparent',
-                                    color: disabled ? '#333' : (isSelected ? '#000' : (isToday ? '#00E5FF' : '#bbb')),
+                                    bgcolor: isSelected ? 'primary.main' : 'transparent',
+                                    color: disabled ? 'text.disabled' : (isSelected ? 'primary.contrastText' : (isToday ? 'primary.main' : 'text.secondary')),
                                     fontWeight: isSelected || isToday ? 700 : 500,
                                     fontSize: '0.9rem',
-                                    border: isToday && !isSelected ? '1px solid rgba(0, 229, 255, 0.3)' : 'none',
+                                    border: isToday && !isSelected ? `1px solid ${theme.palette.primary.main}50` : 'none',
                                     mx: 'auto', // Centering in grid cell
                                     transition: 'all 0.2s',
                                     '&:hover': {
-                                        bgcolor: disabled ? undefined : (isSelected ? '#00E5FF' : 'rgba(255,255,255,0.1)'),
-                                        color: disabled ? undefined : (isSelected ? '#000' : '#fff'),
+                                        bgcolor: disabled ? undefined : (isSelected ? 'primary.main' : 'action.hover'),
+                                        color: disabled ? undefined : (isSelected ? 'primary.contrastText' : 'text.primary'),
                                         transform: disabled ? 'none' : 'scale(1.1)'
                                     }
                                 }}
@@ -231,9 +235,9 @@ export default function CustomDatePicker({ value, onChange, label = "Select Date
                             textAlign: 'center',
                             borderRadius: 2,
                             cursor: disabled ? 'default' : 'pointer',
-                            color: disabled ? '#333' : (i === currentMonth ? '#00E5FF' : '#fff'),
+                            color: disabled ? 'text.disabled' : (i === currentMonth ? 'primary.main' : 'text.primary'),
                             fontWeight: i === currentMonth ? 700 : 500,
-                            '&:hover': { bgcolor: disabled ? undefined : 'rgba(255,255,255,0.1)' }
+                            '&:hover': { bgcolor: disabled ? undefined : 'action.hover' }
                         }}
                     >
                         {m.substring(0, 3)}
@@ -266,9 +270,9 @@ export default function CustomDatePicker({ value, onChange, label = "Select Date
                             textAlign: 'center',
                             borderRadius: 2,
                             cursor: 'pointer',
-                            color: y === currentYear ? '#00E5FF' : '#fff',
+                            color: y === currentYear ? 'primary.main' : 'text.primary',
                             fontWeight: y === currentYear ? 700 : 500,
-                            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                            '&:hover': { bgcolor: 'action.hover' }
                         }}
                     >
                         {y}
@@ -286,7 +290,7 @@ export default function CustomDatePicker({ value, onChange, label = "Select Date
                 sx={{
                     position: 'relative',
                     border: '1px solid',
-                    borderColor: isOpen ? '#00E5FF' : '#333',
+                    borderColor: isOpen ? 'primary.main' : 'divider',
                     borderRadius: '4px',
                     p: isOpen ? '15.5px 13px' : '16.5px 14px',
                     borderWidth: isOpen ? 2 : 1,
@@ -294,18 +298,19 @@ export default function CustomDatePicker({ value, onChange, label = "Select Date
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     cursor: 'pointer',
-                    '&:hover': { borderColor: isOpen ? '#00E5FF' : '#fff' }
+                    bgcolor: 'background.paper',
+                    '&:hover': { borderColor: isOpen ? 'primary.main' : 'text.primary' }
                 }}
             >
                 <Box>
-                    <Typography variant="caption" sx={{ position: 'absolute', top: -10, left: 10, bgcolor: '#0A0A0A', px: 0.5, color: isOpen ? '#00E5FF' : '#666', fontSize: '0.75rem' }}>
+                    <Typography variant="caption" sx={{ position: 'absolute', top: -10, left: 10, bgcolor: 'background.paper', px: 0.5, color: isOpen ? 'primary.main' : 'text.secondary', fontSize: '0.75rem', zIndex: 1 }}>
                         {label}
                     </Typography>
-                    <Typography sx={{ color: value ? '#fff' : '#666', fontWeight: 500 }}>
+                    <Typography sx={{ color: value ? 'text.primary' : 'text.secondary', fontWeight: 500 }}>
                         {value ? new Date(value).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'DD/MM/YYYY'}
                     </Typography>
                 </Box>
-                <Calendar size={20} color={isOpen ? '#00E5FF' : '#666'} />
+                <Calendar size={20} color={isOpen ? theme.palette.primary.main : theme.palette.text.secondary} />
             </Box>
 
             {/* Dropdown */}
@@ -324,10 +329,11 @@ export default function CustomDatePicker({ value, onChange, label = "Select Date
                             minWidth: 320,
                             mt: 1,
                             zIndex: 50,
-                            bgcolor: '#111',
-                            border: '1px solid #333',
+                            bgcolor: 'background.paper',
+                            border: '1px solid',
+                            borderColor: 'divider',
                             borderRadius: 3,
-                            boxShadow: '0 10px 40px -10px rgba(0,0,0,0.5)',
+                            boxShadow: theme.shadows[8],
                             p: 2
                         }}
                     >

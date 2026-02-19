@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo } from "react";
 
+import { useTheme } from "@mui/material/styles";
+
 interface PortfolioChartProps {
     data: { name: string; value: number; color: string }[];
     totalValue?: number;
@@ -15,6 +17,7 @@ interface PortfolioChartProps {
  */
 export default function PortfolioChart({ data }: PortfolioChartProps) {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
+    const theme = useTheme();
 
     const radius = 70;
     const circumference = 2 * Math.PI * radius;
@@ -59,10 +62,10 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                 {/* Header */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
                     <div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#00E5FF", letterSpacing: 3, marginBottom: 6 }}>ALGO ALLOCATION</div>
-                        <div style={{ fontSize: 24, fontWeight: 600, color: "#FFF", letterSpacing: -0.5 }}>Holdings Distribution</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: theme.palette.primary.main, letterSpacing: 3, marginBottom: 6 }}>ALGO ALLOCATION</div>
+                        <div style={{ fontSize: 24, fontWeight: 600, color: theme.palette.text.primary, letterSpacing: -0.5 }}>Holdings Distribution</div>
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: "#888" }}>Total: ₹{total.toLocaleString()}</div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: theme.palette.text.secondary }}>Total: ₹{total.toLocaleString()}</div>
                 </div>
 
                 {/* Donut Chart */}
@@ -70,7 +73,7 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                     <div style={{ position: "relative", width: 220, height: 220 }}>
                         <svg width="220" height="220" viewBox="0 0 220 220" style={{ transform: "rotate(-90deg)" }}>
                             {/* Background Circle */}
-                            <circle cx="110" cy="110" r={radius} fill="none" stroke="#222" strokeWidth="8" />
+                            <circle cx="110" cy="110" r={radius} fill="none" stroke={theme.palette.divider} strokeWidth="8" />
 
                             {segments.map((seg, i) => {
                                 const previousSegments = segments.slice(0, i);
@@ -130,10 +133,10 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                                         <div style={{ fontSize: 11, color: segments[activeIndex].color, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>
                                             {segments[activeIndex].label}
                                         </div>
-                                        <div style={{ fontSize: 24, fontWeight: 700, color: "#FFF", letterSpacing: -1 }}>
+                                        <div style={{ fontSize: 24, fontWeight: 700, color: theme.palette.text.primary, letterSpacing: -1 }}>
                                             {segments[activeIndex].value}%
                                         </div>
-                                        <div style={{ fontSize: 12, color: "#888", fontWeight: 700 }}>
+                                        <div style={{ fontSize: 12, color: theme.palette.text.secondary, fontWeight: 700 }}>
                                             ₹{segments[activeIndex].rawValue.toLocaleString()}
                                         </div>
                                     </motion.div>
@@ -145,9 +148,9 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                                         exit={{ opacity: 0 }}
                                         transition={{ duration: 0.3 }}
                                     >
-                                        <div style={{ fontSize: 11, color: "#666", fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>Portfolio</div>
-                                        <div style={{ fontSize: 24, fontWeight: 700, color: "#FFF", letterSpacing: -1 }}>100%</div>
-                                        <div style={{ fontSize: 12, color: "#00E5FF", fontWeight: 700 }}>Active</div>
+                                        <div style={{ fontSize: 11, color: theme.palette.text.secondary, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>Portfolio</div>
+                                        <div style={{ fontSize: 24, fontWeight: 700, color: theme.palette.text.primary, letterSpacing: -1 }}>100%</div>
+                                        <div style={{ fontSize: 12, color: theme.palette.primary.main, fontWeight: 700 }}>Active</div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -179,7 +182,8 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                                     padding: "10px 16px",
                                     borderRadius: 14,
                                     userSelect: "none",
-                                    borderBottom: "1px solid rgba(255,255,255,0.05)",
+                                    borderBottom: "1px solid",
+                                    borderColor: theme.palette.divider,
                                     transition: "background-color 0.3s ease",
                                     cursor: 'pointer'
                                 }}
@@ -189,8 +193,8 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                                     transition={{ type: "spring", stiffness: 300, damping: 20 }}
                                     style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: seg.color, flexShrink: 0 }}
                                 />
-                                <div style={{ fontSize: 15, fontWeight: 600, color: "#FFF", flex: 1 }}>{seg.label}</div>
-                                <div style={{ fontSize: 14, color: "#888", fontFamily: "monospace", fontWeight: 500 }}>{seg.value}%</div>
+                                <div style={{ fontSize: 15, fontWeight: 600, color: theme.palette.text.primary, flex: 1 }}>{seg.label}</div>
+                                <div style={{ fontSize: 14, color: theme.palette.text.secondary, fontFamily: "monospace", fontWeight: 500 }}>{seg.value}%</div>
                             </motion.div>
                         );
                     })}
@@ -215,7 +219,7 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                                 <div style={{ fontSize: 12, fontWeight: 700, color: segments[activeIndex].color, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>
                                     {segments[activeIndex].label} Details
                                 </div>
-                                <div style={{ fontSize: 14, color: "#BBB", fontWeight: 500 }}>
+                                <div style={{ fontSize: 14, color: theme.palette.text.secondary, fontWeight: 500 }}>
                                     Current Value: {segments[activeIndex].detail}
                                 </div>
                             </div>

@@ -30,7 +30,7 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert }: Holdings
         <TableContainer sx={{ bgcolor: 'transparent', boxShadow: 'none' }}>
             <Table>
                 <TableHead>
-                    <TableRow sx={{ '& th': { borderBottom: '1px solid #222', color: '#666', fontWeight: 600, fontSize: '0.75rem', letterSpacing: '0.05em', py: 2 } }}>
+                    <TableRow sx={{ '& th': { borderBottom: '1px solid', borderColor: 'divider', color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem', letterSpacing: '0.05em', py: 2 } }}>
                         <TableCell>ASSET</TableCell>
                         <TableCell align="right">LTP</TableCell>
                         <TableCell align="right">DAY CHANGE</TableCell>
@@ -43,9 +43,6 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert }: Holdings
                 </TableHead>
                 <TableBody>
                     {portfolio.holdings.map((stock: any, i: number) => {
-                        // Simulated Day Change (Since backend might not send it yet, we calculate or mock)
-                        // If backend doesn't send day_change, we mock it for UI demo as requested "make it more comprehensive"
-                        // ideally this comes from 'current_price' - 'previous_close'
                         const dayChangePct = stock.day_change_pct || 0;
                         const dayChangeVal = stock.day_change || 0;
 
@@ -59,50 +56,50 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert }: Holdings
                                 onClick={() => router.push(`/market/${stock.ticker}`)}
                                 sx={{
                                     cursor: 'pointer',
-                                    '& td': { borderBottom: '1px solid rgba(255,255,255,0.05)', py: 2.5, color: '#ddd', fontSize: '0.95rem' },
-                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' },
+                                    '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 2.5, color: 'text.secondary', fontSize: '0.95rem' },
+                                    '&:hover': { bgcolor: 'action.hover' },
                                     transition: 'background-color 0.2s'
                                 }}
                             >
                                 <TableCell>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #222', fontWeight: 700, color: '#666', fontSize: '0.8rem' }}>
+                                        <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: 'action.selected', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid', borderColor: 'divider', fontWeight: 700, color: 'text.secondary', fontSize: '0.8rem' }}>
                                             {stock.ticker[0]}
                                         </Box>
                                         <Box>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#fff' }}>{stock.ticker}</Typography>
-                                            <Typography variant="caption" sx={{ color: '#666' }}>{stock.shares} qty</Typography>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>{stock.ticker}</Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>{stock.shares} qty</Typography>
                                         </Box>
                                     </Box>
                                 </TableCell>
                                 <TableCell align="right">
-                                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#fff' }}>₹{stock.current_price.toLocaleString()}</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>₹{stock.current_price.toLocaleString()}</Typography>
                                 </TableCell>
                                 <TableCell align="right">
                                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                        <Typography variant="body2" sx={{ color: dayChangePct >= 0 ? '#10B981' : '#EF4444', fontWeight: 600 }}>
+                                        <Typography variant="body2" sx={{ color: dayChangePct >= 0 ? 'success.main' : 'error.main', fontWeight: 600 }}>
                                             {dayChangePct >= 0 ? '+' : ''}{dayChangePct.toFixed(2)}%
                                         </Typography>
-                                        <Typography variant="caption" sx={{ color: '#666' }}>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                             ₹{Math.abs(dayChangeVal).toFixed(2)}
                                         </Typography>
                                     </Box>
                                 </TableCell>
                                 <TableCell align="right">
-                                    <Typography variant="body2" sx={{ color: '#888' }}>₹{stock.avg_price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>₹{stock.avg_price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</Typography>
                                 </TableCell>
                                 <TableCell align="right">
-                                    <Typography variant="body2" sx={{ color: '#888' }}>₹{stock.invested_value.toLocaleString()}</Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>₹{stock.invested_value.toLocaleString()}</Typography>
                                 </TableCell>
                                 <TableCell align="right">
-                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{stock.current_value.toLocaleString()}</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>₹{stock.current_value.toLocaleString()}</Typography>
                                 </TableCell>
                                 <TableCell align="right">
                                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                        <Typography variant="body2" sx={{ color: stock.gain >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>
+                                        <Typography variant="body2" sx={{ color: stock.gain >= 0 ? 'success.main' : 'error.main', fontWeight: 700 }}>
                                             {stock.gain >= 0 ? '+' : ''}₹{stock.gain.toLocaleString()}
                                         </Typography>
-                                        <Typography variant="caption" sx={{ color: stock.gain >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)', fontWeight: 600 }}>
+                                        <Typography variant="caption" sx={{ color: stock.gain >= 0 ? 'success.main' : 'error.main', fontWeight: 600, opacity: 0.8 }}>
                                             {stock.gain_pct.toFixed(2)}%
                                         </Typography>
                                     </Box>
@@ -116,7 +113,7 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert }: Holdings
                                                     e.stopPropagation();
                                                     if (onAlert) onAlert(stock.ticker, stock.current_price);
                                                 }}
-                                                sx={{ color: '#444', '&:hover': { color: '#00E5FF' }, mr: 1 }}
+                                                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' }, mr: 1 }}
                                             >
                                                 <Bell size={16} />
                                             </IconButton>
@@ -128,7 +125,7 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert }: Holdings
                                                 e.stopPropagation();
                                                 handleMenuOpen(e, stock.id || stock.ticker);
                                             }}
-                                            sx={{ color: '#444', '&:hover': { color: '#fff' } }}
+                                            sx={{ color: 'text.secondary', '&:hover': { color: 'text.primary' } }}
                                         >
                                             <MoreVertical size={16} />
                                         </IconButton>
@@ -139,8 +136,9 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert }: Holdings
                                         onClose={() => handleMenuClose(stock.id || stock.ticker)}
                                         PaperProps={{
                                             sx: {
-                                                bgcolor: '#111',
-                                                border: '1px solid #333',
+                                                bgcolor: 'background.paper',
+                                                border: '1px solid',
+                                                borderColor: 'divider',
                                                 minWidth: 140
                                             }
                                         }}
@@ -150,9 +148,9 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert }: Holdings
                                                 handleMenuClose(stock.id || stock.ticker);
                                                 if (onDelete && stock.id) onDelete(stock.id);
                                             }}
-                                            sx={{ color: '#EF4444', '&:hover': { bgcolor: 'rgba(239,68,68,0.1)' } }}
+                                            sx={{ color: 'error.main', '&:hover': { bgcolor: 'action.hover' } }}
                                         >
-                                            <ListItemIcon><Trash2 size={16} color="#EF4444" /></ListItemIcon>
+                                            <ListItemIcon><Trash2 size={16} color="var(--mui-palette-error-main)" /></ListItemIcon>
                                             <Typography variant="body2">Delete</Typography>
                                         </MenuItem>
                                     </Menu>

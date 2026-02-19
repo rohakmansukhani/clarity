@@ -110,9 +110,9 @@ export default function BacktrackPage() {
                 data = await marketService.backtest(ticker, date, undefined, Number(amount), finalSellDate);
             }
             setResult(data);
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            setError("Failed to fetch backtest data. check ticker or date.");
+            setError(e.response?.data?.detail || "Failed to fetch backtest data. check ticker or date.");
         } finally {
             setLoading(false);
         }
@@ -200,10 +200,15 @@ export default function BacktrackPage() {
                                             }}
                                         />
                                     )}
+                                    PaperComponent={({ children }) => (
+                                        <Paper sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', color: 'text.primary', backgroundImage: 'none' }}>
+                                            {children}
+                                        </Paper>
+                                    )}
                                     renderOption={(props, option: any) => {
                                         const { key, ...otherProps } = props;
                                         return (
-                                            <li key={key} {...otherProps} style={{ backgroundColor: '#111', color: '#fff', borderBottom: '1px solid #222' }}>
+                                            <li key={key} {...otherProps} style={{ backgroundColor: theme.palette.mode === 'dark' ? '#111' : '#fff', color: theme.palette.text.primary, borderBottom: `1px solid ${theme.palette.divider}` }}>
                                                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                                                     <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.primary' }}>{option.symbol}</Typography>
                                                     <Typography variant="caption" sx={{ color: 'text.secondary' }}>{option.name}</Typography>
@@ -211,11 +216,6 @@ export default function BacktrackPage() {
                                             </li>
                                         );
                                     }}
-                                    PaperComponent={({ children }) => (
-                                        <Paper sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', color: 'text.primary', backgroundImage: 'none' }}>
-                                            {children}
-                                        </Paper>
-                                    )}
                                 />
 
                                 <Box sx={{ opacity: ticker ? 1 : 0.5, pointerEvents: ticker ? 'auto' : 'none', transition: 'opacity 0.2s' }}>
@@ -241,7 +241,7 @@ export default function BacktrackPage() {
                                                 py: 1,
                                                 borderRadius: 2,
                                                 bgcolor: !useCustomSellDate ? 'primary.main' : 'transparent',
-                                                color: !useCustomSellDate ? '#000' : 'text.secondary',
+                                                color: !useCustomSellDate ? 'primary.contrastText' : 'text.secondary',
                                                 fontWeight: !useCustomSellDate ? 700 : 500,
                                                 border: !useCustomSellDate ? 'none' : '1px solid',
                                                 borderColor: 'divider',
@@ -259,7 +259,7 @@ export default function BacktrackPage() {
                                                 py: 1,
                                                 borderRadius: 2,
                                                 bgcolor: useCustomSellDate ? 'primary.main' : 'transparent',
-                                                color: useCustomSellDate ? '#000' : 'text.secondary',
+                                                color: useCustomSellDate ? 'primary.contrastText' : 'text.secondary',
                                                 fontWeight: useCustomSellDate ? 700 : 500,
                                                 border: useCustomSellDate ? 'none' : '1px solid',
                                                 borderColor: 'divider',
@@ -359,7 +359,7 @@ export default function BacktrackPage() {
                                     sx={{
                                         py: 2,
                                         bgcolor: 'primary.main',
-                                        color: '#000',
+                                        color: 'primary.contrastText',
                                         fontWeight: 800,
                                         fontSize: '1.1rem',
                                         borderRadius: 3,
@@ -409,7 +409,7 @@ export default function BacktrackPage() {
 
                                     {/* Graph */}
                                     {result.history && result.history.length > 0 && (
-                                        <Box sx={{ height: 200, mt: 2, width: '100%' }}>
+                                        <Box sx={{ height: 200, mt: 2, width: '100%', minHeight: 200 }}>
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <AreaChart data={result.history}>
                                                     <defs>
@@ -420,7 +420,7 @@ export default function BacktrackPage() {
                                                     </defs>
                                                     <XAxis
                                                         dataKey="date"
-                                                        stroke="#666"
+                                                        stroke={theme.palette.text.secondary}
                                                         style={{ fontSize: '0.7rem' }}
                                                         tickLine={false}
                                                         interval={result.history.length > 20 ? 'preserveStartEnd' : 0}
