@@ -71,9 +71,23 @@ class ScreenerProvider(BaseDataSource):
                             
                             ratios[key] = val
                             
-            # Normalize Keys for Frontend
+            # Normalize Keys for Frontend and Analyzers
             if "stock_p/e" in ratios:
+                ratios["trailingPE"] = ratios["stock_p/e"]
                 ratios["pe_ratio"] = ratios["stock_p/e"]
+            if "price_to_book" in ratios:
+                ratios["priceToBook"] = ratios["price_to_book"]
+            if "return_on_equity" in ratios:
+                ratios["returnOnEquity"] = ratios["return_on_equity"]
+            if "debt_to_equity" in ratios:
+                ratios["debtToEquity"] = ratios["debt_to_equity"]
+            if "current_ratio" in ratios:
+                ratios["currentRatio"] = ratios["current_ratio"]
+            if "quick_ratio" in ratios:
+                ratios["quickRatio"] = ratios["quick_ratio"]
+            if "dividend_yield" in ratios:
+                ratios["dividendYield"] = ratios["dividend_yield"]
+            
             if "high_/_low" in ratios:
                 hl = str(ratios["high_/_low"]).split("/")
                 if len(hl) == 2:

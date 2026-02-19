@@ -497,6 +497,12 @@ class MarketService:
                     "fundamental": fundamental,
                     "news": news
                 },
+                "expert_insights": {
+                    "technical_flags": technical.get("trend_analysis", {}).get("status"),
+                    "volume_profile": volume_data_signal if (volume_data_signal := technical.get("volume_analysis", {}).get("signal")) != 'NEUTRAL' else None,
+                    "liquidity_status": fundamental.get("financial_health", {}).get("level"),
+                    "valuation_context": fundamental.get("valuation", {}).get("description")
+                },
                 "raw_data": {
                     "fundamentals": base_data.get("fundamentals", {}),
                     "news_items": base_data.get("news", [])[:5]

@@ -44,11 +44,14 @@ class TechnicalAnalyzer:
             # Bollinger Bands
             bb_data = self._calc_bollinger_bands(df)
             
-            # Support & Resistance
-            sr_data = self._calc_support_resistance(df)
+            # Volume Analysis
+            volume_data = self._analyze_volume(df)
+            
+            # Trend Detection (EMA Crosses)
+            trend_data = self._detect_trends(df)
             
             # Overall Signal
-            signal = self._generate_signal(ma_data, rsi, macd_data, bb_data)
+            signal = self._generate_signal(ma_data, rsi, macd_data, bb_data, volume_data)
             
             return {
                 "current_price": round(current_price, 2),
@@ -57,6 +60,8 @@ class TechnicalAnalyzer:
                 "macd": macd_data,
                 "bollinger_bands": bb_data,
                 "support_resistance": sr_data,
+                "volume_analysis": volume_data,
+                "trend_analysis": trend_data,
                 "signal": signal
             }
             
@@ -180,7 +185,65 @@ class TechnicalAnalyzer:
             "pivot": round(pivot, 2)
         }
     
-    def _generate_signal(self, ma_data, rsi, macd, bb) -> str:
+    def _analyze_volume(self, df: pl.DataFrame) -> Dict[str, Any]:
+        """Analyze volume patterns and spikes."""
+        current_vol = df.select(pl.col("volume").last()).item()
+        avg_vol_20 = df.select(pl.col("volume").rolling_mean(window_size=20).last()).item()
+        
+        if avg_vol_20 and avg_vol_20 > 0:
+            spike_ratio = (current_vol / avg_vol_20)
+            spike_pct = (spike_ratio - 1) * 100
+        else:
+            spike_ratio = 1.0
+            spike_pct = 0.0
+            
+        signal = 'NEUTRAL'
+        if spike_ratio > 2.0:
+            signal = 'HIGH_VOLUME_SPIKE'
+        elif spike_ratio > 1.5:
+            signal = 'ACCUMULATION'
+        elif spike_ratio < 0.5:
+            signal = 'LOW_LIQUIDITY'
+            
+        return {
+            "current_volume": int(current_vol),
+            "avg_volume_20d": int(avg_vol_20) if avg_vol_20 else 0,
+            "spike_ratio": round(spike_ratio, 2),
+            "spike_percent": round(spike_pct, 2),
+            "signal": signal
+        }
+
+    def _detect_trends(self, df: pl.DataFrame) -> Dict[str, Any]:
+        """Detect Golden Cross / Death Cross and trend persistence."""
+        if df.height < 200:
+            return {"status": "INSUFFICIENT_DATA", "days_available": df.height}
+            
+        ma50 = df.select(pl.col("close").rolling_mean(window_size=50).to_series())
+        ma200 = df.select(pl.col("close").rolling_mean(window_size=200).to_series())
+        
+        curr_ma50 = ma50[-1]
+        curr_ma200 = ma200[-1]
+        prev_ma50 = ma50[-2]
+        prev_ma200 = ma200[-2]
+        
+        status = 'NEUTRAL'
+        if prev_ma50 <= prev_ma200 and curr_ma50 > curr_ma200:
+            status = 'GOLDEN_CROSS_BULLISH'
+        elif prev_ma50 >= prev_ma200 and curr_ma50 < curr_ma200:
+            status = 'DEATH_CROSS_BEARISH'
+        elif curr_ma50 > curr_ma200:
+            status = 'BULLISH_TREND'
+        else:
+            status = 'BEARISH_TREND'
+            
+        return {
+            "status": status,
+            "ma50": round(curr_ma50, 2),
+            "ma200": round(curr_ma200, 2),
+            "strength": "STRONG" if abs(curr_ma50 - curr_ma200) / curr_ma200 > 0.05 else "WEAK"
+        }
+
+    def _generate_signal(self, ma_data, rsi, macd, bb, volume_data=None) -> str:
         """Generate overall technical signal."""
         buy_signals = 0
         sell_signals = 0
@@ -208,6 +271,13 @@ class TechnicalAnalyzer:
             buy_signals += 1
         elif bb['signal'] == 'OVERBOUGHT':
             sell_signals += 1
+            
+        # Volume Spike (Confirmation filter)
+        if volume_data and volume_data['signal'] == 'HIGH_VOLUME_SPIKE':
+            if buy_signals > sell_signals:
+                buy_signals += 1
+            elif sell_signals > buy_signals:
+                sell_signals += 1
         
         if buy_signals > sell_signals:
             return 'BUY'
