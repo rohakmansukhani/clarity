@@ -24,6 +24,7 @@ export default function StockPage() {
     const [chartData, setChartData] = useState<any[]>([]);
     const [aiSummary, setAiSummary] = useState<string>('');
     const [news, setNews] = useState<any[]>([]);
+    const [technicalData, setTechnicalData] = useState<any>(null);
 
     // UI State
     const [timeRange, setTimeRange] = useState('1mo');
@@ -62,15 +63,17 @@ export default function StockPage() {
             setError(null);
 
             // Parallel fetching for speed
-            const [details, history, summaryData] = await Promise.all([
+            const [details, history, summaryData, techData] = await Promise.all([
                 marketService.getStockDetails(symbol),
                 marketService.getStockHistory(symbol, timeRange),
-                marketService.getAggregatedStockAnalysis(symbol).catch(() => ({ summary: "AI Analysis unavailable." }))
+                marketService.getAggregatedStockAnalysis(symbol).catch(() => ({ summary: "AI Analysis unavailable." })),
+                marketService.getTechnicalSummary(symbol).catch(() => ({}))
             ]);
 
             setData(details);
             setChartData(history);
             setAiSummary(summaryData.summary);
+            setTechnicalData(techData);
             // Assuming details contains news, or we fetch it separately. 
             // For now, let's map details.news if available, or fall back to empty.
             if (details.news) {
@@ -310,6 +313,34 @@ export default function StockPage() {
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 6 }}>
                             <StatRow label="Market Cap" value={formatMarketCap(data.fundamentals?.market_cap)} />
                             <StatRow label="P/E Ratio" value={getPE(data.fundamentals)} />
+                            <StatRow
+                                label="RSI"
+                                value={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography sx={{ fontWeight: 600, color: '#fff' }}>
+                                            {technicalData?.rsi ? technicalData.rsi.toFixed(2) : '-'}
+                                        </Typography>
+                                        <Tooltip
+                                            title={
+                                                <Box sx={{ p: 1 }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5, color: '#00E5FF' }}>Relative Strength Index (RSI)</Typography>
+                                                    <Typography variant="body2" sx={{ fontSize: '0.8rem', color: '#ccc' }}>
+                                                        Measures the speed and change of price movements.
+                                                    </Typography>
+                                                    <Box sx={{ mt: 1, fontSize: '0.75rem', color: '#888' }}>
+                                                        • &gt;70: Overbought (Potential Sell)<br />
+                                                        • &lt;30: Oversold (Potential Buy)
+                                                    </Box>
+                                                </Box>
+                                            }
+                                            arrow
+                                            placement="top"
+                                        >
+                                            <Info size={14} color="#666" style={{ cursor: 'help' }} />
+                                        </Tooltip>
+                                    </Box>
+                                }
+                            />
                             <StatRow label="52W High" value={getHighLow(data.fundamentals).high} />
                             <StatRow label="52W Low" value={getHighLow(data.fundamentals).low} />
                         </Box>
@@ -477,42 +508,7 @@ export default function StockPage() {
                 <Box sx={{ mt: 8 }}>
                     <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff', mb: 4, letterSpacing: '-0.02em' }}>Latest News</Typography>
 
-                    {/* 1. Clarity AI News Summary */}
-                    <Box sx={{
-                        bgcolor: 'rgba(0,0,0,0.5)',
-                        border: '1px solid #333',
-                        borderRadius: 4,
-                        p: 4,
-                        mb: 5,
-                        position: 'relative',
-                        overflow: 'hidden'
-                    }}>
-                        <Box sx={{ display: 'flex', gap: 3 }}>
-                            {/* Unique Clarity Icon (Custom SVG) */}
-                            <Box sx={{
-                                minWidth: 48, height: 48,
-                                borderRadius: '12px',
-                                bgcolor: 'rgba(255,255,255,0.05)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                border: '1px solid rgba(255,255,255,0.1)'
-                            }}>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" strokeWidth="2">
-                                    <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="rgba(0, 229, 255, 0.2)" />
-                                    <path d="M2 17L12 22L22 17" />
-                                    <path d="M2 12L12 17L22 12" />
-                                </svg>
-                            </Box>
-                            <Box>
-                                <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    Clarity News Insight
-                                    <Chip label="AI GENERATED" size="small" sx={{ bgcolor: 'rgba(0, 229, 255, 0.1)', color: '#00E5FF', fontSize: '0.65rem', fontWeight: 800, height: 20 }} />
-                                </Typography>
-                                <Typography variant="body1" sx={{ color: '#ccc', lineHeight: 1.6 }}>
-                                    {aiSummary || data.summary || "Analyzing latest market news..."}
-                                </Typography>
-                            </Box>
-                        </Box>
-                    </Box>
+
 
                     {/* 2. News Grid */}
                     <Grid container spacing={4}>
@@ -735,7 +731,7 @@ function getHighLow(fundamentals: any) {
     return { high: 'N/A', low: 'N/A' };
 }
 
-function StatRow({ label, value }: { label: string, value: string | number }) {
+function StatRow({ label, value }: { label: string, value: string | number | React.ReactNode }) {
     return (
         <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 2, borderBottom: '1px solid #222' }}>
             <Typography variant="body1" sx={{ color: '#888' }}>{label}</Typography>

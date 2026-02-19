@@ -19,9 +19,11 @@ export const marketService = {
 
     // Get historical data for chart
     getStockHistory: async (symbol: string, period: string = '1mo') => {
-        const response = await api.get(`/stocks/${symbol}/history?period=${period}`);
+        const response = await api.get(`/stocks/${symbol}/history`, { params: { period } });
         return response.data;
     },
+
+
 
     // Search for stocks
     searchStocks: async (query: string) => {
@@ -171,7 +173,7 @@ export const marketService = {
 
     getTechnicalSummary: async (ticker: string) => {
         try {
-            const response = await api.get(`/watchlist/analysis/${ticker}`);
+            const response = await api.get(`/watchlists/analysis/${ticker}`);
             return response.data;
         } catch (e) {
             return {};
