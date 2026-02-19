@@ -318,7 +318,9 @@ export default function StockPage() {
                                 value={
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Typography sx={{ fontWeight: 600, color: '#fff' }}>
-                                            {technicalData?.rsi ? technicalData.rsi.toFixed(2) : '-'}
+                                            {technicalData?.rsi !== undefined && technicalData?.rsi !== null
+                                                ? Number(technicalData.rsi).toFixed(2)
+                                                : '-'}
                                         </Typography>
                                         <Tooltip
                                             title={
