@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { TrendingUp, Flame } from 'lucide-react';
 
 import StockSearchInput from '@/components/market/StockSearchInput';
+import { marketService } from '@/services/marketService';
 
 const TRENDING_STOCKS = [
     { symbol: 'RELIANCE', label: 'Reliance' },
@@ -27,17 +28,15 @@ export default function MarketHome() {
     React.useEffect(() => {
         const fetchRSI = async () => {
             const data: Record<string, any> = {};
-            // Fetch in parallel
+            // Fetch in parallel using authenticated proxy-aware service
             await Promise.all(TRENDING_STOCKS.map(async (stock) => {
                 try {
-                    // We can reuse the watchlist analysis endpoint for single stock RSI
-                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/watchlists/analysis/${stock.symbol}`);
-                    if (response.ok) {
-                        const result = await response.json();
+                    const result = await marketService.getTechnicalSummary(stock.symbol);
+                    if (result) {
                         data[stock.symbol] = result;
                     }
                 } catch (e) {
-                    console.error('Failed to fetch RSI', e);
+                    // silently ignore — RSI badges are optional
                 }
             }));
             setRsiData(data);
