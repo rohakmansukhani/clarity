@@ -9,7 +9,7 @@ import api from '@/services/api';
 import { ErrorBanner } from '@/components/common/ErrorBanner';
 import { useTheme } from '@mui/material/styles';
 import { useColorMode } from '@/theme/ThemeContext';
-import { Sun, Moon } from 'lucide-react';
+import ThemeToggle from '@/components/layout/ThemeToggle';
 
 import { supabase } from '@/lib/supabase';
 
@@ -222,25 +222,7 @@ export default function SignupPage() {
 
             {/* Theme Toggle Button */}
             <Box sx={{ position: 'fixed', top: 20, right: 20, zIndex: 1000 }}>
-                <Button
-                    onClick={toggleColorMode}
-                    sx={{
-                        minWidth: 48,
-                        width: 48,
-                        height: 48,
-                        borderRadius: '12px',
-                        bgcolor: 'background.paper',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        color: 'text.primary',
-                        '&:hover': {
-                            bgcolor: 'action.hover',
-                            borderColor: 'text.secondary'
-                        }
-                    }}
-                >
-                    {mode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-                </Button>
+                <ThemeToggle />
             </Box>
 
             <Box
