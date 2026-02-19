@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useRef, useEffect } from 'react';
 import { Box, TextField, InputAdornment, Paper, List, ListItem, ListItemButton, Typography } from '@mui/material';
 import { Search, ArrowRight } from 'lucide-react';

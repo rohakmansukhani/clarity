@@ -10,12 +10,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 const MENU_ITEMS = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
     { label: 'Market', icon: TrendingUp, path: '/market' },
-    { label: 'Analysis', icon: BarChart2, path: '/analysis' },
-    { label: 'Discovery Hub', icon: Compass, path: '/sectors' },
-    { label: 'Buy List', icon: Eye, path: '/watchlist' },
-    { label: 'Backtrack', icon: RotateCcw, path: '/backtrack' },
     { label: 'Portfolio', icon: PieChart, path: '/portfolio' },
+    { label: 'Buy List', icon: Eye, path: '/watchlist' },
+    { label: 'Comparison', icon: BarChart2, path: '/analysis' },
+    { label: 'Backtrack', icon: RotateCcw, path: '/backtrack' },
     { label: 'Advisor', icon: MessageSquare, path: '/advisor' },
+    { label: 'Discovery Hub', icon: Compass, path: '/sectors' },
 ];
 
 export default function Sidebar() {

@@ -22,6 +22,35 @@ const TRENDING_STOCKS = [
 export default function MarketHome() {
     const router = useRouter();
     const [query, setQuery] = useState('');
+    const [rsiData, setRsiData] = React.useState<Record<string, any>>({});
+
+    React.useEffect(() => {
+        const fetchRSI = async () => {
+            const data: Record<string, any> = {};
+            // Fetch in parallel
+            await Promise.all(TRENDING_STOCKS.map(async (stock) => {
+                try {
+                    // We can reuse the watchlist analysis endpoint for single stock RSI
+                    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/watchlists/analysis/${stock.symbol}`);
+                    if (response.ok) {
+                        const result = await response.json();
+                        data[stock.symbol] = result;
+                    }
+                } catch (e) {
+                    console.error('Failed to fetch RSI', e);
+                }
+            }));
+            setRsiData(data);
+        };
+
+        fetchRSI();
+    }, []);
+
+    const getRSIColor = (rsi: number) => {
+        if (rsi < 30) return '#10B981'; // Oversold - Buy
+        if (rsi > 70) return '#EF4444'; // Overbought - Sell
+        return '#666';
+    };
 
     return (
         <Box
@@ -95,36 +124,43 @@ export default function MarketHome() {
                             </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-                            {TRENDING_STOCKS.map((stock, i) => (
-                                <motion.div
-                                    key={stock.symbol}
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: 0.5 + i * 0.05 }}
-                                >
-                                    <Chip
-                                        label={stock.label}
-                                        onClick={() => router.push(`/market/${stock.symbol}`)}
-                                        icon={<TrendingUp size={12} />}
-                                        sx={{
-                                            bgcolor: 'rgba(255,255,255,0.04)',
-                                            color: '#888',
-                                            border: '1px solid rgba(255,255,255,0.08)',
-                                            fontSize: '0.78rem',
-                                            fontWeight: 500,
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                            '& .MuiChip-icon': { color: '#555' },
-                                            '&:hover': {
-                                                bgcolor: 'rgba(0, 229, 255, 0.08)',
-                                                color: '#00E5FF',
-                                                borderColor: 'rgba(0, 229, 255, 0.3)',
-                                                '& .MuiChip-icon': { color: '#00E5FF' },
+                            {TRENDING_STOCKS.map((stock, i) => {
+                                const rsi = rsiData[stock.symbol]?.rsi;
+                                const rsiColor = rsi ? getRSIColor(rsi) : '#666';
+
+                                return (
+                                    <motion.div
+                                        key={stock.symbol}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <Chip
+                                            label={
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    {stock.label}
+                                                    {rsi && (
+                                                        <Typography variant="caption" sx={{ color: rsiColor, fontWeight: 700, fontSize: '0.65rem' }}>
+                                                            {Math.round(rsi)}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
                                             }
-                                        }}
-                                    />
-                                </motion.div>
-                            ))}
+                                            onClick={() => router.push(`/market/${stock.symbol}`)}
+                                            sx={{
+                                                bgcolor: '#111',
+                                                color: '#888',
+                                                border: '1px solid #333',
+                                                fontWeight: 500,
+                                                '&:hover': {
+                                                    bgcolor: '#222',
+                                                    color: '#fff',
+                                                    borderColor: '#444'
+                                                }
+                                            }}
+                                        />
+                                    </motion.div>
+                                );
+                            })}
                         </Box>
                     </Box>
                 </motion.div>
@@ -132,3 +168,4 @@ export default function MarketHome() {
         </Box>
     );
 }
+

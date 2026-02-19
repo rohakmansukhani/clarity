@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, IconButton, ToggleButton, ToggleButtonGroup, InputAdornment } from '@mui/material';
 import { X, Bell, TrendingUp, TrendingDown } from 'lucide-react';

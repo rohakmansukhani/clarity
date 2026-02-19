@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
-import { Box, Typography, Grid, Button, LinearProgress, Chip, IconButton, CircularProgress, Tooltip, Card, CardContent } from '@mui/material';
-import { TrendingUp, TrendingDown, Plus, Wallet, PieChart as PieChartIcon, ArrowLeft, FolderPlus, Folder, Trash2 } from 'lucide-react';
+import { Box, Typography, Grid, Button, LinearProgress, Chip, IconButton, CircularProgress, Tooltip, Card, CardContent, TextField } from '@mui/material';
+import { Plus, Trash2, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowRight, LayoutGrid, List as ListIcon, PieChart as PieChartIcon, Menu, MoreVertical, Bell, Edit2, Check, X, ArrowLeft, Folder, FolderPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
@@ -63,6 +63,10 @@ export default function PortfolioPage() {
     // Delete Confirmation
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [portfolioToDelete, setPortfolioToDelete] = useState<string | null>(null);
+
+    // Rename State
+    const [isRenaming, setIsRenaming] = useState(false);
+    const [newName, setNewName] = useState('');
 
     // --- Actions ---
     const fetchPortfolios = async () => {
@@ -128,9 +132,21 @@ export default function PortfolioPage() {
         try {
             await portfolioService.createPortfolio(name);
             await fetchPortfolios();
+            await fetchPortfolios();
             setIsCreateModalOpen(false);
         } catch (e) {
             console.error("Create failed", e);
+        }
+    };
+
+    const handleRenamePortfolio = async () => {
+        if (!newName.trim() || !activeId) return;
+        try {
+            await portfolioService.updatePortfolio(activeId, { name: newName });
+            setIsRenaming(false);
+            await fetchPortfolios(); // Reload to update list
+        } catch (error) {
+            console.error('Failed to rename', error);
         }
     };
 
@@ -386,9 +402,47 @@ export default function PortfolioPage() {
                             </Button>
 
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <Box>
-                                    <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700, mb: 1 }}>{activePortfolio.name}</Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                                <Box sx={{ flex: 1 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        {isRenaming ? (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <TextField
+                                                    value={newName}
+                                                    onChange={(e) => setNewName(e.target.value)}
+                                                    size="small"
+                                                    autoFocus
+                                                    sx={{
+                                                        bgcolor: '#111',
+                                                        borderRadius: 1,
+                                                        input: { color: '#fff', fontWeight: 700, fontSize: '1.5rem', py: 0.5 }
+                                                    }}
+                                                />
+                                                <IconButton onClick={handleRenamePortfolio} sx={{ color: '#00E5FF' }}><Check size={20} /></IconButton>
+                                                <IconButton onClick={() => setIsRenaming(false)} sx={{ color: '#666' }}><X size={20} /></IconButton>
+                                            </Box>
+                                        ) : (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-1px' }}>
+                                                    {activePortfolio.name}
+                                                </Typography>
+                                                <IconButton
+                                                    onClick={() => {
+                                                        setNewName(activePortfolio.name);
+                                                        setIsRenaming(true);
+                                                    }}
+                                                    size="small"
+                                                    sx={{
+                                                        color: '#444',
+                                                        opacity: 0.5,
+                                                        '&:hover': { opacity: 1, color: '#00E5FF' }
+                                                    }}
+                                                >
+                                                    <Edit2 size={16} />
+                                                </IconButton>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mt: 0.5 }}>
                                         <Typography variant="h1" sx={{ fontSize: { xs: '3.5rem', md: '5rem' }, fontWeight: 800, lineHeight: 0.9, letterSpacing: '-0.04em', color: '#fff' }}>
                                             ₹{activePortfolio.total_value.toLocaleString()}
                                         </Typography>

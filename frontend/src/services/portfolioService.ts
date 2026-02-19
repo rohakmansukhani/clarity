@@ -54,6 +54,12 @@ export const portfolioService = {
         return response.data;
     },
 
+    // Rename Portfolio
+    updatePortfolio: async (portfolioId: string, updates: { name: string }) => {
+        const response = await api.put(`/portfolios/${portfolioId}`, updates);
+        return response.data;
+    },
+
     // Delete Portfolio
     deletePortfolio: async (portfolioId: string) => {
         const response = await api.delete(`/portfolios/${portfolioId}`);

@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Grid, Card, CardContent, IconButton, Button, CircularProgress, Snackbar, Alert } from '@mui/material';
+import { Box, Typography, Grid, Card, CardContent, IconButton, Button, CircularProgress, Snackbar, Alert, Chip, LinearProgress } from '@mui/material';
 import { marketService } from '@/services/marketService';
-import { Trash2, ArrowUpRight, ArrowDownRight, Eye, Plus, ArrowLeft } from 'lucide-react';
+import { Trash2, ArrowUpRight, ArrowDownRight, Eye, Plus, ArrowLeft, CheckCircle, Tag, Edit2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { motion } from 'framer-motion';
-import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
 import AddToWatchlistModal from '@/components/watchlist/AddToWatchlistModal';
 
 export default function WatchlistPage() {
@@ -16,6 +15,7 @@ export default function WatchlistPage() {
     const [watchlist, setWatchlist] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [prices, setPrices] = useState<Record<string, any>>({});
+    const [techSummaries, setTechSummaries] = useState<Record<string, any>>({});
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [tickerToDelete, setTickerToDelete] = useState<string | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -27,19 +27,28 @@ export default function WatchlistPage() {
             const data = await marketService.getWatchlist();
             setWatchlist(data);
 
-            // Fetch live prices for watched items
-            // We can do this in parallel or use a bulk endpoint if available.
-            // For now, loop (limited scale).
+            // Fetch live prices and Technical Analysis in parallel
             const priceMap: Record<string, any> = {};
+            const techMap: Record<string, any> = {};
+
+            // Batch fetching would be better, but loop for now
             await Promise.all(data.map(async (item: any) => {
                 try {
+                    // 1. Get Live Price
                     const details = await marketService.getStockDetails(item.ticker);
                     priceMap[item.ticker] = details.market_data;
+
+                    // 2. Get Technical Summary (RSI, Trend)
+                    const tech = await marketService.getTechnicalSummary(item.ticker);
+                    techMap[item.ticker] = tech;
+
                 } catch (e) {
-                    console.error(`Failed to load price for ${item.ticker}`, e);
+                    console.error(`Failed to load data for ${item.ticker}`, e);
                 }
             }));
+
             setPrices(priceMap);
+            setTechSummaries(techMap);
 
         } catch (error) {
             console.error("Failed to fetch watchlist", error);
@@ -74,10 +83,25 @@ export default function WatchlistPage() {
         }
     };
 
-    const handleAddToWatchlist = async (ticker: string, options: { target_buy_price?: number; target_sell_price?: number; notes?: string }) => {
+    const handleAddToWatchlist = async (ticker: string, options: any) => {
         await marketService.addToWatchlist(ticker, options);
         setToast({ open: true, message: `${ticker} added to Buy List`, severity: 'success' });
         await fetchWatchlist();
+    };
+
+    const handleAlreadyBought = async (item: any, e: React.MouseEvent) => {
+        e.stopPropagation();
+        // Logic to move to portfolio?
+        // For now, maybe just open a dialog to add to portfolio?
+        // Or just show a toast saying "Use 'Add to Portfolio' to track holdings"
+        setToast({ open: true, message: 'Use "Add to Portfolio" to track actual holdings.', severity: 'success' });
+        // Ideally this opens the AddToPortfolio modal pre-filled
+    };
+
+    const getRSIText = (rsi: number) => {
+        if (rsi < 30) return { text: 'OVERSOLD', color: '#10B981' }; // Buy signal
+        if (rsi > 70) return { text: 'OVERBOUGHT', color: '#EF4444' }; // Sell signal
+        return { text: 'NEUTRAL', color: '#888' };
     };
 
     if (loading) {
@@ -95,20 +119,21 @@ export default function WatchlistPage() {
                 <Button
                     startIcon={<ArrowLeft size={20} />}
                     onClick={() => router.back()}
-                    sx={{
-                        color: '#666',
-                        mb: 2,
-                        pl: 0,
-                        '&:hover': { color: '#fff', bgcolor: 'transparent' }
-                    }}
+                    sx={{ color: '#666', mb: 2, pl: 0, '&:hover': { color: '#fff', bgcolor: 'transparent' } }}
                 >
                     Back
                 </Button>
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-                    <Typography variant="h3" sx={{ color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Eye size={32} color="#00E5FF" />
-                        My Buy List
-                    </Typography>
+                    <Box>
+                        <Typography variant="h3" sx={{ color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Eye size={32} color="#00E5FF" />
+                            Smart Buy List
+                        </Typography>
+                        <Typography variant="body1" sx={{ color: '#666', mt: 1 }}>
+                            Track your research, set entry targets, and monitor RSI levels.
+                        </Typography>
+                    </Box>
                     <Button
                         variant="contained"
                         startIcon={<Plus size={18} />}
@@ -139,94 +164,121 @@ export default function WatchlistPage() {
                     <Grid container spacing={3}>
                         {watchlist.map((item) => {
                             const marketData = prices[item.ticker] || {};
+                            const techData = techSummaries[item.ticker] || {};
                             const change = marketData.change || 0;
-                            const price = marketData.price_formatted || 'Loading...';
+                            const currentPrice = marketData.price || 0;
+                            const priceFormatted = marketData.price_formatted || 'Loading...';
+                            const target = item.target_price || 0;
+                            const targetDiff = target > 0 ? ((currentPrice - target) / target) * 100 : 0;
+                            const isNearTarget = target > 0 && targetDiff < 5 && targetDiff > -5;
+                            const rsi = techData.rsi || 50;
+                            const rsiInfo = getRSIText(rsi);
 
                             return (
                                 <Grid size={{ xs: 12, md: 6, lg: 4 }} key={item.ticker}>
                                     <Card
                                         component={motion.div}
-                                        whileHover={{ y: -4, borderColor: '#444' }}
+                                        whileHover={{ y: -4, borderColor: isNearTarget ? '#10B981' : '#444' }}
                                         onClick={() => router.push(`/market/${item.ticker}`)}
                                         sx={{
                                             bgcolor: '#0A0A0A',
-                                            border: '1px solid #222',
+                                            border: '1px solid',
+                                            borderColor: isNearTarget ? 'rgba(16, 185, 129, 0.3)' : '#222',
                                             borderRadius: 4,
                                             cursor: 'pointer',
                                             position: 'relative',
-                                            overflow: 'visible'
+                                            overflow: 'visible',
+                                            height: '100%',
+                                            display: 'flex',
+                                            flexDirection: 'column'
                                         }}
                                     >
-                                        <CardContent sx={{ p: 4 }}>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+                                        <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                                            {/* Header */}
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                                 <Box>
                                                     <Typography variant="h5" sx={{ color: '#fff', fontWeight: 700 }}>{item.ticker}</Typography>
-                                                    <Typography variant="caption" sx={{ color: '#666' }}>NSE</Typography>
+                                                    <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+                                                        <Chip label="NSE" size="small" sx={{ bgcolor: '#222', color: '#888', height: 20, fontSize: '0.65rem' }} />
+                                                        {item.tags?.slice(0, 2).map((tag: string) => (
+                                                            <Chip key={tag} label={tag} size="small" sx={{ bgcolor: 'rgba(0, 229, 255, 0.1)', color: '#00E5FF', height: 20, fontSize: '0.65rem' }} />
+                                                        ))}
+                                                    </Box>
                                                 </Box>
-                                                <IconButton
-                                                    onClick={(e) => handleRemove(item.ticker, e)}
-                                                    sx={{ color: '#333', '&:hover': { color: '#EF4444', bgcolor: 'rgba(239, 68, 68, 0.1)' } }}
-                                                >
-                                                    <Trash2 size={18} />
-                                                </IconButton>
-                                            </Box>
-
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', mb: 2 }}>
-                                                <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700 }}>
-                                                    {price}
-                                                </Typography>
-
-                                                {marketData.price && (
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', color: change >= 0 ? '#10B981' : '#EF4444', bgcolor: change >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', px: 1, py: 0.5, borderRadius: 2 }}>
-                                                        {change >= 0 ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-                                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, ml: 0.5 }}>
-                                                            {Math.abs(change).toFixed(2)}
+                                                <Box sx={{ textAlign: 'right' }}>
+                                                    <Typography variant="h5" sx={{ color: '#fff', fontWeight: 700 }}>{priceFormatted}</Typography>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', color: change >= 0 ? '#10B981' : '#EF4444' }}>
+                                                        {change >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                                                        <Typography variant="caption" sx={{ fontWeight: 700, ml: 0.5 }}>
+                                                            {Math.abs(change).toFixed(2)}%
                                                         </Typography>
                                                     </Box>
-                                                )}
+                                                </Box>
                                             </Box>
 
-                                            {/* Target Prices & Notes */}
-                                            {(item.target_buy_price || item.target_sell_price || item.notes) && (
-                                                <Box sx={{ pt: 2, borderTop: '1px solid #222' }}>
-                                                    {item.target_buy_price && (
-                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                                            <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 600 }}>
-                                                                Buy Target:
-                                                            </Typography>
-                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: '#10B981' }}>
-                                                                ₹{item.target_buy_price.toLocaleString()}
-                                                            </Typography>
-                                                        </Box>
-                                                    )}
-                                                    {item.target_sell_price && (
-                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                                            <Typography variant="caption" sx={{ color: '#EF4444', fontWeight: 600 }}>
-                                                                Sell Target:
-                                                            </Typography>
-                                                            <Typography variant="caption" sx={{ fontWeight: 700, color: '#EF4444' }}>
-                                                                ₹{item.target_sell_price.toLocaleString()}
-                                                            </Typography>
-                                                        </Box>
-                                                    )}
-                                                    {item.notes && (
-                                                        <Typography
-                                                            variant="caption"
-                                                            sx={{
-                                                                color: '#666',
-                                                                fontStyle: 'italic',
-                                                                display: '-webkit-box',
-                                                                WebkitLineClamp: 2,
-                                                                WebkitBoxOrient: 'vertical',
-                                                                overflow: 'hidden',
-                                                                mt: 1
-                                                            }}
-                                                        >
-                                                            "{item.notes}"
-                                                        </Typography>
-                                                    )}
+                                            {/* Target Price Progress */}
+                                            {target > 0 && (
+                                                <Box sx={{ mb: 2.5, bgcolor: '#151515', p: 1.5, borderRadius: 2, border: '1px solid #222' }}>
+                                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                                        <Typography variant="caption" sx={{ color: '#888' }}>Current</Typography>
+                                                        <Typography variant="caption" sx={{ color: '#00E5FF' }}>Target: {target}</Typography>
+                                                    </Box>
+                                                    <LinearProgress
+                                                        variant="determinate"
+                                                        value={Math.min(100, Math.max(0, (currentPrice / (target * 1.2)) * 100))} // Rough visual
+                                                        sx={{
+                                                            height: 6,
+                                                            borderRadius: 3,
+                                                            bgcolor: '#333',
+                                                            '& .MuiLinearProgress-bar': { bgcolor: isNearTarget ? '#10B981' : '#00E5FF' }
+                                                        }}
+                                                    />
+                                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: isNearTarget ? '#10B981' : '#666', textAlign: 'right', fontWeight: isNearTarget ? 700 : 400 }}>
+                                                        {currentPrice <= target ? "TARGET REACHED!" : `${((currentPrice - target)).toFixed(1)} pts to target`}
+                                                    </Typography>
                                                 </Box>
                                             )}
+
+                                            {/* Notes Area */}
+                                            {item.notes && (
+                                                <Box sx={{ mb: 3, flexGrow: 1 }}>
+                                                    <Typography variant="caption" sx={{ color: '#555', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+                                                        THESIS
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: '#ccc', fontSize: '0.9rem', lineHeight: 1.4, bgcolor: '#111', p: 1.5, borderRadius: 2, border: '1px dashed #333' }}>
+                                                        "{item.notes}"
+                                                    </Typography>
+                                                </Box>
+                                            )}
+
+                                            {/* Footer: RSI & Actions */}
+                                            <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <Box>
+                                                    <Typography variant="caption" sx={{ color: '#666', display: 'block' }}>RSI (14D)</Typography>
+                                                    <Typography variant="body2" sx={{ color: rsiInfo.color, fontWeight: 700 }}>
+                                                        {Math.round(rsi)} <span style={{ fontSize: '0.7em', opacity: 0.8 }}>{rsiInfo.text}</span>
+                                                    </Typography>
+                                                </Box>
+
+                                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                                    <Button
+                                                        variant="text"
+                                                        size="small"
+                                                        onClick={(e) => handleAlreadyBought(item, e)}
+                                                        startIcon={<CheckCircle size={14} />}
+                                                        sx={{ color: '#10B981', bgcolor: 'rgba(16, 185, 129, 0.1)', '&:hover': { bgcolor: 'rgba(16, 185, 129, 0.2)' } }}
+                                                    >
+                                                        Bought
+                                                    </Button>
+                                                    <IconButton
+                                                        onClick={(e) => handleRemove(item.ticker, e)}
+                                                        size="small"
+                                                        sx={{ color: '#444', '&:hover': { color: '#EF4444', bgcolor: 'rgba(239, 68, 68, 0.1)' } }}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </IconButton>
+                                                </Box>
+                                            </Box>
                                         </CardContent>
                                     </Card>
                                 </Grid>

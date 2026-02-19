@@ -140,17 +140,44 @@ export const marketService = {
         return response.data;
     },
 
-    addToWatchlist: async (ticker: string, details?: { exchange?: string, target_buy_price?: number, target_sell_price?: number, notes?: string }) => {
+    addToWatchlist: async (ticker: string, details?: {
+        exchange?: string,
+        target_price?: number,
+        notes?: string,
+        tags?: string[],
+        rsi_alert?: boolean
+    }) => {
         const payload = {
             ticker,
             exchange: details?.exchange || 'NSE',
-            target_buy_price: details?.target_buy_price,
-            target_sell_price: details?.target_sell_price,
-            notes: details?.notes
+            target_price: details?.target_price,
+            notes: details?.notes,
+            tags: details?.tags || [],
+            rsi_alert: details?.rsi_alert || false
         };
         const response = await api.post('/watchlists', payload);
         return response.data;
     },
+
+    updateWatchlistItem: async (ticker: string, updates: {
+        notes?: string,
+        target_price?: number,
+        tags?: string[],
+        rsi_alert?: boolean
+    }) => {
+        const response = await api.put(`/watchlists/${ticker}`, updates);
+        return response.data;
+    },
+
+    getTechnicalSummary: async (ticker: string) => {
+        try {
+            const response = await api.get(`/watchlist/analysis/${ticker}`);
+            return response.data;
+        } catch (e) {
+            return {};
+        }
+    },
+
 
     removeFromWatchlist: async (ticker: string) => {
         const response = await api.delete(`/watchlists/${ticker}`);
