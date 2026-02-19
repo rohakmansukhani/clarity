@@ -18,14 +18,14 @@ export const getThemeConfig = (mode: 'light' | 'dark') => ({
             main: '#7C3AED',
         },
         background: {
-            default: mode === 'dark' ? '#0F172A' : '#FFFFFF', // Slate 900 vs Pure Alabaster
-            paper: mode === 'dark' ? '#1E293B' : '#F8F9FA',   // Slate 800 vs Soft Porcelain
+            default: mode === 'dark' ? '#0B0B0B' : '#FFFFFF', // Reverted to deep black
+            paper: mode === 'dark' ? '#111111' : '#F8F9FA',   // Reverted to dark grey
         },
         text: {
-            primary: mode === 'dark' ? '#F8FAFC' : '#0F172A',
-            secondary: mode === 'dark' ? '#94A3B8' : '#64748B',
+            primary: mode === 'dark' ? '#FFFFFF' : '#0F172A',
+            secondary: mode === 'dark' ? '#888888' : '#64748B',
         },
-        divider: mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+        divider: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)',
         success: {
             main: '#10B981',
         },
