@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, Paper, IconButton, Button, Avatar, Snackbar, Alert } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Scale, ArrowLeft } from 'lucide-react';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 import Sidebar from '@/components/layout/Sidebar';
 import { useRouter } from 'next/navigation';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -33,6 +35,8 @@ export default function AnalysisPage() {
     const [stockNames, setStockNames] = useState<Record<string, string>>({});
     const [chartData, setChartData] = useState<any[]>([]);
     const [chartPeriod, setChartPeriod] = useState('1y');
+    const theme = useTheme();
+    const { mode } = useColorMode();
 
     const MAX_SLOTS = 5;
 
@@ -156,7 +160,7 @@ export default function AnalysisPage() {
     const quickInfo = stockPrices[search.toUpperCase()];
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#0B0B0B' }}>
+        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
             <Sidebar />
             <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 6 }, ml: { md: '140px' }, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <Box sx={{ width: '100%', maxWidth: 1200, mb: 2 }}>
@@ -164,9 +168,9 @@ export default function AnalysisPage() {
                         startIcon={<ArrowLeft size={20} />}
                         onClick={() => router.back()}
                         sx={{
-                            color: '#666',
+                            color: 'text.secondary',
                             pl: 0,
-                            '&:hover': { color: '#fff', bgcolor: 'transparent' },
+                            '&:hover': { color: 'text.primary', bgcolor: 'transparent' },
                             alignSelf: 'flex-start'
                         }}
                     >
@@ -179,24 +183,24 @@ export default function AnalysisPage() {
                     {!isComparing ? (
                         <Box key="hero" sx={{ textAlign: 'center', mb: 10, mt: 4 }}>
                             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }}>
-                                <Typography variant="overline" sx={{ color: '#00E5FF', fontWeight: 700, letterSpacing: '0.2em', mb: 1, display: 'block', textShadow: '0 0 40px rgba(0, 229, 255, 0.5)' }}>
+                                <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.2em', mb: 1, display: 'block' }}>
                                     MARKET INTELLIGENCE
                                 </Typography>
-                                <Typography variant="h2" sx={{ fontWeight: 800, letterSpacing: '-0.03em', mb: 2, background: '#ffffff', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                                <Typography variant="h2" sx={{ fontWeight: 800, letterSpacing: '-0.03em', mb: 2, color: 'text.primary' }}>
                                     Compare & Analyze
                                 </Typography>
-                                <Typography variant="body1" sx={{ color: '#888', maxWidth: 600, mx: 'auto', fontSize: '1.1rem' }}>
+                                <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 600, mx: 'auto', fontSize: '1.1rem' }}>
                                     Institutional-grade comparison. Add up to 5 assets to visualize relative performance and fundamental strength.
                                 </Typography>
                             </motion.div>
                         </Box>
                     ) : (
-                        <Box key="compact" sx={{ mb: 4, mt: 2 }}>
+                        <Box key="compact" sx={{ mb: 4, mt: 2, width: '100%', maxWidth: 1200 }}>
                             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                                <Typography variant="overline" sx={{ color: '#00E5FF', fontWeight: 700, letterSpacing: '0.15em', display: 'block', mb: 0.5 }}>
+                                <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: '0.15em', display: 'block', mb: 0.5 }}>
                                     COMPARISON RESULTS
                                 </Typography>
-                                <Typography variant="h4" sx={{ fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
+                                <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.02em' }}>
                                     {selectedStocks.join(' vs ')}
                                 </Typography>
                             </motion.div>
@@ -222,7 +226,7 @@ export default function AnalysisPage() {
                             <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ scale: 1.1, rotate: 90 }} transition={{ type: 'spring', stiffness: 300, damping: 15 }}>
                                 <IconButton
                                     onClick={() => setShowSearchOverlay(true)}
-                                    sx={{ width: 80, height: 80, borderRadius: '50%', border: '1px dashed #333', color: '#444', transition: 'all 0.3s', '&:hover': { borderColor: '#00E5FF', color: '#00E5FF', bgcolor: 'rgba(0, 229, 255, 0.05)' } }}
+                                    sx={{ width: 80, height: 80, borderRadius: '50%', border: '1px dashed', borderColor: 'divider', color: 'text.disabled', transition: 'all 0.3s', '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'action.hover' } }}
                                 >
                                     <Plus size={32} />
                                 </IconButton>
@@ -261,7 +265,7 @@ export default function AnalysisPage() {
                         </Button>
                     )}
                     {isComparing && (
-                        <Button variant="outlined" onClick={() => setIsComparing(false)} sx={{ color: '#666', borderColor: '#333', borderRadius: '99px', '&:hover': { color: '#fff', borderColor: '#fff' } }}>
+                        <Button variant="outlined" onClick={() => setIsComparing(false)} sx={{ color: 'text.secondary', borderColor: 'divider', borderRadius: '99px', '&:hover': { color: 'text.primary', borderColor: 'text.primary' } }}>
                             Reset Comparison
                         </Button>
                     )}
@@ -278,7 +282,7 @@ export default function AnalysisPage() {
                             )}
 
                             {/* Chart */}
-                            <Box sx={{ bgcolor: '#0A0A0A', borderRadius: 6, border: '1px solid #222', p: { xs: 1, md: 3 }, height: { xs: 400, sm: 450, md: 500 }, mb: 4, position: 'relative', overflow: 'hidden' }}>
+                            <Box sx={{ bgcolor: 'background.paper', borderRadius: 6, border: '1px solid', borderColor: 'divider', p: { xs: 1, md: 3 }, height: { xs: 400, sm: 450, md: 500 }, mb: 4, position: 'relative', overflow: 'hidden', backgroundImage: 'none' }}>
                                 {/* Date Range Selector */}
                                 <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10, display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '60%' }}>
                                     {['1mo', '3mo', '6mo', '1y', '5y'].map((range) => (
@@ -304,10 +308,10 @@ export default function AnalysisPage() {
                                             sx={{
                                                 minWidth: 0,
                                                 px: 1.5,
-                                                color: chartPeriod === range ? '#00E5FF' : '#666',
+                                                color: chartPeriod === range ? 'primary.main' : 'text.secondary',
                                                 fontWeight: 700,
                                                 bgcolor: chartPeriod === range ? 'rgba(0, 229, 255, 0.1)' : 'transparent',
-                                                '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }
+                                                '&:hover': { color: 'text.primary', bgcolor: 'action.hover' }
                                             }}
                                         >
                                             {range === '1mo' ? '1M' : range === '3mo' ? '3M' : range === '6mo' ? '6M' : range === '1y' ? '1Y' : '5Y'}
@@ -324,15 +328,15 @@ export default function AnalysisPage() {
                             </Box>
 
                             {/* Fundamentals Table */}
-                            <Box sx={{ bgcolor: '#0A0A0A', borderRadius: 6, border: '1px solid #222', overflow: 'hidden', mb: 4 }}>
+                            <Box sx={{ bgcolor: 'background.paper', borderRadius: 6, border: '1px solid', borderColor: 'divider', overflow: 'hidden', mb: 4, backgroundImage: 'none' }}>
                                 <Box sx={{ p: { xs: 2, md: 4 }, overflowX: 'auto' }}>
                                     <Box sx={{ minWidth: { xs: 500, md: 600 } }}>
-                                        <Box sx={{ display: 'grid', gridTemplateColumns: `180px repeat(${selectedStocks.length}, 1fr)`, gap: { xs: 1, md: 2 }, pb: 2, borderBottom: '1px solid #333', mb: 2 }}>
-                                            <Typography variant="caption" sx={{ color: '#666', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: { xs: '0.65rem', md: '0.75rem' } }}>Metric</Typography>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: `180px repeat(${selectedStocks.length}, 1fr)`, gap: { xs: 1, md: 2 }, pb: 2, borderBottom: '1px solid', borderColor: 'divider', mb: 2 }}>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: { xs: '0.65rem', md: '0.75rem' } }}>Metric</Typography>
                                             {selectedStocks.map((s, i) => (
                                                 <Box key={s} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
                                                     <Box sx={{ width: { xs: 6, md: 8 }, height: { xs: 6, md: 8 }, borderRadius: '50%', bgcolor: ['#00E5FF', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'][i % 5] }} />
-                                                    <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 700, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>{s}</Typography>
+                                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 700, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>{s}</Typography>
                                                 </Box>
                                             ))}
                                         </Box>
@@ -342,7 +346,7 @@ export default function AnalysisPage() {
                             </Box>
 
                             {/* AI Verdict */}
-                            <Paper sx={{ p: 4, borderRadius: 6, bgcolor: '#0A0A0A', border: '1px solid #222', mb: 4 }}>
+                            <Paper sx={{ p: 4, borderRadius: 6, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', mb: 4, backgroundImage: 'none' }}>
                                 <AIVerdict comparisonData={comparisonData} selectedStocks={selectedStocks} />
                             </Paper>
                         </motion.div>

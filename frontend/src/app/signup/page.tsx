@@ -7,11 +7,16 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/services/api';
 import { ErrorBanner } from '@/components/common/ErrorBanner';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
+import { Sun, Moon } from 'lucide-react';
 
 import { supabase } from '@/lib/supabase';
 
 export default function SignupPage() {
     const router = useRouter();
+    const theme = useTheme();
+    const { mode, toggleColorMode } = useColorMode();
     const [loading, setLoading] = useState(false);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -57,8 +62,8 @@ export default function SignupPage() {
         <Box
             sx={{
                 minHeight: '100dvh',
-                bgcolor: '#0B0B0B',
-                color: '#FFFFFF',
+                bgcolor: 'background.default',
+                color: 'text.primary',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
@@ -89,12 +94,12 @@ export default function SignupPage() {
                                 }}
                             >
                                 JOIN
-                                <Box component="span" sx={{ color: '#00E5FF' }}>.</Box>
+                                <Box component="span" sx={{ color: 'primary.main' }}>.</Box>
                             </Typography>
 
                             <Typography variant="h5" sx={{
                                 fontWeight: 400,
-                                color: '#A0A0A0',
+                                color: 'text.secondary',
                                 maxWidth: 400,
                                 mb: { xs: 4, md: 6 },
                                 fontSize: { xs: '1.2rem', md: '1.5rem' },
@@ -147,18 +152,20 @@ export default function SignupPage() {
                                     sx={{
                                         mt: 4,
                                         py: 2.5,
-                                        borderRadius: '4px',
-                                        bgcolor: '#00E5FF',
-                                        color: '#000',
+                                        borderRadius: '12px',
+                                        bgcolor: 'text.primary',
+                                        color: 'background.default',
                                         fontSize: '1.1rem',
-                                        fontWeight: 600,
+                                        fontWeight: 700,
                                         letterSpacing: '0.05em',
-                                        textTransform: 'uppercase',
+                                        textTransform: 'none',
                                         transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                                         opacity: loading ? 0.7 : 1,
+                                        boxShadow: theme.shadows[4],
                                         '&:hover': {
-                                            bgcolor: '#fff',
-                                            transform: 'translateY(-2px)'
+                                            bgcolor: 'text.secondary',
+                                            transform: 'translateY(-2px)',
+                                            boxShadow: theme.shadows[8]
                                         }
                                     }}
                                 >
@@ -166,16 +173,16 @@ export default function SignupPage() {
                                 </Button>
 
                                 <Box sx={{ textAlign: 'center' }}>
-                                    <Link href="/login" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9rem', letterSpacing: '0.05em' }}>
-                                        ALREADY HAVE AN ACCOUNT? <span style={{ color: '#fff', borderBottom: '1px solid #fff' }}>LOGIN</span>
+                                    <Link href="/login" style={{ color: theme.palette.text.secondary, textDecoration: 'none', fontSize: '0.9rem', letterSpacing: '0.05em' }}>
+                                        ALREADY HAVE AN ACCOUNT? <span style={{ color: theme.palette.text.primary, borderBottom: `1px solid ${theme.palette.text.primary}` }}>LOGIN</span>
                                     </Link>
                                 </Box>
 
                                 {/* Divider */}
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 1, opacity: 0.5 }}>
-                                    <Box sx={{ flex: 1, height: '1px', bgcolor: '#333' }} />
-                                    <Typography variant="caption" sx={{ color: '#666' }}>OR JOIN WITH</Typography>
-                                    <Box sx={{ flex: 1, height: '1px', bgcolor: '#333' }} />
+                                    <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>OR JOIN WITH</Typography>
+                                    <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
                                 </Box>
 
                                 {/* Social Login Buttons */}
@@ -185,14 +192,15 @@ export default function SignupPage() {
                                         onClick={() => handleSocialLogin('google')}
                                         sx={{
                                             py: 1.5,
-                                            borderRadius: '8px', // Slightly rounded
-                                            bgcolor: '#111',
-                                            border: '1px solid #333',
-                                            color: '#fff',
+                                            borderRadius: '12px',
+                                            bgcolor: 'background.paper',
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            color: 'text.primary',
                                             fontSize: '0.9rem',
-                                            textTransform: 'uppercase',
+                                            textTransform: 'none',
                                             letterSpacing: '0.05em',
-                                            '&:hover': { bgcolor: '#222', borderColor: '#666' }
+                                            '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' }
                                         }}
                                         startIcon={
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -211,6 +219,29 @@ export default function SignupPage() {
                     </Grid>
                 </Grid>
             </Container>
+
+            {/* Theme Toggle Button */}
+            <Box sx={{ position: 'fixed', top: 20, right: 20, zIndex: 1000 }}>
+                <Button
+                    onClick={toggleColorMode}
+                    sx={{
+                        minWidth: 48,
+                        width: 48,
+                        height: 48,
+                        borderRadius: '12px',
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        color: 'text.primary',
+                        '&:hover': {
+                            bgcolor: 'action.hover',
+                            borderColor: 'text.secondary'
+                        }
+                    }}
+                >
+                    {mode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                </Button>
+            </Box>
 
             <Box
                 sx={{
@@ -247,7 +278,7 @@ function MinimalInput({ label, type, placeholder, value, onChange }: MinimalInpu
             <Typography
                 variant="caption"
                 sx={{
-                    color: '#666',
+                    color: 'text.secondary',
                     mb: 1,
                     display: 'block',
                     fontWeight: 600,
@@ -267,17 +298,18 @@ function MinimalInput({ label, type, placeholder, value, onChange }: MinimalInpu
                     disableUnderline: true,
                     sx: {
                         fontSize: '1.5rem',
-                        color: '#fff',
+                        color: 'text.primary',
                         fontWeight: 500,
                         pb: 1,
-                        borderBottom: '1px solid #333',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
                         transition: 'border-color 0.3s',
-                        '&:hover': { borderBottom: '1px solid #666' },
-                        '&.Mui-focused': { borderBottom: '1px solid #00E5FF' }
+                        '&:hover': { borderBottom: '1px solid', borderColor: 'text.secondary' },
+                        '&.Mui-focused': { borderBottom: '1px solid', borderColor: 'primary.main' }
                     }
                 }}
                 sx={{
-                    '& input::placeholder': { color: '#333', opacity: 1 }
+                    '& input::placeholder': { color: 'text.disabled', opacity: 1 }
                 }}
             />
         </Box>

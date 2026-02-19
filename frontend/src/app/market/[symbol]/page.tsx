@@ -364,13 +364,13 @@ export default function StockPage() {
                             size="large"
                             onClick={() => setBuyListModalOpen(true)}
                             sx={{
-                                bgcolor: mode === 'dark' ? '#fff' : '#000',
+                                bgcolor: mode === 'dark' ? '#fff' : theme.palette.primary.main,
                                 color: mode === 'dark' ? '#000' : '#fff',
                                 py: 2,
                                 fontWeight: 700,
                                 fontSize: '1rem',
                                 mb: 2,
-                                '&:hover': { bgcolor: mode === 'dark' ? '#ddd' : '#333' }
+                                '&:hover': { bgcolor: mode === 'dark' ? '#ddd' : theme.palette.primary.dark }
                             }}
                         >
                             Add to Buy List

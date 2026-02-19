@@ -54,15 +54,15 @@ export default function AuthCallbackPage() {
     return (
         <Box sx={{
             minHeight: '100vh',
-            bgcolor: '#0B0B0B',
+            bgcolor: 'background.default',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
             gap: 2
         }}>
-            <CircularProgress size={40} sx={{ color: '#00E5FF' }} />
-            <Typography sx={{ color: '#666', fontSize: '0.9rem', letterSpacing: '0.05em' }}>
+            <CircularProgress size={40} sx={{ color: 'primary.main' }} />
+            <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem', letterSpacing: '0.05em' }}>
                 Authenticating...
             </Typography>
         </Box>

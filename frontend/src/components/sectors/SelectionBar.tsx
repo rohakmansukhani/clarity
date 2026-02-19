@@ -3,18 +3,24 @@
 import React from 'react';
 import { Box, Paper, Typography, Button } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Trash2, TrendingUp, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 
 interface SelectionBarProps {
     selectedStocks: string[];
     onRemove: (symbol: string) => void;
-    onContinue: () => void;
-    onCompare: () => void;
-    onBacktrack: () => void;
+    onClear: () => void;
+    onNext: () => void;
+    maxStocks?: number;
 }
 
-export default function SelectionBar({ selectedStocks, onRemove, onContinue, onCompare, onBacktrack }: SelectionBarProps) {
+export default function SelectionBar({ selectedStocks, onRemove, onClear, onNext, maxStocks = 5 }: SelectionBarProps) {
+    const theme = useTheme();
+    const { mode } = useColorMode();
     if (selectedStocks.length === 0) return null;
+
+    const isValid = selectedStocks.length >= 2;
 
     return (
         <AnimatePresence>
@@ -30,130 +36,108 @@ export default function SelectionBar({ selectedStocks, onRemove, onContinue, onC
                     zIndex: 1000
                 }}
             >
-                <Paper
+                <Box
                     sx={{
-                        p: 3,
-                        bgcolor: '#0A0A0A',
-                        borderTop: '2px solid #00E5FF',
-                        borderRadius: 0,
-                        backdropFilter: 'blur(10px)',
-                        boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.5)'
+                        position: 'fixed',
+                        bottom: 24,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        width: { xs: '90%', md: '800px' },
+                        bgcolor: 'background.paper',
+                        border: '2px solid',
+                        borderColor: 'primary.main',
+                        borderRadius: '24px',
+                        p: { xs: 2, md: 3 },
+                        boxShadow: mode === 'dark' ? '0 20px 40px rgba(0,0,0,0.6)' : '0 10px 30px rgba(0,0,0,0.1)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        flexDirection: { xs: 'column', md: 'row' },
+                        alignItems: 'center',
+                        gap: 3
                     }}
                 >
-                    <Box sx={{
-                        maxWidth: 1200,
-                        mx: 'auto',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: 2
-                    }}>
-                        {/* Selected Stocks */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-                            <Typography variant="subtitle2" sx={{ color: '#666', fontWeight: 600 }}>
-                                Selected ({selectedStocks.length}/5):
+                    {/* Selected Stocks */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, flexWrap: 'wrap' }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                Selected Stocks ({selectedStocks.length}/{maxStocks})
                             </Typography>
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                {selectedStocks.map((symbol) => (
+                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}>
+                                {isValid ? 'Ready to build portfolio' : `Select ${2 - selectedStocks.length} more stock${2 - selectedStocks.length > 1 ? 's' : ''}`}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            {selectedStocks.map((symbol) => (
+                                <Box
+                                    key={symbol}
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        px: 1,
+                                        py: 0.5,
+                                        borderRadius: '8px',
+                                        bgcolor: 'primary.main' + '1A',
+                                        border: '1px solid',
+                                        borderColor: 'primary.main',
+                                    }}
+                                >
+                                    <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 600 }}>
+                                        {symbol}
+                                    </Typography>
                                     <Box
-                                        key={symbol}
+                                        onClick={() => onRemove(symbol)}
                                         sx={{
+                                            cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: 1,
-                                            px: 2,
-                                            py: 1,
-                                            borderRadius: 2,
-                                            bgcolor: '#00E5FF20',
-                                            border: '1px solid #00E5FF'
+                                            color: 'primary.main',
+                                            '&:hover': { color: theme.palette.primary.light }
                                         }}
                                     >
-                                        <Typography variant="body2" sx={{ color: '#00E5FF', fontWeight: 600 }}>
-                                            {symbol}
-                                        </Typography>
-                                        <Box
-                                            onClick={() => onRemove(symbol)}
-                                            sx={{
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                color: '#00E5FF',
-                                                '&:hover': { color: '#fff' }
-                                            }}
-                                        >
-                                            <X size={14} />
-                                        </Box>
+                                        <Trash2 size={14} />
                                     </Box>
-                                ))}
-                            </Box>
-                        </Box>
-
-                        {/* Action Buttons */}
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <Button
-                                variant="outlined"
-                                onClick={onBacktrack}
-                                disabled={selectedStocks.length === 0}
-                                sx={{
-                                    borderColor: '#333',
-                                    color: '#666',
-                                    '&:hover': {
-                                        borderColor: '#8B5CF6',
-                                        color: '#8B5CF6',
-                                        bgcolor: 'rgba(139, 92, 246, 0.05)'
-                                    },
-                                    '&:disabled': {
-                                        borderColor: '#222',
-                                        color: '#444'
-                                    }
-                                }}
-                            >
-                                Backtrack
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                onClick={onCompare}
-                                disabled={selectedStocks.length < 2}
-                                sx={{
-                                    borderColor: '#333',
-                                    color: '#666',
-                                    '&:hover': {
-                                        borderColor: '#00E5FF',
-                                        color: '#00E5FF',
-                                        bgcolor: 'rgba(0, 229, 255, 0.05)'
-                                    },
-                                    '&:disabled': {
-                                        borderColor: '#222',
-                                        color: '#444'
-                                    }
-                                }}
-                            >
-                                Compare Stocks
-                            </Button>
-                            <Button
-                                variant="contained"
-                                onClick={onContinue}
-                                disabled={selectedStocks.length < 2}
-                                sx={{
-                                    bgcolor: '#00E5FF',
-                                    color: '#000',
-                                    fontWeight: 700,
-                                    px: 4,
-                                    '&:hover': {
-                                        bgcolor: '#00D4E6'
-                                    },
-                                    '&:disabled': {
-                                        bgcolor: '#222',
-                                        color: '#444'
-                                    }
-                                }}
-                            >
-                                Build Portfolio ({selectedStocks.length})
-                            </Button>
+                                </Box>
+                            ))}
                         </Box>
                     </Box>
-                </Paper>
+
+                    {/* Action Buttons */}
+                    <Box sx={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                        <Button
+                            variant="outlined"
+                            onClick={onClear}
+                            sx={{
+                                borderColor: 'divider',
+                                color: 'text.secondary',
+                                '&:hover': { borderColor: 'primary.main', color: 'primary.main' }
+                            }}
+                        >
+                            Clear
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={onNext}
+                            disabled={!isValid}
+                            sx={{
+                                bgcolor: 'primary.main',
+                                color: theme.palette.primary.contrastText,
+                                fontWeight: 700,
+                                px: 3,
+                                '&:hover': {
+                                    bgcolor: theme.palette.primary.dark
+                                },
+                                '&:disabled': {
+                                    bgcolor: 'action.disabledBackground',
+                                    color: 'action.disabled'
+                                }
+                            }}
+                            endIcon={<ChevronRight size={20} />}
+                        >
+                            Build Portfolio
+                        </Button>
+                    </Box>
+                </Box>
             </motion.div>
         </AnimatePresence>
     );

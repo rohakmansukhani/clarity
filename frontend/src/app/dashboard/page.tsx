@@ -292,7 +292,17 @@ export default function DashboardPage() {
 
             {/* Notification Toast */}
             <Snackbar open={toast.open} autoHideDuration={6000} onClose={handleCloseToast} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-                <Alert onClose={handleCloseToast} severity={toast.severity} sx={{ width: '100%', bgcolor: '#1A1A1A', color: '#fff', '& .MuiAlert-icon': { color: toast.severity === 'error' ? '#EF4444' : '#00E5FF' } }}>
+                <Alert
+                    onClose={handleCloseToast}
+                    severity={toast.severity}
+                    sx={{
+                        width: '100%',
+                        bgcolor: theme.palette.background.paper,
+                        color: theme.palette.text.primary,
+                        border: `1px solid ${theme.palette.divider}`,
+                        '& .MuiAlert-icon': { color: toast.severity === 'error' ? theme.palette.error.main : theme.palette.primary.main }
+                    }}
+                >
                     {toast.message}
                 </Alert>
             </Snackbar>

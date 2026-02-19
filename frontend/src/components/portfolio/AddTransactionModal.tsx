@@ -7,6 +7,8 @@ import StockSearchInput from '@/components/market/StockSearchInput';
 import { ErrorBanner } from '@/components/common/ErrorBanner';
 import { marketService } from '@/services/marketService';
 import CustomDatePicker from '@/components/ui/CustomDatePicker';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 
 interface AddTransactionModalProps {
     open: boolean;
@@ -16,6 +18,8 @@ interface AddTransactionModalProps {
 }
 
 export default function AddTransactionModal({ open, onClose, onSubmit, initialTicker }: AddTransactionModalProps) {
+    const theme = useTheme();
+    const { mode: colorMode } = useColorMode();
     const [mode, setMode] = useState<'PRESENT' | 'HISTORICAL'>('PRESENT');
     const [ticker, setTicker] = useState('');
     const [shares, setShares] = useState('');
@@ -108,23 +112,25 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
             onClose={handleClose}
             PaperProps={{
                 sx: {
-                    bgcolor: '#050505',
-                    border: '1px solid #222',
+                    bgcolor: 'background.paper',
+                    color: 'text.primary',
                     borderRadius: 4,
-                    minWidth: 450,
-                    p: 2
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    p: 1,
+                    backgroundImage: 'none'
                 }
             }}
         >
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', fontWeight: 700 }}>
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'text.primary', fontWeight: 700 }}>
                 {initialTicker ? `Add ${initialTicker}` : 'Add Transaction'}
-                <IconButton onClick={handleClose} size="small" sx={{ color: '#666' }}><X size={20} /></IconButton>
+                <IconButton onClick={handleClose} size="small" sx={{ color: 'text.secondary' }}><X size={20} /></IconButton>
             </DialogTitle>
             <DialogContent>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
 
                     {/* Toggle Buttons */}
-                    <Box sx={{ display: 'flex', gap: 1, bgcolor: '#111', p: 0.5, borderRadius: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 1, bgcolor: 'background.default', p: 0.5, borderRadius: 2 }}>
                         {['PRESENT', 'HISTORICAL'].map((m) => (
                             <Button
                                 key={m}
@@ -135,12 +141,12 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                                     setPriceError('');
                                 }}
                                 sx={{
-                                    bgcolor: mode === m ? '#00E5FF' : 'transparent',
-                                    color: mode === m ? '#000' : '#666',
+                                    bgcolor: mode === m ? 'primary.main' : 'transparent',
+                                    color: mode === m ? 'primary.contrastText' : 'text.secondary',
                                     fontWeight: 700,
                                     borderRadius: 1.5,
                                     '&:hover': {
-                                        bgcolor: mode === m ? '#00B8CC' : 'rgba(255,255,255,0.05)'
+                                        bgcolor: mode === m ? 'primary.dark' : 'action.hover'
                                     }
                                 }}
                             >
@@ -164,15 +170,20 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                             value={ticker}
                             disabled
                             fullWidth
-                            InputProps={{
-                                sx: {
-                                    color: '#fff',
-                                    bgcolor: '#111',
+                            InputLabelProps={{ shrink: true, style: { color: theme.palette.text.secondary } }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    '& fieldset': { borderColor: 'divider' },
+                                    '& input': { color: 'text.primary' },
+                                    bgcolor: 'background.default',
                                     borderRadius: 2,
-                                    '& fieldset': { borderColor: '#333' }
+                                },
+                                '& .MuiInputBase-root.Mui-disabled': {
+                                    bgcolor: 'action.disabledBackground',
+                                    color: 'text.disabled',
+                                    '& fieldset': { borderColor: 'divider' },
                                 }
                             }}
-                            InputLabelProps={{ sx: { color: '#666' } }}
                         />
                     )}
 

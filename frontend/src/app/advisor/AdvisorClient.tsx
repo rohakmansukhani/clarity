@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Typography, TextField, IconButton, CircularProgress, Paper, Drawer, List, ListItem, ListItemText, ListItemButton, Divider, Menu, MenuItem } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 import { Send, Paperclip, Bot, User, Sparkles, Zap, TrendingUp, History, Plus, MoreVertical, Pin, Trash2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/layout/Sidebar';
@@ -71,10 +73,9 @@ function HistoryItem({ session, isActive, onClick, onPin, onDelete }: any) {
                 borderRadius: '12px',
                 mb: 0.5,
                 py: 1.5,
-                color: '#ddd',
                 transition: 'all 0.2s',
                 bgcolor: isActive ? 'rgba(0, 229, 255, 0.1)' : 'transparent',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.05)', pr: 1 },
+                '&:hover': { bgcolor: 'rgba(255,255,255,0.03)', pr: 1 },
                 position: 'relative',
                 group: 'true',
                 '&:hover .menu-trigger': { opacity: 1 }
@@ -98,7 +99,7 @@ function HistoryItem({ session, isActive, onClick, onPin, onDelete }: any) {
                     </Typography>
                     {session.is_pinned && <Pin size={12} fill="#00E5FF" color="#00E5FF" />}
                 </Box>
-                <Typography variant="caption" sx={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>
+                <Typography variant="caption" sx={{ fontSize: '0.7rem', color: 'text.secondary', opacity: 0.7 }}>
                     {new Date(session.updated_at || session.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 </Typography>
             </Box>
@@ -128,9 +129,10 @@ function HistoryItem({ session, isActive, onClick, onPin, onDelete }: any) {
                 onClose={(e: any) => handleClose(e)}
                 PaperProps={{
                     sx: {
-                        bgcolor: '#111',
-                        border: '1px solid #333',
-                        color: '#ddd',
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        color: 'text.primary',
                         minWidth: 120
                     }
                 }}
@@ -150,6 +152,8 @@ export default function AdvisorClient() {
     const searchParams = useSearchParams();
     const initialQuery = searchParams.get('query');
     const { quickChatMessages, resetQuickChat, openSidebar, closeSidebar, advisorQuery, setAdvisorQuery } = useUIStore();
+    const theme = useTheme();
+    const { mode } = useColorMode();
 
     // Chat State
     const [messages, setMessages] = useState<Message[]>([]);
@@ -396,12 +400,14 @@ export default function AdvisorClient() {
             <Box sx={{
                 pl: { xs: 0, md: '100px' }, // Main Sidebar width
                 height: '100vh',
-                bgcolor: '#0B0B0B',
+                bgcolor: 'background.default',
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
                 overflow: 'hidden',
-                background: 'radial-gradient(circle at 50% 0%, #051a24 0%, #0B0B0B 70%)'
+                background: mode === 'dark'
+                    ? `radial-gradient(circle at 50% 0%, #051a24 0%, ${theme.palette.background.default} 70%)`
+                    : `radial-gradient(circle at 50% 0%, #e0faff 0%, ${theme.palette.background.default} 70%)`
             }}>
                 {/* Header */}
                 <Box sx={{
@@ -421,9 +427,10 @@ export default function AdvisorClient() {
                         <IconButton
                             onClick={() => window.history.back()}
                             sx={{
-                                color: '#fff',
-                                bgcolor: 'rgba(255,255,255,0.05)',
-                                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                                color: 'text.primary',
+                                bgcolor: 'background.paper',
+                                border: `1px solid ${theme.palette.divider}`,
+                                '&:hover': { bgcolor: 'action.hover' }
                             }}
                         >
                             <ArrowLeft size={20} />
@@ -431,10 +438,10 @@ export default function AdvisorClient() {
                         <IconButton
                             onClick={toggleHistory}
                             sx={{
-                                color: '#fff',
-                                bgcolor: isHistoryOpen ? 'rgba(0, 229, 255, 0.2)' : 'rgba(255,255,255,0.05)',
-                                border: isHistoryOpen ? '1px solid rgba(0, 229, 255, 0.4)' : '1px solid transparent',
-                                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                                color: 'text.primary',
+                                bgcolor: isHistoryOpen ? 'rgba(0, 229, 255, 0.15)' : 'background.paper',
+                                border: isHistoryOpen ? '1px solid rgba(0, 229, 255, 0.4)' : `1px solid ${theme.palette.divider}`,
+                                '&:hover': { bgcolor: 'action.hover' }
                             }}
                         >
                             <History size={20} />
@@ -468,17 +475,18 @@ export default function AdvisorClient() {
                             >
                                 <Paper sx={{
                                     height: '100%',
-                                    bgcolor: 'rgba(18, 18, 18, 0.9)',
+                                    bgcolor: 'background.paper',
                                     backdropFilter: 'blur(20px)',
-                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    backgroundImage: 'none',
+                                    border: `1px solid ${theme.palette.divider}`,
                                     borderRadius: '24px',
-                                    boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                                    boxShadow: theme.shadows[10],
                                     display: 'flex',
                                     flexDirection: 'column',
                                     overflow: 'hidden'
                                 }}>
-                                    <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                        <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '-0.02em', color: '#fff' }}>Chats</Typography>
+                                    <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${theme.palette.divider}` }}>
+                                        <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '-0.02em', color: 'text.primary' }}>Chats</Typography>
                                         <IconButton
                                             onClick={handleNewChat}
                                             sx={{
@@ -493,7 +501,7 @@ export default function AdvisorClient() {
                                     </Box>
 
                                     <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-                                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', fontWeight: 600, mb: 1, display: 'block', px: 1 }}>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', opacity: 0.6, fontWeight: 700, mb: 1, display: 'block', px: 1, letterSpacing: '0.05em' }}>
                                             RECENT
                                         </Typography>
                                         <List disablePadding>
@@ -561,13 +569,17 @@ export default function AdvisorClient() {
                                     {SUGGESTED_PROMPTS.map((prompt, i) => (
                                         <motion.button
                                             key={i}
-                                            whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.08)' }}
+                                            whileHover={{ scale: 1.05, backgroundColor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
                                             whileTap={{ scale: 0.95 }}
                                             onClick={() => handleSend(prompt.text)}
-                                            className="flex flex-col items-center justify-center p-6 gap-3 rounded-2xl bg-[#0A0A0A] border border-white/5 hover:border-[#00E5FF]/30 transition-colors group cursor-pointer text-left"
+                                            className="flex flex-col items-center justify-center p-6 gap-3 rounded-2xl border transition-colors group cursor-pointer text-left"
+                                            style={{
+                                                backgroundColor: theme.palette.background.paper,
+                                                borderColor: theme.palette.divider
+                                            }}
                                         >
-                                            <prompt.icon className="text-[#00E5FF] group-hover:text-white transition-colors" size={24} />
-                                            <span className="text-gray-400 text-sm font-medium group-hover:text-white text-center">{prompt.text}</span>
+                                            <prompt.icon className="text-[#00E5FF] group-hover:text-primary-main transition-colors" size={24} />
+                                            <span className="text-sm font-medium transition-colors" style={{ color: theme.palette.text.secondary }}>{prompt.text}</span>
                                         </motion.button>
                                     ))}
                                 </div>
@@ -595,22 +607,27 @@ export default function AdvisorClient() {
                                 <Paper sx={{
                                     p: 2.5,
                                     borderRadius: msg.role === 'user' ? '24px 24px 4px 24px' : '4px 24px 24px 24px', // Chat bubble shape
-                                    bgcolor: msg.role === 'user' ? '#00E5FF' : 'rgba(255,255,255,0.05)',
+                                    bgcolor: msg.role === 'user' ? '#00E5FF' : 'background.paper',
                                     backdropFilter: 'blur(10px)',
-                                    color: msg.role === 'user' ? '#000' : '#E0E0E0',
+                                    color: msg.role === 'user' ? '#000' : 'text.primary',
                                     fontWeight: 500,
+                                    border: msg.role === 'assistant' ? `1px solid ${theme.palette.divider}` : 'none',
                                     boxShadow: msg.role === 'user' ? '0 4px 20px rgba(0, 229, 255, 0.2)' : 'none',
+                                    backgroundImage: 'none',
                                     position: 'relative'
                                 }}>
                                     <Box sx={{
                                         '& p': { m: 0, mb: 1.5, lineHeight: 1.6 },
                                         '& p:last-child': { mb: 0 },
-                                        '& strong': { fontWeight: 700 },
+                                        '& strong': { fontWeight: 700, color: theme.palette.primary.main },
                                         '& ul': { pl: 3, mb: 1.5 },
                                         '& li': { mb: 0.5 },
-                                        '& blockquote': { borderLeft: '3px solid #00E5FF', pl: 2, fontStyle: 'italic', my: 2, opacity: 0.8 }
+                                        '& blockquote': { borderLeft: '3px solid #00E5FF', pl: 2, fontStyle: 'italic', my: 2, opacity: 0.8 },
+                                        color: msg.role === 'user' ? '#000' : 'inherit'
                                     }}>
-                                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                        <div className={`prose prose-sm max-w-none ${mode === 'dark' ? 'prose-invert' : ''}`}>
+                                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                        </div>
 
                                         {/* Show Switch Button if suggested */}
                                         {msg.suggest_switch && (
@@ -650,21 +667,22 @@ export default function AdvisorClient() {
                             p: '8px 16px',
                             display: 'flex',
                             alignItems: 'center',
-                            bgcolor: 'rgba(20, 20, 20, 0.6)',
+                            bgcolor: mode === 'dark' ? 'rgba(20, 20, 20, 0.6)' : 'rgba(255, 255, 255, 0.8)',
                             backdropFilter: 'blur(20px)',
-                            border: '1px solid rgba(255,255,255,0.1)',
+                            border: `1px solid ${theme.palette.divider}`,
                             borderRadius: '50px', // Pill shape
+                            backgroundImage: 'none',
                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                            '&:hover': { borderColor: 'rgba(255,255,255,0.2)', transform: 'translateY(-1px)' },
+                            boxShadow: theme.shadows[8],
+                            '&:hover': { borderColor: theme.palette.text.secondary, transform: 'translateY(-1px)' },
                             '&:focus-within': { borderColor: '#00E5FF', boxShadow: '0 8px 32px rgba(0, 229, 255, 0.1)' }
                         }}
                     >
-                        <IconButton sx={{ p: '10px', color: '#666', transition: 'color 0.2s', '&:hover': { color: '#fff' } }}>
+                        <IconButton sx={{ p: '10px', color: 'text.secondary', transition: 'color 0.2s', '&:hover': { color: 'text.primary' } }}>
                             <Paperclip size={20} />
                         </IconButton>
                         <TextField
-                            sx={{ flex: 1, px: 1, '& fieldset': { border: 'none' }, input: { color: '#fff', fontSize: '1rem', fontWeight: 500 } }}
+                            sx={{ flex: 1, px: 1, '& fieldset': { border: 'none' }, input: { color: 'text.primary', fontSize: '1rem', fontWeight: 500 } }}
                             placeholder="Ask Clarity AI..."
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
@@ -677,8 +695,8 @@ export default function AdvisorClient() {
                             sx={{
                                 p: '10px',
                                 mr: 0.5,
-                                bgcolor: input.trim() ? '#00E5FF' : 'transparent',
-                                color: input.trim() ? '#000' : '#444',
+                                bgcolor: input.trim() ? '#00E5FF' : 'action.disabledBackground',
+                                color: input.trim() ? '#000' : 'text.disabled',
                                 transition: 'all 0.2s',
                                 '&:hover': { bgcolor: input.trim() ? '#00B2CC' : 'transparent', transform: input.trim() ? 'scale(1.1)' : 'none' }
                             }}
@@ -686,7 +704,7 @@ export default function AdvisorClient() {
                             <Send size={18} fill={input.trim() ? "currentColor" : "none"} />
                         </IconButton>
                     </Paper>
-                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.3)', mt: 2, display: 'block', textAlign: 'center', fontWeight: 500 }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', opacity: 0.5, mt: 2, display: 'block', textAlign: 'center', fontWeight: 500 }}>
                         Clarity AI can make mistakes. Verify important financial data.
                     </Typography>
                 </Box>

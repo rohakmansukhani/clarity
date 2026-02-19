@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
 import { Box, Typography, Grid, Button, LinearProgress, Chip, IconButton, CircularProgress, Tooltip, Card, CardContent, TextField } from '@mui/material';
 import { Plus, Trash2, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowRight, LayoutGrid, List as ListIcon, PieChart as PieChartIcon, Menu, MoreVertical, Bell, Edit2, Check, X, ArrowLeft, Folder, FolderPlus } from 'lucide-react';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
@@ -49,6 +51,8 @@ export default function PortfolioPage() {
     const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
     const [view, setView] = useState<'holdings' | 'allocation'>('holdings'); // Detail sub-view
     const [loading, setLoading] = useState(true);
+    const theme = useTheme();
+    const { mode } = useColorMode();
 
     // Multi-Portfolio State
     const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -223,8 +227,8 @@ export default function PortfolioPage() {
 
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', bgcolor: '#0B0B0B' }}>
-                <CircularProgress size={24} sx={{ color: '#00E5FF' }} />
+            <Box sx={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', bgcolor: 'background.default' }}>
+                <CircularProgress size={24} sx={{ color: 'primary.main' }} />
             </Box>
         );
     }
@@ -247,7 +251,7 @@ export default function PortfolioPage() {
                     mx: 'auto',
                     pb: 10,
                     pt: 6,
-                    bgcolor: '#0B0B0B',
+                    bgcolor: 'background.default',
                     minHeight: '100vh',
                     pr: { xs: 2, md: 6 },
                     pl: { xs: 2, md: '140px' }
@@ -261,32 +265,32 @@ export default function PortfolioPage() {
                             startIcon={<ArrowLeft size={20} />}
                             onClick={() => router.back()}
                             sx={{
-                                color: '#666',
+                                color: 'text.secondary',
                                 mb: 2,
                                 pl: 0,
-                                '&:hover': { color: '#fff', bgcolor: 'transparent' }
+                                '&:hover': { color: 'text.primary', bgcolor: 'transparent' }
                             }}
                         >
                             Back
                         </Button>
                         <Box sx={{ mb: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Box>
-                                <Typography variant="h4" sx={{ color: '#fff', fontWeight: 700, mb: 1 }}>My Portfolios</Typography>
-                                <Typography variant="body1" sx={{ color: '#666' }}>Select a portfolio to manage holdings and analyze performance.</Typography>
+                                <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 700, mb: 1 }}>My Portfolios</Typography>
+                                <Typography variant="body1" sx={{ color: 'text.secondary' }}>Select a portfolio to manage holdings and analyze performance.</Typography>
                             </Box>
                             <Button
                                 variant="contained"
                                 startIcon={<Plus size={20} />}
                                 onClick={() => setIsCreateModalOpen(true)}
                                 sx={{
-                                    bgcolor: '#00E5FF',
+                                    bgcolor: 'primary.main',
                                     color: '#000',
                                     fontWeight: 700,
                                     py: 1.5,
                                     px: 3,
                                     borderRadius: 3,
                                     textTransform: 'none',
-                                    '&:hover': { bgcolor: '#00B2CC' }
+                                    '&:hover': { bgcolor: 'primary.dark' }
                                 }}
                             >
                                 New Portfolio
@@ -299,31 +303,33 @@ export default function PortfolioPage() {
                                     <Card
                                         onClick={() => handlePortfolioClick(p.id)}
                                         sx={{
-                                            bgcolor: '#0A0A0A',
-                                            border: '1px solid #222',
+                                            bgcolor: 'background.paper',
+                                            border: '1px solid',
+                                            borderColor: 'divider',
                                             borderRadius: 4,
                                             cursor: 'pointer',
+                                            backgroundImage: 'none',
                                             transition: 'all 0.2s ease',
                                             '&:hover': {
                                                 transform: 'translateY(-4px)',
-                                                border: '1px solid #333',
-                                                bgcolor: '#111'
+                                                borderColor: 'primary.main',
+                                                bgcolor: mode === 'dark' ? '#111' : '#fcfcfc'
                                             }
                                         }}
                                     >
                                         <CardContent sx={{ p: 4 }}>
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(0, 229, 255, 0.1)', color: '#00E5FF' }}>
+                                                    <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(0, 229, 255, 0.1)', color: 'primary.main' }}>
                                                         <Folder size={24} />
                                                     </Box>
-                                                    <Typography variant="h6" sx={{ color: '#fff', fontWeight: 600 }}>{p.name}</Typography>
+                                                    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>{p.name}</Typography>
                                                 </Box>
                                                 <IconButton
                                                     size="small"
                                                     onClick={(e) => handleDeletePortfolio(p.id, e)}
                                                     sx={{
-                                                        color: '#333',
+                                                        color: 'text.disabled',
                                                         width: 32,
                                                         height: 32,
                                                         flexShrink: 0,
@@ -335,8 +341,8 @@ export default function PortfolioPage() {
                                             </Box>
 
                                             <Box sx={{ mb: 3 }}>
-                                                <Typography variant="caption" sx={{ color: '#666', fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL VALUE</Typography>
-                                                <Typography variant="h3" sx={{ color: '#fff', fontWeight: 700, mt: 0.5 }}>₹{p.total_value.toLocaleString()}</Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL VALUE</Typography>
+                                                <Typography variant="h3" sx={{ color: 'text.primary', fontWeight: 700, mt: 0.5 }}>₹{p.total_value.toLocaleString()}</Typography>
                                             </Box>
 
                                             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -350,7 +356,7 @@ export default function PortfolioPage() {
                                                         borderRadius: 2
                                                     }}
                                                 />
-                                                <Typography variant="body2" sx={{ color: '#666' }}>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                                     {p.total_gain >= 0 ? '+' : ''}₹{p.total_gain.toLocaleString()}
                                                 </Typography>
                                             </Box>
@@ -369,14 +375,15 @@ export default function PortfolioPage() {
                                         display: 'flex',
                                         flexDirection: 'column',
                                         gap: 2,
-                                        border: '2px dashed #222',
+                                        border: '2px dashed',
+                                        borderColor: 'divider',
                                         borderRadius: 4,
-                                        color: '#333',
+                                        color: 'text.disabled',
                                         transition: 'all 0.2s',
                                         '&:hover': {
-                                            borderColor: '#00E5FF',
-                                            color: '#00E5FF',
-                                            bgcolor: 'rgba(0, 229, 255, 0.02)'
+                                            borderColor: 'primary.main',
+                                            color: 'primary.main',
+                                            bgcolor: 'action.hover'
                                         }
                                     }}
                                 >
@@ -396,7 +403,7 @@ export default function PortfolioPage() {
                             <Button
                                 onClick={handleBackToList}
                                 startIcon={<ArrowLeft size={18} />}
-                                sx={{ color: '#666', mb: 3, '&:hover': { color: '#fff' } }}
+                                sx={{ color: 'text.secondary', mb: 3, '&:hover': { color: 'text.primary' } }}
                             >
                                 Back to Portfolios
                             </Button>
@@ -412,13 +419,13 @@ export default function PortfolioPage() {
                                                     size="small"
                                                     autoFocus
                                                     sx={{
-                                                        bgcolor: '#111',
+                                                        bgcolor: 'background.paper',
                                                         borderRadius: 1,
-                                                        input: { color: '#fff', fontWeight: 700, fontSize: '1.5rem', py: 0.5 }
+                                                        input: { color: 'text.primary', fontWeight: 700, fontSize: '1.5rem', py: 0.5 }
                                                     }}
                                                 />
-                                                <IconButton onClick={handleRenamePortfolio} sx={{ color: '#00E5FF' }}><Check size={20} /></IconButton>
-                                                <IconButton onClick={() => setIsRenaming(false)} sx={{ color: '#666' }}><X size={20} /></IconButton>
+                                                <IconButton onClick={handleRenamePortfolio} sx={{ color: 'primary.main' }}><Check size={20} /></IconButton>
+                                                <IconButton onClick={() => setIsRenaming(false)} sx={{ color: 'text.secondary' }}><X size={20} /></IconButton>
                                             </Box>
                                         ) : (
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -432,9 +439,9 @@ export default function PortfolioPage() {
                                                     }}
                                                     size="small"
                                                     sx={{
-                                                        color: '#444',
+                                                        color: 'text.disabled',
                                                         opacity: 0.5,
-                                                        '&:hover': { opacity: 1, color: '#00E5FF' }
+                                                        '&:hover': { opacity: 1, color: 'primary.main' }
                                                     }}
                                                 >
                                                     <Edit2 size={16} />
@@ -443,7 +450,7 @@ export default function PortfolioPage() {
                                         )}
                                     </Box>
                                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mt: 0.5 }}>
-                                        <Typography variant="h1" sx={{ fontSize: { xs: '3.5rem', md: '5rem' }, fontWeight: 800, lineHeight: 0.9, letterSpacing: '-0.04em', color: '#fff' }}>
+                                        <Typography variant="h1" sx={{ fontSize: { xs: '3.5rem', md: '5rem' }, fontWeight: 800, lineHeight: 0.9, letterSpacing: '-0.04em', color: 'text.primary' }}>
                                             ₹{activePortfolio.total_value.toLocaleString()}
                                         </Typography>
 
@@ -476,7 +483,7 @@ export default function PortfolioPage() {
                                         borderRadius: 4,
                                         textTransform: 'none',
                                         fontSize: '1rem',
-                                        '&:hover': { bgcolor: '#e0e0e0' }
+                                        '&:hover': { bgcolor: mode === 'dark' ? '#e0e0e0' : 'rgba(0,0,0,0.8)' }
                                     }}
                                 >
                                     Add Transaction
@@ -488,7 +495,7 @@ export default function PortfolioPage() {
                             {/* Main Content Area */}
                             <Grid size={{ xs: 12, md: 8 }}>
                                 {/* View Toggle */}
-                                <Box sx={{ display: 'flex', gap: 3, mb: 4, borderBottom: '1px solid rgba(255,255,255,0.1)', pb: 0 }}>
+                                <Box sx={{ display: 'flex', gap: 3, mb: 4, borderBottom: '1px solid', borderColor: 'divider', pb: 0 }}>
                                     <TabButton active={view === 'holdings'} onClick={() => setView('holdings')} label="Holdings" icon={Wallet} />
                                     <TabButton active={view === 'allocation'} onClick={() => setView('allocation')} label="Allocation" icon={PieChartIcon} />
                                 </Box>
@@ -516,26 +523,26 @@ export default function PortfolioPage() {
                             <Grid size={{ xs: 12, md: 4 }}>
                                 <Box component={motion.div} initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
                                     <Box sx={{ bgcolor: 'transparent', mb: 4 }}>
-                                        <Typography variant="overline" sx={{ color: '#666', fontWeight: 700, letterSpacing: '0.1em' }}>PORTFOLIO HEALTH</Typography>
+                                        <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: '0.1em' }}>PORTFOLIO HEALTH</Typography>
                                         <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                            <StatBar label="Equity Allocation" value={activePortfolio.total_value > 0 ? 100 : 0} color="#00E5FF" />
+                                            <StatBar label="Equity Allocation" value={activePortfolio.total_value > 0 ? 100 : 0} color="primary.main" />
                                         </Box>
                                     </Box>
 
-                                    <Box sx={{ borderTop: '1px solid #222', pt: 4 }}>
-                                        <Typography variant="overline" sx={{ color: '#666', fontWeight: 700, letterSpacing: '0.1em' }}>KEY METRICS</Typography>
+                                    <Box sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 4 }}>
+                                        <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: '0.1em' }}>KEY METRICS</Typography>
                                         <Box sx={{ mt: 2, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                                             <Tooltip title={activePortfolio.total_invested.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} arrow>
-                                                <Box sx={{ p: 3, bgcolor: '#050505', borderRadius: 3, border: '1px solid #222' }}>
-                                                    <Typography variant="caption" sx={{ color: '#888' }}>Total Invested</Typography>
-                                                    <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
+                                                <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Invested</Typography>
+                                                    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 700 }}>
                                                         {formatIndianCurrencyDynamic(activePortfolio.total_invested)}
                                                     </Typography>
                                                 </Box>
                                             </Tooltip>
                                             <Tooltip title={activePortfolio.total_gain.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} arrow>
-                                                <Box sx={{ p: 3, bgcolor: '#050505', borderRadius: 3, border: '1px solid #222' }}>
-                                                    <Typography variant="caption" sx={{ color: '#888' }}>Total Gain</Typography>
+                                                <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Gain</Typography>
                                                     <Typography variant="h6" sx={{ color: activePortfolio.total_gain >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>
                                                         {activePortfolio.total_gain >= 0 ? '+' : ''}{formatIndianCurrencyDynamic(activePortfolio.total_gain)}
                                                     </Typography>
@@ -610,8 +617,9 @@ function TabButton({ active, onClick, label, icon: Icon }: TabButtonProps) {
             onClick={onClick}
             startIcon={<Icon size={20} />}
             sx={{
-                color: active ? '#00E5FF' : '#666',
-                borderBottom: active ? '2px solid #00E5FF' : '2px solid transparent',
+                color: active ? 'primary.main' : 'text.secondary',
+                borderBottom: active ? '2px solid' : '2px solid transparent',
+                borderColor: active ? 'primary.main' : 'transparent',
                 borderRadius: 0,
                 pb: 2,
                 px: 2,
@@ -619,7 +627,7 @@ function TabButton({ active, onClick, label, icon: Icon }: TabButtonProps) {
                 fontWeight: 600,
                 textTransform: 'none',
                 opacity: active ? 1 : 0.7,
-                '&:hover': { color: '#fff', opacity: 1, bgcolor: 'transparent' }
+                '&:hover': { color: 'text.primary', opacity: 1, bgcolor: 'transparent' }
             }}
         >
             {label}
@@ -637,8 +645,8 @@ function StatBar({ label, value, color }: StatBarProps) {
     return (
         <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2" sx={{ color: '#aaa', fontWeight: 600 }}>{label}</Typography>
-                <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>{value}%</Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{label}</Typography>
+                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>{value}%</Typography>
             </Box>
             <LinearProgress
                 variant="determinate"
@@ -646,7 +654,7 @@ function StatBar({ label, value, color }: StatBarProps) {
                 sx={{
                     height: 8,
                     borderRadius: 4,
-                    bgcolor: '#111',
+                    bgcolor: 'action.hover',
                     '& .MuiLinearProgress-bar': { bgcolor: color }
                 }}
             />

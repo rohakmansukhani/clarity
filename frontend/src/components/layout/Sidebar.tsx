@@ -68,8 +68,8 @@ export default function Sidebar() {
                         left: 24,
                         zIndex: 60,
                         color: '#fff',
-                        bgcolor: 'rgba(11, 11, 11, 0.8)',
-                        '&:hover': { color: '#00E5FF' }
+                        bgcolor: mode === 'dark' ? 'rgba(11, 11, 11, 0.8)' : theme.palette.primary.main,
+                        '&:hover': { color: '#fff', bgcolor: mode === 'dark' ? 'rgba(11, 11, 11, 1)' : theme.palette.primary.dark }
                     }}
                 >
                     <Menu size={24} />

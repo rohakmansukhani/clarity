@@ -16,6 +16,8 @@ import PortfolioBuilder from '@/components/sectors/PortfolioBuilder';
 import DiscoveryHistory from '@/components/sectors/DiscoveryHistory';
 import DiscoveryChat from '@/components/sectors/DiscoveryChat';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 
 
 interface Message {
@@ -51,6 +53,8 @@ type ViewMode = 'chat' | 'questionnaire' | 'recommendations' | 'builder';
 
 export default function DiscoveryHubPage() {
     const router = useRouter();
+    const theme = useTheme();
+    const { mode } = useColorMode();
     const { isSidebarOpen, closeSidebar } = useUIStore();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
@@ -353,18 +357,20 @@ export default function DiscoveryHubPage() {
     };
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#0B0B0B' }}>
+        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
             <Sidebar />
 
             <Box sx={{
                 flexGrow: 1,
                 height: '100vh',
-                bgcolor: '#0B0B0B',
+                bgcolor: 'background.default',
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
                 overflow: 'hidden',
-                background: 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #0B0B0B 70%)'
+                background: mode === 'dark'
+                    ? 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #0B0B0B 70%)'
+                    : 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05) 0%, #FFFFFF 70%)'
             }}>
                 {/* Header */}
                 <Box sx={{
@@ -393,9 +399,9 @@ export default function DiscoveryHubPage() {
                                 width: 44,
                                 height: 44,
                                 borderRadius: '50%',
-                                color: '#fff',
-                                bgcolor: 'rgba(255,255,255,0.05)',
-                                '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                                color: 'text.primary',
+                                bgcolor: 'action.hover',
+                                '&:hover': { bgcolor: 'action.selected' }
                             }}
                         >
                             <ArrowRight className="rotate-180" size={20} />
@@ -406,13 +412,14 @@ export default function DiscoveryHubPage() {
                                 width: 44,
                                 height: 44,
                                 borderRadius: '50%',
-                                color: '#fff',
-                                bgcolor: isHistoryOpen ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255,255,255,0.05)',
-                                border: isHistoryOpen ? '1px solid rgba(139, 92, 246, 0.4)' : '1px solid rgba(255,255,255,0.1)',
+                                color: 'text.primary',
+                                bgcolor: isHistoryOpen ? 'rgba(139, 92, 246, 0.2)' : 'action.hover',
+                                border: isHistoryOpen ? '1px solid rgba(139, 92, 246, 0.4)' : '1px solid',
+                                borderColor: 'divider',
                                 backdropFilter: 'blur(10px)',
                                 transition: 'all 0.3s ease',
                                 '&:hover': {
-                                    bgcolor: 'rgba(255,255,255,0.1)',
+                                    bgcolor: 'action.selected',
                                     transform: 'scale(1.05)'
                                 }
                             }}
@@ -426,13 +433,13 @@ export default function DiscoveryHubPage() {
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                             <Button
                                 onClick={() => setViewMode('chat')}
-                                sx={{ color: viewMode === 'chat' ? '#fff' : '#666', textTransform: 'none' }}
+                                sx={{ color: viewMode === 'chat' ? 'text.primary' : 'text.secondary', textTransform: 'none' }}
                             >
                                 Discovery
                             </Button>
                             {viewMode !== 'chat' && <ChevronRight size={16} color="#666" />}
                             {viewMode !== 'chat' && (
-                                <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
+                                <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                                     {viewMode === 'questionnaire' ? 'Preferences' :
                                         viewMode === 'recommendations' ? 'Selection' : 'Builder'}
                                 </Typography>
@@ -480,10 +487,10 @@ export default function DiscoveryHubPage() {
                                         transition={{ duration: 0.6 }}
                                     >
                                         <Box sx={{ maxWidth: 600, textAlign: 'center' }}>
-                                            <Typography variant="h3" sx={{ fontWeight: 700, mb: 2, background: 'linear-gradient(135deg, #fff 0%, #A78BFA 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                                            <Typography variant="h3" sx={{ fontWeight: 700, mb: 2, background: mode === 'dark' ? 'linear-gradient(135deg, #fff 0%, #A78BFA 100%)' : 'linear-gradient(135deg, #0F172A 0%, #8B5CF6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                                                 Research any sector
                                             </Typography>
-                                            <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.6)', mb: 4 }}>
+                                            <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4 }}>
                                                 AI-powered insights, latest news, and investment opportunities.
                                             </Typography>
                                             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
@@ -495,11 +502,12 @@ export default function DiscoveryHubPage() {
                                                         sx={{
                                                             textAlign: 'left',
                                                             p: 2,
-                                                            bgcolor: 'rgba(255, 255, 255, 0.03)',
-                                                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                                                            color: 'rgba(255, 255, 255, 0.7)',
+                                                            bgcolor: 'background.paper',
+                                                            border: '1px solid',
+                                                            borderColor: 'divider',
+                                                            color: 'text.secondary',
                                                             textTransform: 'none',
-                                                            '&:hover': { bgcolor: 'rgba(139, 92, 246, 0.08)', borderColor: '#8B5CF6' }
+                                                            '&:hover': { bgcolor: 'action.hover', borderColor: 'primary.main', color: 'text.primary' }
                                                         }}
                                                     >
                                                         {prompt}
@@ -540,17 +548,17 @@ export default function DiscoveryHubPage() {
                     {viewMode === 'recommendations' && (
                         <Box sx={{ p: { xs: 2, md: 6 }, maxWidth: 1200, mx: 'auto', width: '100%' }}>
                             <Box sx={{ mb: 4 }}>
-                                <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>
+                                <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, color: 'text.primary' }}>
                                     Top Picks for You
                                 </Typography>
-                                <Typography variant="body1" sx={{ color: '#888' }}>
+                                <Typography variant="body1" sx={{ color: 'text.secondary' }}>
                                     Based on your preferences: {userPreferences?.riskProfile} Risk • {userPreferences?.horizon} Horizon
                                 </Typography>
                             </Box>
 
                             {loading ? (
                                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-                                    <CircularProgress sx={{ color: '#00E5FF' }} />
+                                    <CircularProgress sx={{ color: 'primary.main' }} />
                                 </Box>
                             ) : (
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
@@ -573,9 +581,8 @@ export default function DiscoveryHubPage() {
                             <SelectionBar
                                 selectedStocks={selectedStocks}
                                 onRemove={(symbol) => toggleStockSelection(symbol)}
-                                onCompare={handleCompareStocks}
-                                onContinue={handleProceedToBuilder}
-                                onBacktrack={() => setViewMode('questionnaire')}
+                                onClear={() => setSelectedStocks([])}
+                                onNext={handleProceedToBuilder}
                             />
                         </Box>
                     )}
@@ -598,7 +605,7 @@ export default function DiscoveryHubPage() {
                                 <Button
                                     variant="outlined"
                                     onClick={() => setViewMode('recommendations')}
-                                    sx={{ borderColor: '#333', color: '#fff', px: 4, py: 1.5, borderRadius: 3 }}
+                                    sx={{ borderColor: 'divider', color: 'text.primary', px: 4, py: 1.5, borderRadius: 3 }}
                                 >
                                     Modify Selection
                                 </Button>
@@ -637,8 +644,11 @@ export default function DiscoveryHubPage() {
                                 alignItems: 'flex-end',
                                 p: 1.5,
                                 borderRadius: 3,
-                                bgcolor: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                bgcolor: 'background.paper',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                backgroundImage: 'none',
+                                boxShadow: theme.shadows[4]
                             }}>
                                 <TextField
                                     fullWidth
@@ -650,7 +660,7 @@ export default function DiscoveryHubPage() {
                                     onKeyDown={handleKeyPress}
                                     disabled={loading}
                                     variant="standard"
-                                    InputProps={{ disableUnderline: true, sx: { color: '#fff' } }}
+                                    InputProps={{ disableUnderline: true, sx: { color: 'text.primary' } }}
                                 />
                                 <IconButton
                                     onClick={() => handleSend()}

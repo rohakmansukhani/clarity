@@ -16,6 +16,8 @@ import {
 } from '@mui/material';
 import { Eye, Plus, X } from 'lucide-react';
 import StockSearchInput from '@/components/market/StockSearchInput';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 
 interface AddToWatchlistModalProps {
     open: boolean;
@@ -32,6 +34,8 @@ interface AddToWatchlistModalProps {
 const AVAILABLE_TAGS = ['High Conviction', 'Swing', 'Long Term', 'Speculative', 'Value', 'Growth', 'Dividend'];
 
 export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicker = '' }: AddToWatchlistModalProps) {
+    const theme = useTheme();
+    const { mode: colorMode } = useColorMode();
     const [ticker, setTicker] = useState(initialTicker);
     const [targetPrice, setTargetPrice] = useState('');
     const [notes, setNotes] = useState('');
@@ -89,14 +93,14 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
 
     const fieldSx = {
         '& .MuiOutlinedInput-root': {
-            color: '#fff',
-            bgcolor: '#111',
-            '& fieldset': { borderColor: '#333' },
-            '&:hover fieldset': { borderColor: '#555' },
-            '&.Mui-focused fieldset': { borderColor: '#00E5FF' },
+            color: 'text.primary',
+            bgcolor: 'background.default',
+            '& fieldset': { borderColor: 'divider' },
+            '&:hover fieldset': { borderColor: 'text.secondary' },
+            '&.Mui-focused fieldset': { borderColor: 'primary.main' },
         },
-        '& .MuiInputLabel-root': { color: '#666' },
-        '& .MuiInputLabel-root.Mui-focused': { color: '#00E5FF' },
+        '& .MuiInputLabel-root': { color: 'text.secondary' },
+        '& .MuiInputLabel-root.Mui-focused': { color: 'primary.main' },
     };
 
     return (
@@ -105,16 +109,18 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
             onClose={handleClose}
             PaperProps={{
                 sx: {
-                    bgcolor: '#0B0B0B',
-                    border: '1px solid #333',
+                    bgcolor: 'background.paper',
+                    color: 'text.primary',
+                    border: '1px solid',
+                    borderColor: 'divider',
                     borderRadius: 4,
                     minWidth: { xs: '90%', sm: 550 },
                     backgroundImage: 'none',
                 }
             }}
         >
-            <DialogTitle sx={{ color: '#fff', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1.5, p: 3, pb: 1 }}>
-                <Eye size={24} color="#00E5FF" />
+            <DialogTitle sx={{ color: 'text.primary', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1.5, p: 3, pb: 1 }}>
+                <Eye size={24} color={theme.palette.primary.main} />
                 Add to Buy List
             </DialogTitle>
 
@@ -122,7 +128,7 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 1 }}>
                     {!initialTicker && (
                         <Box>
-                            <Typography variant="caption" sx={{ color: '#666', fontWeight: 600, letterSpacing: '0.08em', display: 'block', mb: 1 }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.08em', display: 'block', mb: 1 }}>
                                 STOCK
                             </Typography>
                             <StockSearchInput
@@ -135,7 +141,7 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
                     )}
 
                     <Box>
-                        <Typography variant="caption" sx={{ color: '#666', fontWeight: 600, letterSpacing: '0.08em', display: 'block', mb: 1 }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.08em', display: 'block', mb: 1 }}>
                             ENTRY STRATEGY (MANDATORY)
                         </Typography>
                         <TextField
@@ -153,7 +159,7 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
                     </Box>
 
                     <Box>
-                        <Typography variant="caption" sx={{ color: '#666', fontWeight: 600, letterSpacing: '0.08em', display: 'block', mb: 1 }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.08em', display: 'block', mb: 1 }}>
                             INVESTMENT THESIS (THE "WHY")
                         </Typography>
                         <TextField
@@ -170,7 +176,7 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
                     </Box>
 
                     <Box>
-                        <Typography variant="caption" sx={{ color: '#666', fontWeight: 600, letterSpacing: '0.08em', display: 'block', mb: 1 }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.08em', display: 'block', mb: 1 }}>
                             TAGS
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
@@ -181,12 +187,12 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
                                     onClick={() => toggleTag(tag)}
                                     size="small"
                                     sx={{
-                                        bgcolor: selectedTags.includes(tag) ? 'rgba(0, 229, 255, 0.2)' : '#1A1A1A',
-                                        color: selectedTags.includes(tag) ? '#00E5FF' : '#888',
+                                        bgcolor: selectedTags.includes(tag) ? 'primary.main' + '33' : 'action.hover',
+                                        color: selectedTags.includes(tag) ? 'primary.main' : 'text.secondary',
                                         border: '1px solid',
-                                        borderColor: selectedTags.includes(tag) ? '#00E5FF' : '#333',
+                                        borderColor: selectedTags.includes(tag) ? 'primary.main' : 'divider',
                                         fontWeight: 600,
-                                        '&:hover': { bgcolor: selectedTags.includes(tag) ? 'rgba(0, 229, 255, 0.3)' : '#222' }
+                                        '&:hover': { bgcolor: selectedTags.includes(tag) ? 'primary.main' + '4D' : 'action.selected' }
                                     }}
                                 />
                             ))}
@@ -208,7 +214,7 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
                                         label={tag}
                                         onDelete={() => toggleTag(tag)}
                                         size="small"
-                                        sx={{ bgcolor: 'rgba(0, 229, 255, 0.2)', color: '#00E5FF', borderColor: '#00E5FF', border: '1px solid' }}
+                                        sx={{ bgcolor: 'primary.main' + '33', color: 'primary.main', borderColor: 'primary.main', border: '1px solid' }}
                                     />
                                 ))}
                             </Box>
@@ -217,7 +223,7 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
 
                     <FormControlLabel
                         control={<Switch checked={rsiAlert} onChange={(e) => setRsiAlert(e.target.checked)} color="primary" />}
-                        label={<Typography sx={{ color: '#fff', fontWeight: 500 }}>Alert on RSI Oversold (30)</Typography>}
+                        label={<Typography sx={{ color: 'text.primary', fontWeight: 500 }}>Alert on RSI Oversold (30)</Typography>}
                     />
                 </Box>
             </DialogContent>
@@ -226,7 +232,7 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
                 <Button
                     onClick={handleClose}
                     disabled={isLoading}
-                    sx={{ color: '#666', '&:hover': { color: '#fff' } }}
+                    sx={{ color: 'text.secondary', '&:hover': { color: 'text.primary' } }}
                 >
                     Cancel
                 </Button>
@@ -236,14 +242,14 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
                     variant="contained"
                     startIcon={isLoading ? null : <Plus size={18} />}
                     sx={{
-                        bgcolor: '#00E5FF',
-                        color: '#000',
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
                         fontWeight: 700,
                         px: 4,
                         py: 1,
                         borderRadius: 2,
-                        '&:hover': { bgcolor: '#00B2CC' },
-                        '&.Mui-disabled': { bgcolor: 'rgba(51, 51, 51, 0.5)', color: '#666' },
+                        '&:hover': { bgcolor: 'primary.dark' },
+                        '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
                     }}
                 >
                     {isLoading ? 'Adding...' : 'Add to List'}

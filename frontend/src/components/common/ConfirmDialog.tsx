@@ -2,7 +2,9 @@
 
 import React from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box } from '@mui/material';
-import { AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 
 interface ConfirmDialogProps {
     open: boolean;
@@ -13,6 +15,7 @@ interface ConfirmDialogProps {
     confirmColor?: 'primary' | 'error' | 'warning';
     onConfirm: () => void;
     onCancel: () => void;
+    loading?: boolean;
 }
 
 export default function ConfirmDialog({
@@ -21,34 +24,28 @@ export default function ConfirmDialog({
     message,
     confirmText = 'Confirm',
     cancelText = 'Cancel',
-    confirmColor = 'error',
     onConfirm,
-    onCancel
+    onCancel,
+    confirmColor = 'primary',
+    loading = false
 }: ConfirmDialogProps) {
-    const colorMap = {
-        primary: '#00E5FF',
-        error: '#EF4444',
-        warning: '#F59E0B'
-    };
-
-    const bgColorMap = {
-        primary: 'rgba(0, 229, 255, 0.1)',
-        error: 'rgba(239, 68, 68, 0.1)',
-        warning: 'rgba(245, 158, 11, 0.1)'
-    };
+    const theme = useTheme();
+    const { mode } = useColorMode();
 
     return (
         <Dialog
             open={open}
             onClose={onCancel}
+            maxWidth="xs"
+            fullWidth
             PaperProps={{
                 sx: {
-                    bgcolor: '#0A0A0A',
-                    border: '1px solid #222',
-                    borderRadius: 4,
-                    minWidth: 400,
-                    maxWidth: 500,
-                    boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+                    bgcolor: 'background.paper',
+                    color: 'text.primary',
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    backgroundImage: 'none'
                 }
             }}
         >
@@ -56,15 +53,15 @@ export default function ConfirmDialog({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 2,
-                color: '#fff',
+                color: 'text.primary',
                 fontWeight: 700,
                 pb: 2
             }}>
                 <Box sx={{
                     p: 1,
                     borderRadius: 2,
-                    bgcolor: bgColorMap[confirmColor],
-                    color: colorMap[confirmColor],
+                    bgcolor: theme.palette[confirmColor].main + '1A', // 10% opacity
+                    color: theme.palette[confirmColor].main,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -74,26 +71,26 @@ export default function ConfirmDialog({
                 {title}
             </DialogTitle>
             <DialogContent>
-                <Typography sx={{ color: '#aaa', fontSize: '0.95rem', lineHeight: 1.6 }}>
+                <Typography sx={{ color: 'text.secondary', fontSize: '0.95rem', lineHeight: 1.6 }}>
                     {message}
                 </Typography>
             </DialogContent>
-            <DialogActions sx={{ p: 3, gap: 2 }}>
+            <DialogActions sx={{ p: 2, pt: 0, gap: 1.5 }}>
                 <Button
                     onClick={onCancel}
                     sx={{
                         flex: 1,
-                        color: '#666',
-                        borderColor: '#333',
+                        color: 'text.secondary',
+                        borderColor: 'divider',
                         border: '1px solid',
                         borderRadius: 2,
                         py: 1.2,
-                        fontWeight: 600,
                         textTransform: 'none',
+                        fontWeight: 600,
                         '&:hover': {
-                            color: '#fff',
-                            borderColor: '#555',
-                            bgcolor: 'rgba(255,255,255,0.05)'
+                            bgcolor: 'action.hover',
+                            color: 'text.primary',
+                            borderColor: 'text.primary'
                         }
                     }}
                 >
@@ -102,21 +99,23 @@ export default function ConfirmDialog({
                 <Button
                     onClick={onConfirm}
                     variant="contained"
+                    disabled={loading}
                     sx={{
                         flex: 1,
-                        bgcolor: colorMap[confirmColor],
-                        color: confirmColor === 'primary' ? '#000' : '#fff',
-                        fontWeight: 700,
-                        py: 1.2,
+                        bgcolor: theme.palette[confirmColor].main,
+                        color: theme.palette[confirmColor].contrastText,
                         borderRadius: 2,
+                        py: 1.2,
+                        fontWeight: 700,
                         textTransform: 'none',
+                        boxShadow: `0 4px 14px ${theme.palette[confirmColor].main}40`,
                         '&:hover': {
-                            bgcolor: confirmColor === 'error' ? '#DC2626' :
-                                confirmColor === 'warning' ? '#D97706' : '#00B2CC'
+                            bgcolor: theme.palette[confirmColor].dark,
+                            boxShadow: `0 6px 20px ${theme.palette[confirmColor].main}60`,
                         }
                     }}
                 >
-                    {confirmText}
+                    {loading ? 'Processing...' : confirmText}
                 </Button>
             </DialogActions>
         </Dialog>

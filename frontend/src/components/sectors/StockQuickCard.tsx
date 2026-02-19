@@ -1,9 +1,11 @@
 'use client';
 
-import React from 'react';
-import { Box, Paper, Typography, Chip } from '@mui/material';
-import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { Box, Paper, Typography, Chip, Button } from '@mui/material';
+import { motion, AnimatePresence } from 'framer-motion';
+import { TrendingUp, TrendingDown, Check, ChevronUp, ChevronDown } from 'lucide-react';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 
 interface StockRecommendation {
     symbol: string;
@@ -17,21 +19,17 @@ interface StockRecommendation {
 
 interface StockQuickCardProps {
     stock: StockRecommendation;
-    index: number;
     isSelected: boolean;
+    onToggleSelect: () => void;
     isExpanded: boolean;
     onToggleExpand: () => void;
-    onToggleSelect: () => void;
+    index?: number;
 }
 
-export default function StockQuickCard({
-    stock,
-    index,
-    isSelected,
-    isExpanded,
-    onToggleExpand,
-    onToggleSelect
-}: StockQuickCardProps) {
+export default function StockQuickCard({ stock, isSelected, onToggleSelect, isExpanded, onToggleExpand, index = 0 }: StockQuickCardProps) {
+    const theme = useTheme();
+    const { mode } = useColorMode();
+
     const isPositive = (stock.change || 0) >= 0;
     const actionColor = stock.action === 'BUY' ? '#10B981' : stock.action === 'SELL' ? '#EF4444' : '#F59E0B';
 
@@ -39,40 +37,41 @@ export default function StockQuickCard({
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ duration: 0.4, delay: index * 0.1 }}
         >
             <Paper
                 sx={{
-                    p: 3,
-                    borderRadius: 4,
-                    bgcolor: '#0A0A0A',
-                    border: isSelected ? `2px solid #00E5FF` : '1px solid #222',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s',
+                    bgcolor: 'background.paper',
+                    borderRadius: '16px',
+                    border: isSelected ? `2px solid ${theme.palette.primary.main}` : '1px solid',
+                    borderColor: isSelected ? 'primary.main' : 'divider',
                     position: 'relative',
                     overflow: 'hidden',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    cursor: 'pointer',
                     '&:hover': {
+                        borderColor: isSelected ? 'primary.main' : 'text.secondary',
                         transform: 'translateY(-4px)',
-                        borderColor: isSelected ? '#00E5FF' : '#444',
-                        bgcolor: '#111'
+                        boxShadow: mode === 'dark' ? '0 12px 24px -8px rgba(0,0,0,0.5)' : '0 12px 24px -8px rgba(0,0,0,0.1)'
                     }
                 }}
             >
                 {/* Background Glow for Selected */}
                 {isSelected && (
-                    <Box
-                        sx={{
-                            position: 'absolute',
-                            top: -50,
-                            right: -50,
-                            width: 150,
-                            height: 150,
-                            borderRadius: '50%',
-                            filter: 'blur(60px)',
-                            opacity: 0.2,
-                            bgcolor: '#00E5FF'
-                        }}
-                    />
+                    <Box sx={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        p: 0.5,
+                        borderBottomLeftRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        zIndex: 1
+                    }}>
+                        <Check size={14} strokeWidth={3} />
+                    </Box>
                 )}
 
                 {/* Header */}
@@ -84,15 +83,17 @@ export default function StockQuickCard({
                         alignItems: 'flex-start',
                         mb: 2,
                         position: 'relative',
-                        zIndex: 1
+                        zIndex: 1,
+                        p: 3,
+                        pb: 0
                     }}
                 >
                     <Box sx={{ flex: 1 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary' }}>
                             {stock.symbol}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: '#666' }}>
-                            {stock.name}
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                            {stock.name || 'Company Name'}
                         </Typography>
                     </Box>
 
@@ -108,23 +109,6 @@ export default function StockQuickCard({
                                 borderRadius: 2
                             }}
                         />
-                        {isSelected && (
-                            <Box
-                                sx={{
-                                    width: 24,
-                                    height: 24,
-                                    borderRadius: '50%',
-                                    bgcolor: '#00E5FF',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                <Typography sx={{ color: '#000', fontSize: '0.75rem', fontWeight: 700 }}>
-                                    ✓
-                                </Typography>
-                            </Box>
-                        )}
                     </Box>
                 </Box>
 
@@ -137,83 +121,81 @@ export default function StockQuickCard({
                         alignItems: 'center',
                         mb: 2,
                         position: 'relative',
-                        zIndex: 1
+                        zIndex: 1,
+                        px: 3
                     }}
                 >
                     <Box>
-                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                            Score
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                            {stock.score}
+                        </Typography>
+                    </Box>
+
+                    <Box sx={{ textAlign: 'right' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
                             ₹{stock.price.toLocaleString()}
                         </Typography>
                         {stock.change !== undefined && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                                {isPositive ? <TrendingUp size={14} className="text-emerald-500" /> : <TrendingDown size={14} className="text-red-500" />}
-                                <Typography variant="caption" sx={{ color: isPositive ? '#10B981' : '#EF4444', fontWeight: 600 }}>
-                                    {isPositive ? '+' : ''}{stock.change}%
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'flex-end', color: isPositive ? 'success.main' : 'error.main' }}>
+                                {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                    {isPositive ? '+' : ''}{stock.change.toFixed(2)}%
                                 </Typography>
                             </Box>
                         )}
                     </Box>
-
-                    <Box sx={{ textAlign: 'right' }}>
-                        <Typography variant="caption" sx={{ color: '#666', display: 'block', mb: 0.5 }}>
-                            Score
-                        </Typography>
-                        <Typography variant="h5" sx={{ fontWeight: 700, color: '#00E5FF' }}>
-                            {stock.score}
-                        </Typography>
-                    </Box>
                 </Box>
 
-                {/* Reasoning Preview */}
-                <Box
-                    onClick={onToggleSelect}
-                    sx={{
-                        position: 'relative',
-                        zIndex: 1,
-                        mb: isExpanded ? 0 : 2
-                    }}
-                >
-                    <Typography
-                        variant="body2"
+                {/* Reasoning Section */}
+                <Box sx={{ px: 3, pb: 2, position: 'relative', zIndex: 1 }}>
+                    <AnimatePresence>
+                        {isExpanded && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                style={{ overflow: 'hidden' }}
+                            >
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: 'text.secondary',
+                                        lineHeight: 1.6,
+                                        pt: 1,
+                                        borderTop: '1px solid',
+                                        borderColor: 'divider',
+                                        mb: 2
+                                    }}
+                                >
+                                    {stock.reasoning}
+                                </Typography>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <Button
+                        fullWidth
+                        size="small"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleExpand();
+                        }}
+                        endIcon={isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                         sx={{
-                            color: '#888',
-                            lineHeight: 1.6,
-                            display: '-webkit-box',
-                            WebkitLineClamp: isExpanded ? 'unset' : 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
+                            color: 'text.secondary',
+                            textTransform: 'none',
+                            fontSize: '0.75rem',
+                            '&:hover': {
+                                color: 'primary.main',
+                                bgcolor: 'transparent'
+                            }
                         }}
                     >
-                        {stock.reasoning}
-                    </Typography>
-                </Box>
-
-                {/* Expand Button */}
-                <Box
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleExpand();
-                    }}
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 1,
-                        pt: 2,
-                        borderTop: '1px solid #222',
-                        color: '#666',
-                        transition: 'color 0.2s',
-                        position: 'relative',
-                        zIndex: 1,
-                        '&:hover': {
-                            color: '#00E5FF'
-                        }
-                    }}
-                >
-                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                        {isExpanded ? 'Show Less' : 'View Details'}
-                    </Typography>
-                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        {isExpanded ? 'Hide Details' : 'View Reasoning'}
+                    </Button>
                 </Box>
             </Paper>
         </motion.div>

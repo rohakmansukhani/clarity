@@ -11,6 +11,8 @@ import QuestionnaireFlow, { QuestionnaireData } from '@/components/sectors/Quest
 import StockQuickCard from '@/components/sectors/StockQuickCard';
 import SelectionBar from '@/components/sectors/SelectionBar';
 import PortfolioBuilder from '@/components/sectors/PortfolioBuilder';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 
 interface StockRecommendation {
     symbol: string;
@@ -24,6 +26,8 @@ interface StockRecommendation {
 
 export default function SectorDetailPage({ params }: { params: { sector: string } }) {
     const router = useRouter();
+    const theme = useTheme();
+    const { mode } = useColorMode();
     const sector = decodeURIComponent(params.sector);
     const [showQuestionnaire, setShowQuestionnaire] = useState(true);
     const [loading, setLoading] = useState(false);
@@ -164,7 +168,7 @@ export default function SectorDetailPage({ params }: { params: { sector: string 
     };
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#0B0B0B' }}>
+        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
             <Sidebar />
 
             <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, md: 6 }, ml: { md: '140px' }, pb: 12 }}>
@@ -174,18 +178,18 @@ export default function SectorDetailPage({ params }: { params: { sector: string 
                         startIcon={<ArrowLeft size={20} />}
                         onClick={() => router.push('/sectors')}
                         sx={{
-                            color: '#666',
+                            color: 'text.secondary',
                             mb: 3,
-                            '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }
+                            '&:hover': { color: 'text.primary', bgcolor: 'action.hover' }
                         }}
                     >
                         Back to Sectors
                     </Button>
 
-                    <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 1 }}>
+                    <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-0.02em', mb: 1, color: 'text.primary' }}>
                         {sector} Sector Analysis
                     </Typography>
-                    <Typography variant="body1" sx={{ color: '#666', mb: 4 }}>
+                    <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4 }}>
                         AI-powered stock recommendations tailored to your investment goals
                     </Typography>
                 </Box>
@@ -201,9 +205,9 @@ export default function SectorDetailPage({ params }: { params: { sector: string 
                 {/* Loading */}
                 {loading && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 20 }}>
-                        <CircularProgress sx={{ color: '#00E5FF', mb: 3 }} size={48} />
+                        <CircularProgress sx={{ color: 'primary.main', mb: 3 }} size={48} />
                         <Box sx={{ textAlign: 'center' }}>
-                            <Typography variant="h6" sx={{ color: '#fff', mb: 1, fontWeight: 600 }}>
+                            <Typography variant="h6" sx={{ color: 'text.primary', mb: 1, fontWeight: 600 }}>
                                 Analyzing {sector} Sector...
                             </Typography>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 3 }}>
@@ -214,8 +218,8 @@ export default function SectorDetailPage({ params }: { params: { sector: string 
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: i * 0.5 }}
                                     >
-                                        <Typography variant="caption" sx={{ color: '#666', display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
-                                            <Sparkles size={14} color="#00E5FF" />
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'center' }}>
+                                            <Sparkles size={14} color={theme.palette.primary.main} />
                                             {text}
                                         </Typography>
                                     </motion.div>
@@ -229,10 +233,10 @@ export default function SectorDetailPage({ params }: { params: { sector: string 
                 {!showQuestionnaire && !loading && recommendations.length > 0 && !showPortfolio && (
                     <Box>
                         <Box sx={{ mb: 4 }}>
-                            <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+                            <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
                                 Top {recommendations.length} Recommendations
                             </Typography>
-                            <Typography variant="body2" sx={{ color: '#666' }}>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                 Select 2-5 stocks to build your portfolio or compare
                             </Typography>
                         </Box>
@@ -257,12 +261,12 @@ export default function SectorDetailPage({ params }: { params: { sector: string 
                                 variant="outlined"
                                 onClick={handleRestart}
                                 sx={{
-                                    borderColor: '#333',
-                                    color: '#666',
+                                    borderColor: 'divider',
+                                    color: 'text.secondary',
                                     '&:hover': {
-                                        borderColor: '#00E5FF',
-                                        color: '#00E5FF',
-                                        bgcolor: 'rgba(0, 229, 255, 0.05)'
+                                        borderColor: 'primary.main',
+                                        color: 'primary.main',
+                                        bgcolor: 'primary.main' + '1A'
                                     }
                                 }}
                             >
@@ -287,12 +291,12 @@ export default function SectorDetailPage({ params }: { params: { sector: string 
                                 variant="outlined"
                                 onClick={() => setShowPortfolio(false)}
                                 sx={{
-                                    borderColor: '#333',
-                                    color: '#666',
+                                    borderColor: 'divider',
+                                    color: 'text.secondary',
                                     '&:hover': {
-                                        borderColor: '#00E5FF',
-                                        color: '#00E5FF',
-                                        bgcolor: 'rgba(0, 229, 255, 0.05)'
+                                        borderColor: 'primary.main',
+                                        color: 'primary.main',
+                                        bgcolor: 'primary.main' + '1A'
                                     }
                                 }}
                             >
@@ -302,12 +306,12 @@ export default function SectorDetailPage({ params }: { params: { sector: string 
                                 variant="outlined"
                                 onClick={handleCompare}
                                 sx={{
-                                    borderColor: '#333',
-                                    color: '#666',
+                                    borderColor: 'divider',
+                                    color: 'text.secondary',
                                     '&:hover': {
-                                        borderColor: '#00E5FF',
-                                        color: '#00E5FF',
-                                        bgcolor: 'rgba(0, 229, 255, 0.05)'
+                                        borderColor: 'primary.main',
+                                        color: 'primary.main',
+                                        bgcolor: 'primary.main' + '1A'
                                     }
                                 }}
                             >
@@ -346,12 +350,12 @@ export default function SectorDetailPage({ params }: { params: { sector: string 
                                     }
                                 }}
                                 sx={{
-                                    bgcolor: '#00E5FF',
-                                    color: '#000',
+                                    bgcolor: 'primary.main',
+                                    color: 'primary.contrastText',
                                     fontWeight: 700,
                                     px: 4,
                                     '&:hover': {
-                                        bgcolor: '#00D4E6'
+                                        bgcolor: 'primary.dark'
                                     }
                                 }}
                             >
@@ -366,9 +370,8 @@ export default function SectorDetailPage({ params }: { params: { sector: string 
                     <SelectionBar
                         selectedStocks={selectedStocks}
                         onRemove={(symbol) => setSelectedStocks(selectedStocks.filter(s => s !== symbol))}
-                        onContinue={handleBuildPortfolio}
-                        onCompare={handleCompare}
-                        onBacktrack={handleBacktrack}
+                        onClear={() => setSelectedStocks([])}
+                        onNext={handleBuildPortfolio}
                     />
                 )}
             </Box>

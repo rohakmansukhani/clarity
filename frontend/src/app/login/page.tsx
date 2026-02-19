@@ -5,9 +5,11 @@ import { Box, Typography, TextField, Button, Container, Grid, CircularProgress }
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, User } from 'lucide-react';
+import { Lock, User, Sun, Moon } from 'lucide-react';
 import api from '@/services/api';
 import { ErrorBanner } from '@/components/common/ErrorBanner';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 
 // ... imports ...
 
@@ -15,6 +17,8 @@ import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
     const router = useRouter();
+    const theme = useTheme();
+    const { mode, toggleColorMode } = useColorMode();
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -73,8 +77,8 @@ export default function LoginPage() {
         <Box
             sx={{
                 minHeight: '100dvh',
-                bgcolor: '#0B0B0B',
-                color: '#FFFFFF',
+                bgcolor: 'background.default',
+                color: 'text.primary',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
@@ -101,16 +105,17 @@ export default function LoginPage() {
                                     lineHeight: { xs: 1, md: 0.9 },
                                     letterSpacing: '-0.04em',
                                     mb: { xs: 2, md: 4 },
-                                    mt: { xs: 0, md: -5 }
+                                    mt: { xs: 0, md: -5 },
+                                    color: 'text.primary'
                                 }}
                             >
                                 CLARITY
-                                <Box component="span" sx={{ color: '#00E5FF' }}>.</Box>
+                                <Box component="span" sx={{ color: 'primary.main' }}>.</Box>
                             </Typography>
 
                             <Typography variant="h5" sx={{
                                 fontWeight: 400,
-                                color: '#A0A0A0',
+                                color: 'text.secondary',
                                 maxWidth: 400,
                                 mb: { xs: 4, md: 6 },
                                 fontSize: { xs: '1.2rem', md: '1.5rem' },
@@ -146,7 +151,7 @@ export default function LoginPage() {
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        icon={<User size={18} color="#666" />}
+                                        icon={<User size={18} color={theme.palette.text.secondary} />}
                                     />
                                     <MinimalInput
                                         label="PASSWORD"
@@ -154,7 +159,7 @@ export default function LoginPage() {
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        icon={<Lock size={18} color="#666" />}
+                                        icon={<Lock size={18} color={theme.palette.text.secondary} />}
                                     />
                                 </motion.div>
 
@@ -166,20 +171,20 @@ export default function LoginPage() {
                                     sx={{
                                         mt: 2,
                                         py: 2.5,
-                                        borderRadius: '16px', // Apple-style rounded rect
-                                        bgcolor: '#fff', // White primary
-                                        color: '#000',
+                                        borderRadius: '16px',
+                                        bgcolor: 'text.primary',
+                                        color: 'background.default',
                                         fontSize: '1rem',
                                         fontWeight: 700,
                                         letterSpacing: '-0.01em',
-                                        textTransform: 'none', // Remove uppercase for friendlier UI
+                                        textTransform: 'none',
                                         transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                                         opacity: loading ? 0.7 : 1,
-                                        boxShadow: '0 4px 20px rgba(255,255,255,0.1)',
+                                        boxShadow: theme.shadows[4],
                                         '&:hover': {
-                                            bgcolor: '#f0f0f0',
+                                            bgcolor: 'text.secondary',
                                             transform: 'scale(1.02)',
-                                            boxShadow: '0 8px 30px rgba(255,255,255,0.2)'
+                                            boxShadow: theme.shadows[8]
                                         },
                                         '&:active': { transform: 'scale(0.98)' }
                                     }}
@@ -188,16 +193,16 @@ export default function LoginPage() {
                                 </Button>
 
                                 <Box sx={{ textAlign: 'center', mt: 1 }}>
-                                    <Link href="/signup" style={{ color: '#888', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'color 0.2s' }}>
-                                        Don't have an account? <span style={{ color: '#fff' }}>Join Clarity</span>
+                                    <Link href="/signup" style={{ color: theme.palette.text.secondary, textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500, transition: 'color 0.2s' }}>
+                                        Don't have an account? <span style={{ color: theme.palette.text.primary }}>Join Clarity</span>
                                     </Link>
                                 </Box>
 
                                 {/* Divider */}
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, my: 1, opacity: 0.5 }}>
-                                    <Box sx={{ flex: 1, height: '1px', bgcolor: '#333' }} />
-                                    <Typography variant="caption" sx={{ color: '#666' }}>OR</Typography>
-                                    <Box sx={{ flex: 1, height: '1px', bgcolor: '#333' }} />
+                                    <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>OR</Typography>
+                                    <Box sx={{ flex: 1, height: '1px', bgcolor: 'divider' }} />
                                 </Box>
 
                                 {/* Social Login Buttons */}
@@ -207,13 +212,14 @@ export default function LoginPage() {
                                         onClick={() => handleSocialLogin('google')}
                                         sx={{
                                             py: 1.5,
-                                            borderRadius: '8px', // Slightly rounded
-                                            bgcolor: '#111',
-                                            border: '1px solid #333',
-                                            color: '#fff',
+                                            borderRadius: '12px',
+                                            bgcolor: 'background.paper',
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            color: 'text.primary',
                                             fontSize: '0.9rem',
                                             textTransform: 'none',
-                                            '&:hover': { bgcolor: '#222', borderColor: '#666' }
+                                            '&:hover': { bgcolor: 'action.hover', borderColor: 'text.secondary' }
                                         }}
                                         startIcon={
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -232,6 +238,29 @@ export default function LoginPage() {
                     </Grid>
                 </Grid>
             </Container>
+
+            {/* Theme Toggle Button */}
+            <Box sx={{ position: 'fixed', top: 20, right: 20, zIndex: 1000 }}>
+                <Button
+                    onClick={toggleColorMode}
+                    sx={{
+                        minWidth: 48,
+                        width: 48,
+                        height: 48,
+                        borderRadius: '12px',
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        color: 'text.primary',
+                        '&:hover': {
+                            bgcolor: 'action.hover',
+                            borderColor: 'text.secondary'
+                        }
+                    }}
+                >
+                    {mode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                </Button>
+            </Box>
 
             {/* Decorative Grid Lines or Footer */}
             <Box
@@ -306,7 +335,7 @@ function MarketMetrics() {
             <Metric
                 label="NIFTY"
                 value={nifty?.current && typeof nifty.current === 'number' ? nifty.current.toLocaleString() : (nifty?.error ? "N/A" : "...")}
-                color={nifty?.percent_change && nifty.percent_change >= 0 ? '#10B981' : (nifty?.percent_change < 0 ? '#EF4444' : '#fff')}
+                color={nifty?.percent_change && nifty.percent_change >= 0 ? '#10B981' : (nifty?.percent_change < 0 ? '#EF4444' : 'text.primary')}
             />
 
             {/* 3. Sensex */}
@@ -334,7 +363,7 @@ function MinimalInput({ label, type, placeholder, value, onChange, icon }: Minim
                 <Typography
                     variant="caption"
                     sx={{
-                        color: '#666',
+                        color: 'text.secondary',
                         fontWeight: 600,
                         letterSpacing: '0.1em',
                         fontSize: '0.75rem'
@@ -355,17 +384,18 @@ function MinimalInput({ label, type, placeholder, value, onChange, icon }: Minim
                     endAdornment: icon ? <Box sx={{ opacity: 0.5 }}>{icon}</Box> : null,
                     sx: {
                         fontSize: '1.2rem',
-                        color: '#fff',
+                        color: 'text.primary',
                         fontWeight: 500,
                         pb: 1.5,
-                        borderBottom: '1px solid #333',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
                         transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                        '&:hover': { borderBottom: '1px solid #666' },
-                        '&.Mui-focused': { borderBottom: '1px solid #fff' }
+                        '&:hover': { borderBottom: '1px solid', borderColor: 'text.secondary' },
+                        '&.Mui-focused': { borderBottom: '1px solid', borderColor: 'primary.main' }
                     }
                 }}
                 sx={{
-                    '& input::placeholder': { color: '#444', opacity: 1 }
+                    '& input::placeholder': { color: 'text.disabled', opacity: 1 }
                 }}
             />
         </Box>
@@ -373,12 +403,13 @@ function MinimalInput({ label, type, placeholder, value, onChange, icon }: Minim
 }
 
 function Metric({ label, value, color }: { label: string, value: string, color?: string }) {
+    const theme = useTheme();
     return (
         <Box>
-            <Typography variant="caption" sx={{ color: '#444', display: 'block', letterSpacing: '0.05em', mb: 0.5 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', letterSpacing: '0.05em', mb: 0.5 }}>
                 {label}
             </Typography>
-            <Typography variant="h6" sx={{ color: color || '#fff', fontWeight: 600 }}>
+            <Typography variant="h6" sx={{ color: color || 'text.primary', fontWeight: 600 }}>
                 {value}
             </Typography>
         </Box>

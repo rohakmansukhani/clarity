@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, Typography, Paper, LinearProgress } from '@mui/material';
+import { Box, Typography, Paper, LinearProgress, useTheme } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import BudgetInput from './BudgetInput';
@@ -45,6 +45,7 @@ const QUESTIONS = [
 ];
 
 export default function QuestionnaireFlow({ sector, onComplete }: QuestionnaireFlowProps) {
+    const theme = useTheme();
     const [currentStep, setCurrentStep] = useState(0);
     const [data, setData] = useState<QuestionnaireData>({
         budget: 0,
@@ -78,7 +79,7 @@ export default function QuestionnaireFlow({ sector, onComplete }: QuestionnaireF
                     <Typography variant="caption" sx={{ color: '#666', fontWeight: 600 }}>
                         Question {currentStep + 1} of {QUESTIONS.length}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: '#00E5FF', fontWeight: 600 }}>
+                    <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600 }}>
                         {Math.round(progress)}%
                     </Typography>
                 </Box>
@@ -88,9 +89,9 @@ export default function QuestionnaireFlow({ sector, onComplete }: QuestionnaireF
                     sx={{
                         height: 6,
                         borderRadius: 3,
-                        bgcolor: '#222',
+                        bgcolor: 'divider',
                         '& .MuiLinearProgress-bar': {
-                            bgcolor: '#00E5FF',
+                            bgcolor: 'primary.main',
                             borderRadius: 3,
                             transition: 'transform 0.4s ease'
                         }
@@ -112,19 +113,19 @@ export default function QuestionnaireFlow({ sector, onComplete }: QuestionnaireF
                             height: 40,
                             minWidth: 40,
                             borderRadius: 2,
-                            bgcolor: '#00E5FF20',
+                            bgcolor: 'primary.main' + '1A',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
                         }}
                     >
-                        <Sparkles size={20} color="#00E5FF" />
+                        <Sparkles size={20} color={theme.palette.primary.main} />
                     </Box>
                     <Box>
-                        <Typography variant="caption" sx={{ color: '#00E5FF', fontWeight: 600, display: 'block', mb: 0.5 }}>
+                        <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600, display: 'block', mb: 0.5 }}>
                             Clarity AI
                         </Typography>
-                        <Typography variant="body1" sx={{ color: '#fff', lineHeight: 1.6 }}>
+                        <Typography variant="body1" sx={{ color: 'text.primary', lineHeight: 1.6 }}>
                             {currentQuestion.aiMessage}
                         </Typography>
                     </Box>
@@ -136,8 +137,9 @@ export default function QuestionnaireFlow({ sector, onComplete }: QuestionnaireF
                 sx={{
                     p: 4,
                     borderRadius: 4,
-                    bgcolor: '#0A0A0A',
-                    border: '1px solid #222',
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
                     position: 'relative',
                     overflow: 'hidden'
                 }}
@@ -153,7 +155,7 @@ export default function QuestionnaireFlow({ sector, onComplete }: QuestionnaireF
                         borderRadius: '50%',
                         filter: 'blur(80px)',
                         opacity: 0.1,
-                        bgcolor: '#00E5FF'
+                        bgcolor: 'primary.main'
                     }}
                 />
 
@@ -163,7 +165,7 @@ export default function QuestionnaireFlow({ sector, onComplete }: QuestionnaireF
                     sx={{
                         fontWeight: 700,
                         mb: 4,
-                        color: '#fff',
+                        color: 'text.primary',
                         position: 'relative',
                         zIndex: 1
                     }}

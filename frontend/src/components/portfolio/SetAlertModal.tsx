@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, IconButton, ToggleButton, ToggleButtonGroup, InputAdornment } from '@mui/material';
 import { X, Bell, TrendingUp, TrendingDown } from 'lucide-react';
 import { portfolioService } from '@/services/portfolioService';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 
 interface SetAlertModalProps {
     open: boolean;
@@ -14,6 +16,8 @@ interface SetAlertModalProps {
 }
 
 export default function SetAlertModal({ open, onClose, ticker, currentPrice, onAlertSet }: SetAlertModalProps) {
+    const theme = useTheme();
+    const { mode: colorMode } = useColorMode();
     const [mode, setMode] = useState<'PRICE' | 'PERCENT'>('PRICE');
     const [targetPrice, setTargetPrice] = useState<string>('');
     const [percent, setPercent] = useState<string>('');
@@ -55,26 +59,29 @@ export default function SetAlertModal({ open, onClose, ticker, currentPrice, onA
             onClose={onClose}
             PaperProps={{
                 sx: {
-                    bgcolor: '#0B0B0B',
-                    border: '1px solid #222',
+                    bgcolor: 'background.paper',
+                    color: 'text.primary',
+                    border: '1px solid',
+                    borderColor: 'divider',
                     borderRadius: 3,
                     minWidth: 400,
-                    p: 1
+                    p: 1,
+                    backgroundImage: 'none'
                 }
             }}
         >
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', fontWeight: 700 }}>
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'text.primary', fontWeight: 700 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Bell size={20} color="#00E5FF" />
+                    <Bell size={20} color={theme.palette.primary.main} />
                     Set Alert for {ticker}
                 </Box>
-                <IconButton onClick={onClose} size="small" sx={{ color: '#666' }}><X size={20} /></IconButton>
+                <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}><X size={20} /></IconButton>
             </DialogTitle>
 
             <DialogContent>
                 <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <Typography variant="body2" sx={{ color: '#888' }}>
-                        Current Price: <span style={{ color: '#fff', fontWeight: 700 }}>₹{currentPrice.toLocaleString()}</span>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                        Current Price: <span style={{ color: theme.palette.text.primary, fontWeight: 700 }}>₹{currentPrice.toLocaleString()}</span>
                     </Typography>
 
                     <ToggleButtonGroup
@@ -82,12 +89,12 @@ export default function SetAlertModal({ open, onClose, ticker, currentPrice, onA
                         exclusive
                         onChange={(_, v) => v && setMode(v)}
                         fullWidth
-                        sx={{ bgcolor: '#111', borderRadius: 2 }}
+                        sx={{ bgcolor: 'background.default', borderRadius: 2 }}
                     >
-                        <ToggleButton value="PRICE" sx={{ color: '#666', '&.Mui-selected': { color: '#00E5FF', bgcolor: 'rgba(0,229,255,0.1)' }, fontWeight: 600 }}>
+                        <ToggleButton value="PRICE" sx={{ color: 'text.secondary', '&.Mui-selected': { color: 'primary.main', bgcolor: 'primary.main' + '1A' }, fontWeight: 600 }}>
                             Target Price
                         </ToggleButton>
-                        <ToggleButton value="PERCENT" sx={{ color: '#666', '&.Mui-selected': { color: '#00E5FF', bgcolor: 'rgba(0,229,255,0.1)' }, fontWeight: 600 }}>
+                        <ToggleButton value="PERCENT" sx={{ color: 'text.secondary', '&.Mui-selected': { color: 'primary.main', bgcolor: 'primary.main' + '1A' }, fontWeight: 600 }}>
                             % Change
                         </ToggleButton>
                     </ToggleButtonGroup>
@@ -100,10 +107,10 @@ export default function SetAlertModal({ open, onClose, ticker, currentPrice, onA
                             value={targetPrice}
                             onChange={(e) => setTargetPrice(e.target.value)}
                             InputProps={{
-                                startAdornment: <InputAdornment position="start"><Typography sx={{ color: '#666' }}>₹</Typography></InputAdornment>,
+                                startAdornment: <InputAdornment position="start"><Typography sx={{ color: 'text.secondary' }}>₹</Typography></InputAdornment>,
                                 sx: {
-                                    color: '#fff',
-                                    bgcolor: '#111',
+                                    color: 'text.primary',
+                                    bgcolor: 'background.default',
                                     borderRadius: 2,
                                     height: 56, // Explicit height
                                     alignItems: 'center',
@@ -112,10 +119,10 @@ export default function SetAlertModal({ open, onClose, ticker, currentPrice, onA
                                         boxSizing: 'border-box',
                                         py: 0
                                     },
-                                    '& fieldset': { borderColor: '#333' }
+                                    '& fieldset': { borderColor: 'divider' }
                                 }
                             }}
-                            InputLabelProps={{ sx: { color: '#666' } }}
+                            InputLabelProps={{ shrink: true, sx: { color: 'text.secondary' } }}
                         />
                     ) : (
                         <TextField
@@ -126,10 +133,10 @@ export default function SetAlertModal({ open, onClose, ticker, currentPrice, onA
                             value={percent}
                             onChange={(e) => setPercent(e.target.value)}
                             InputProps={{
-                                endAdornment: <InputAdornment position="end"><Typography sx={{ color: '#666' }}>%</Typography></InputAdornment>,
+                                endAdornment: <InputAdornment position="end"><Typography sx={{ color: 'text.secondary' }}>%</Typography></InputAdornment>,
                                 sx: {
-                                    color: '#fff',
-                                    bgcolor: '#111',
+                                    color: 'text.primary',
+                                    bgcolor: 'background.default',
                                     borderRadius: 2,
                                     height: 56,
                                     alignItems: 'center',
@@ -138,12 +145,12 @@ export default function SetAlertModal({ open, onClose, ticker, currentPrice, onA
                                         boxSizing: 'border-box',
                                         py: 0
                                     },
-                                    '& fieldset': { borderColor: '#333' }
+                                    '& fieldset': { borderColor: 'divider' }
                                 }
                             }}
-                            InputLabelProps={{ sx: { color: '#666' } }}
+                            InputLabelProps={{ shrink: true, sx: { color: 'text.secondary' } }}
                             helperText="Enter positive for gain, negative for loss"
-                            FormHelperTextProps={{ sx: { color: '#666' } }}
+                            FormHelperTextProps={{ sx: { color: 'text.secondary' } }}
                         />
                     )}
                 </Box>
@@ -156,8 +163,12 @@ export default function SetAlertModal({ open, onClose, ticker, currentPrice, onA
                     onClick={handleSubmit}
                     disabled={loading || (mode === 'PRICE' && !targetPrice) || (mode === 'PERCENT' && !percent)}
                     sx={{
-                        bgcolor: '#fff', color: '#000', fontWeight: 700, py: 1.5, borderRadius: 2,
-                        '&:hover': { bgcolor: '#e0e0e0' }
+                        bgcolor: 'text.primary',
+                        color: 'background.default',
+                        fontWeight: 700,
+                        py: 1.5,
+                        borderRadius: 2,
+                        '&:hover': { bgcolor: 'text.secondary' }
                     }}
                 >
                     {loading ? 'Setting Alert...' : 'Create Alert'}

@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Card, CardContent, IconButton, Button, CircularProgress, Snackbar, Alert, Chip, LinearProgress } from '@mui/material';
 import { marketService } from '@/services/marketService';
 import { Trash2, ArrowUpRight, ArrowDownRight, Eye, Plus, ArrowLeft, CheckCircle, Tag, Edit2 } from 'lucide-react';
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
@@ -20,6 +22,8 @@ export default function WatchlistPage() {
     const [tickerToDelete, setTickerToDelete] = useState<string | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+    const theme = useTheme();
+    const { mode } = useColorMode();
 
     const fetchWatchlist = async () => {
         try {
@@ -106,31 +110,31 @@ export default function WatchlistPage() {
 
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', bgcolor: '#0B0B0B' }}>
-                <CircularProgress size={24} sx={{ color: '#00E5FF' }} />
+            <Box sx={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', bgcolor: 'background.default' }}>
+                <CircularProgress size={24} sx={{ color: 'primary.main' }} />
             </Box>
         );
     }
 
     return (
-        <Box sx={{ display: 'flex', bgcolor: '#0B0B0B', minHeight: '100vh' }}>
+        <Box sx={{ display: 'flex', bgcolor: 'background.default', minHeight: '100vh' }}>
             <Sidebar />
             <Box sx={{ flexGrow: 1, p: 4, pl: { xs: 4, md: '140px' }, maxWidth: 1600, mx: 'auto' }}>
                 <Button
                     startIcon={<ArrowLeft size={20} />}
                     onClick={() => router.back()}
-                    sx={{ color: '#666', mb: 2, pl: 0, '&:hover': { color: '#fff', bgcolor: 'transparent' } }}
+                    sx={{ color: 'text.secondary', mb: 2, pl: 0, '&:hover': { color: 'text.primary', bgcolor: 'transparent' } }}
                 >
                     Back
                 </Button>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
                     <Box>
-                        <Typography variant="h3" sx={{ color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Eye size={32} color="#00E5FF" />
+                        <Typography variant="h3" sx={{ color: 'text.primary', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Eye size={32} color={theme.palette.primary.main} />
                             Smart Buy List
                         </Typography>
-                        <Typography variant="body1" sx={{ color: '#666', mt: 1 }}>
+                        <Typography variant="body1" sx={{ color: 'text.secondary', mt: 1 }}>
                             Track your research, set entry targets, and monitor RSI levels.
                         </Typography>
                     </Box>
@@ -139,14 +143,14 @@ export default function WatchlistPage() {
                         startIcon={<Plus size={18} />}
                         onClick={() => setIsAddModalOpen(true)}
                         sx={{
-                            bgcolor: '#00E5FF',
+                            bgcolor: 'primary.main',
                             color: '#000',
                             fontWeight: 700,
                             py: 1.5,
                             px: 3,
                             borderRadius: 3,
                             textTransform: 'none',
-                            '&:hover': { bgcolor: '#00B2CC' }
+                            '&:hover': { bgcolor: 'primary.dark' }
                         }}
                     >
                         Add Stock
@@ -154,9 +158,9 @@ export default function WatchlistPage() {
                 </Box>
 
                 {watchlist.length === 0 ? (
-                    <Box sx={{ py: 10, textAlign: 'center', border: '1px dashed #333', borderRadius: 4 }}>
-                        <Typography sx={{ color: '#666', mb: 2 }}>Your watchlist is empty.</Typography>
-                        <Button variant="outlined" onClick={() => router.push('/market')} sx={{ color: '#00E5FF', borderColor: '#00E5FF' }}>
+                    <Box sx={{ py: 10, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: 4 }}>
+                        <Typography sx={{ color: 'text.secondary', mb: 2 }}>Your watchlist is empty.</Typography>
+                        <Button variant="outlined" onClick={() => router.push('/market')} sx={{ color: 'primary.main', borderColor: 'primary.main' }}>
                             Browse Market
                         </Button>
                     </Box>
@@ -178,14 +182,15 @@ export default function WatchlistPage() {
                                 <Grid size={{ xs: 12, md: 6, lg: 4 }} key={item.ticker}>
                                     <Card
                                         component={motion.div}
-                                        whileHover={{ y: -4, borderColor: isNearTarget ? '#10B981' : '#444' }}
+                                        whileHover={{ y: -4, borderColor: isNearTarget ? '#10B981' : theme.palette.primary.main }}
                                         onClick={() => router.push(`/market/${item.ticker}`)}
                                         sx={{
-                                            bgcolor: '#0A0A0A',
+                                            bgcolor: 'background.paper',
                                             border: '1px solid',
-                                            borderColor: isNearTarget ? 'rgba(16, 185, 129, 0.3)' : '#222',
+                                            borderColor: isNearTarget ? 'rgba(16, 185, 129, 0.3)' : 'divider',
                                             borderRadius: 4,
                                             cursor: 'pointer',
+                                            backgroundImage: 'none',
                                             position: 'relative',
                                             overflow: 'visible',
                                             height: '100%',
@@ -197,16 +202,16 @@ export default function WatchlistPage() {
                                             {/* Header */}
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                                 <Box>
-                                                    <Typography variant="h5" sx={{ color: '#fff', fontWeight: 700 }}>{item.ticker}</Typography>
+                                                    <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 700 }}>{item.ticker}</Typography>
                                                     <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                                                        <Chip label="NSE" size="small" sx={{ bgcolor: '#222', color: '#888', height: 20, fontSize: '0.65rem' }} />
+                                                        <Chip label="NSE" size="small" sx={{ bgcolor: 'action.hover', color: 'text.secondary', height: 20, fontSize: '0.65rem' }} />
                                                         {item.tags?.slice(0, 2).map((tag: string) => (
-                                                            <Chip key={tag} label={tag} size="small" sx={{ bgcolor: 'rgba(0, 229, 255, 0.1)', color: '#00E5FF', height: 20, fontSize: '0.65rem' }} />
+                                                            <Chip key={tag} label={tag} size="small" sx={{ bgcolor: 'rgba(0, 229, 255, 0.1)', color: 'primary.main', height: 20, fontSize: '0.65rem' }} />
                                                         ))}
                                                     </Box>
                                                 </Box>
                                                 <Box sx={{ textAlign: 'right' }}>
-                                                    <Typography variant="h5" sx={{ color: '#fff', fontWeight: 700 }}>{priceFormatted}</Typography>
+                                                    <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 700 }}>{priceFormatted}</Typography>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', color: change >= 0 ? '#10B981' : '#EF4444' }}>
                                                         {change >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                                                         <Typography variant="caption" sx={{ fontWeight: 700, ml: 0.5 }}>
@@ -218,10 +223,10 @@ export default function WatchlistPage() {
 
                                             {/* Target Price Progress */}
                                             {target > 0 && (
-                                                <Box sx={{ mb: 2.5, bgcolor: '#151515', p: 1.5, borderRadius: 2, border: '1px solid #222' }}>
+                                                <Box sx={{ mb: 2.5, bgcolor: 'action.hover', p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
                                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                                                        <Typography variant="caption" sx={{ color: '#888' }}>Current</Typography>
-                                                        <Typography variant="caption" sx={{ color: '#00E5FF' }}>Target: {target}</Typography>
+                                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>Current</Typography>
+                                                        <Typography variant="caption" sx={{ color: 'primary.main' }}>Target: {target}</Typography>
                                                     </Box>
                                                     <LinearProgress
                                                         variant="determinate"
@@ -229,11 +234,11 @@ export default function WatchlistPage() {
                                                         sx={{
                                                             height: 6,
                                                             borderRadius: 3,
-                                                            bgcolor: '#333',
-                                                            '& .MuiLinearProgress-bar': { bgcolor: isNearTarget ? '#10B981' : '#00E5FF' }
+                                                            bgcolor: 'rgba(0,0,0,0.1)',
+                                                            '& .MuiLinearProgress-bar': { bgcolor: isNearTarget ? '#10B981' : 'primary.main' }
                                                         }}
                                                     />
-                                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: isNearTarget ? '#10B981' : '#666', textAlign: 'right', fontWeight: isNearTarget ? 700 : 400 }}>
+                                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: isNearTarget ? '#10B981' : 'text.secondary', textAlign: 'right', fontWeight: isNearTarget ? 700 : 400 }}>
                                                         {currentPrice <= target ? "TARGET REACHED!" : `${((currentPrice - target)).toFixed(1)} pts to target`}
                                                     </Typography>
                                                 </Box>
@@ -242,19 +247,19 @@ export default function WatchlistPage() {
                                             {/* Notes Area */}
                                             {item.notes && (
                                                 <Box sx={{ mb: 3, flexGrow: 1 }}>
-                                                    <Typography variant="caption" sx={{ color: '#555', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', opacity: 0.7, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
                                                         THESIS
                                                     </Typography>
-                                                    <Typography variant="body2" sx={{ color: '#ccc', fontSize: '0.9rem', lineHeight: 1.4, bgcolor: '#111', p: 1.5, borderRadius: 2, border: '1px dashed #333' }}>
+                                                    <Typography variant="body2" sx={{ color: 'text.primary', fontSize: '0.9rem', lineHeight: 1.4, bgcolor: 'action.hover', p: 1.5, borderRadius: 2, border: '1px dashed', borderColor: 'divider' }}>
                                                         "{item.notes}"
                                                     </Typography>
                                                 </Box>
                                             )}
 
                                             {/* Footer: RSI & Actions */}
-                                            <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <Box>
-                                                    <Typography variant="caption" sx={{ color: '#666', display: 'block' }}>RSI (14D)</Typography>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>RSI (14D)</Typography>
                                                     <Typography variant="body2" sx={{ color: rsiInfo.color, fontWeight: 700 }}>
                                                         {Math.round(rsi)} <span style={{ fontSize: '0.7em', opacity: 0.8 }}>{rsiInfo.text}</span>
                                                     </Typography>
@@ -273,7 +278,7 @@ export default function WatchlistPage() {
                                                     <IconButton
                                                         onClick={(e) => handleRemove(item.ticker, e)}
                                                         size="small"
-                                                        sx={{ color: '#444', '&:hover': { color: '#EF4444', bgcolor: 'rgba(239, 68, 68, 0.1)' } }}
+                                                        sx={{ color: 'text.disabled', '&:hover': { color: '#EF4444', bgcolor: 'rgba(239, 68, 68, 0.1)' } }}
                                                     >
                                                         <Trash2 size={16} />
                                                     </IconButton>

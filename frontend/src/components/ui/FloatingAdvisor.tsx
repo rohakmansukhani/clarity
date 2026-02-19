@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import ClarityLogo from './ClarityLogo';
 import { useUIStore } from '@/lib/ui-store';
-import { Send, Bot, MessageSquare, X } from 'lucide-react';
+import { Box, useTheme } from '@mui/material';
+import { useColorMode } from '@/theme/ThemeContext';
+import { MessageSquare, Send, X, Shrink, Maximize2, RotateCcw } from 'lucide-react';
 import { marketService } from '@/services/marketService';
 import ReactMarkdown from 'react-markdown';
 
@@ -13,6 +15,8 @@ export default function FloatingAdvisor() {
     const router = useRouter();
     const pathname = usePathname();
     const { isQuickChatOpen, openQuickChat, closeQuickChat, initialQuery, addMessage, quickChatMessages, interactionCount, incrementInteraction, resetQuickChat, quickSessionId, setQuickSessionId } = useUIStore();
+    const theme = useTheme();
+    const { mode } = useColorMode();
 
     const [isGreetingVisible, setIsGreetingVisible] = useState(false);
     const [input, setInput] = useState('');
@@ -169,11 +173,16 @@ export default function FloatingAdvisor() {
                     >
                         {/* Messages Area (appears above input) */}
                         {quickChatMessages.length > 0 && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
+                            <Box
+                                component={motion.div}
+                                initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                style={{ maxHeight: chatHeight }}
-                                className="bg-[#111]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl overflow-y-auto flex flex-col gap-3 relative"
+                                style={{ maxHeight: 350 }}
+                                className={`backdrop-blur-xl border rounded-2xl p-4 shadow-2xl overflow-y-auto flex flex-col gap-3 relative`}
+                                sx={{
+                                    bgcolor: mode === 'dark' ? 'rgba(17, 17, 17, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                                    borderColor: theme.palette.divider
+                                }}
                             >
                                 {/* Resize Handle */}
                                 <div
@@ -186,8 +195,11 @@ export default function FloatingAdvisor() {
                                 <div className="mt-2"> {/* Spacer for handle */}
                                     {quickChatMessages.map((msg) => (
                                         <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-3`}>
-                                            <div className={`max-w-[85%] p-3 rounded-2xl text-[15px] leading-relaxed ${msg.role === 'user' ? 'bg-[#00E5FF] text-black font-medium' : 'bg-white/5 text-gray-200'}`}>
-                                                <div className="prose prose-invert prose-sm max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:pl-4 [&>ul]:list-disc [&>ul]:mb-2 [&>strong]:text-[#00E5FF] [&>strong]:font-bold [&>h2]:text-base [&>h2]:font-bold [&>h2]:text-white [&>h2]:mt-3 [&>h2]:mb-1">
+                                            <div
+                                                className={`max-w-[85%] p-3 rounded-2xl text-[15px] leading-relaxed ${msg.role === 'user' ? 'bg-[#00E5FF] text-black font-medium' : ''}`}
+                                                style={msg.role === 'assistant' ? { backgroundColor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', color: theme.palette.text.primary } : {}}
+                                            >
+                                                <div className={`prose prose-sm max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:pl-4 [&>ul]:list-disc [&>ul]:mb-2 [&>strong]:text-[#00E5FF] [&>strong]:font-bold [&>h2]:text-base [&>h2]:font-bold ${mode === 'dark' ? 'prose-invert' : ''} [&>h2]:mt-3 [&>h2]:mb-1`}>
                                                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                                                 </div>
                                             </div>
@@ -200,23 +212,45 @@ export default function FloatingAdvisor() {
                                         </div>
                                     )}
                                 </div>
-                            </motion.div>
+                            </Box>
                         )}
 
                         {/* The Input Bar */}
-                        <div className="bg-[#111]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-2 pl-4 flex items-center gap-4 shadow-2xl relative">
+                        <Box sx={{
+                            bgcolor: mode === 'dark' ? 'rgba(17, 17, 17, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                            borderColor: theme.palette.divider,
+                            borderWidth: 1,
+                            borderRadius: '16px',
+                            p: 2,
+                            pl: 4,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                            position: 'relative',
+                            backdropFilter: 'blur(20px)'
+                        }}>
                             <ClarityLogo size={28} />
 
                             <input
                                 autoFocus
-                                className="flex-1 bg-transparent text-white text-lg outline-none placeholder-gray-500 font-medium"
+                                className="flex-1 bg-transparent text-lg outline-none font-medium"
+                                style={{ color: theme.palette.text.primary, caretColor: '#00E5FF' }}
                                 placeholder="What can I help you with today?"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                             />
 
-                            <div className="flex items-center gap-2 bg-[#1A1A1A] p-1 rounded-xl border border-white/5">
+                            <Box sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2,
+                                bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+                                p: 1,
+                                borderRadius: '12px',
+                                border: `1px solid ${theme.palette.divider}`
+                            }}>
                                 <button
                                     onClick={closeQuickChat}
                                     className="p-2 hover:bg-white/10 rounded-lg text-gray-500 transition-colors"
@@ -230,8 +264,8 @@ export default function FloatingAdvisor() {
                                 >
                                     <Send size={18} />
                                 </button>
-                            </div>
-                        </div>
+                            </Box>
+                        </Box>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -240,15 +274,37 @@ export default function FloatingAdvisor() {
             <AnimatePresence>
                 {!isQuickChatOpen && isGreetingVisible && (
                     <div className="fixed bottom-6 right-24 z-[9999]">
-                        <motion.div
+                        <Box
                             initial={{ opacity: 0, y: 20, scale: 0.9 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-                            className="bg-[#1A1A1A] border border-white/10 text-white px-4 py-2 rounded-xl shadow-2xl text-sm font-medium relative"
+                            component={motion.div}
+                            sx={{
+                                bgcolor: theme.palette.background.paper,
+                                border: `1px solid ${theme.palette.divider}`,
+                                color: theme.palette.text.primary,
+                                px: 2,
+                                py: 1,
+                                borderRadius: 3,
+                                boxShadow: theme.shadows[10],
+                                fontSize: '0.875rem',
+                                fontWeight: 500,
+                                position: 'relative'
+                            }}
                         >
                             Hi, Clarity Advisor here! 👋
-                            <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-3 h-3 bg-[#1A1A1A] border-r border-t border-white/10 transform rotate-45" />
-                        </motion.div>
+                            <Box sx={{
+                                position: 'absolute',
+                                right: -4,
+                                top: '50%',
+                                transform: 'translateY(-50%) rotate(45deg)',
+                                width: 8,
+                                height: 8,
+                                bgcolor: theme.palette.background.paper,
+                                borderRight: `1px solid ${theme.palette.divider}`,
+                                borderTop: `1px solid ${theme.palette.divider}`
+                            }} />
+                        </Box>
                     </div>
                 )}
             </AnimatePresence >
@@ -264,7 +320,11 @@ export default function FloatingAdvisor() {
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => openQuickChat()}
-                            className="fixed bottom-6 right-6 z-50 bg-[#1A1A1A] border border-white/10 p-3 rounded-full shadow-2xl hover:border-[#00E5FF] transition-colors group hidden md:flex"
+                            className="fixed bottom-6 right-6 z-50 p-3 rounded-full shadow-2xl hover:border-[#00E5FF] transition-colors group hidden md:flex"
+                            style={{
+                                backgroundColor: theme.palette.background.paper,
+                                border: `1px solid ${theme.palette.divider}`
+                            }}
                         >
                             <div className="absolute inset-0 rounded-full bg-[#00E5FF] opacity-0 group-hover:opacity-10 transition-opacity" />
                             <ClarityLogo size={32} />
