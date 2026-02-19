@@ -318,9 +318,12 @@ export default function StockPage() {
                                 value={
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Typography sx={{ fontWeight: 600, color: '#fff' }}>
-                                            {technicalData?.rsi !== undefined && technicalData?.rsi !== null
-                                                ? Number(technicalData.rsi).toFixed(2)
-                                                : '-'}
+                                            {(() => {
+                                                const val = technicalData?.rsi;
+                                                if (val === undefined || val === null) return '-';
+                                                const num = Number(val);
+                                                return isNaN(num) ? '-' : num.toFixed(2);
+                                            })()}
                                         </Typography>
                                         <Tooltip
                                             title={

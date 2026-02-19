@@ -173,7 +173,7 @@ export const marketService = {
 
     getTechnicalSummary: async (ticker: string) => {
         try {
-            const response = await api.get(`/watchlists/analysis/${ticker}`);
+            const response = await api.get(`/market/analysis/${ticker}`);
             return response.data;
         } catch (e) {
             return {};
