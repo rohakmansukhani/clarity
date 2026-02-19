@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import {
     TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
-    Search, Activity, Flame
+    Search, Activity, Compass
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -266,38 +266,30 @@ export default function DashboardPage() {
                                                 display: 'grid', gridTemplateColumns: '1fr 100px 120px',
                                                 px: 3, py: 2, cursor: 'pointer',
                                                 borderBottom: '1px solid #0f0f0f',
-                                                transition: 'background 0.15s',
-                                                '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' }
+                                                borderLeft: '2px solid transparent',
+                                                transition: 'all 0.15s',
+                                                '&:hover': {
+                                                    borderLeftColor: '#00E5FF',
+                                                    bgcolor: 'rgba(0,229,255,0.02)'
+                                                }
                                             }}
                                         >
                                             {/* Symbol */}
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                <Box sx={{
-                                                    width: 34, height: 34, borderRadius: 1.5,
-                                                    bgcolor: stock.isUp ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontWeight: 800, fontSize: '0.7rem',
-                                                    color: stock.isUp ? '#10B981' : '#EF4444'
-                                                }}>
-                                                    {stock.symbol.slice(0, 2)}
-                                                </Box>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                 <Box>
-                                                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#fff' }}>{stock.symbol}</Typography>
-                                                    <Typography variant="caption" sx={{ color: '#444' }}>NSE</Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#fff', letterSpacing: '0.01em' }}>{stock.symbol}</Typography>
+                                                    <Typography variant="caption" sx={{ color: '#333', fontSize: '0.65rem' }}>NSE</Typography>
                                                 </Box>
                                             </Box>
 
                                             {/* Price */}
-                                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#ccc', textAlign: 'right', alignSelf: 'center' }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 500, color: '#888', textAlign: 'right', alignSelf: 'center', fontVariantNumeric: 'tabular-nums' }}>
                                                 ₹{stock.price}
                                             </Typography>
 
                                             {/* Change */}
                                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-                                                {stock.isUp
-                                                    ? <ArrowUpRight size={14} color="#10B981" />
-                                                    : <ArrowDownRight size={14} color="#EF4444" />}
-                                                <Typography variant="body2" sx={{ fontWeight: 700, color: stock.isUp ? '#10B981' : '#EF4444' }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 700, color: stock.isUp ? '#10B981' : '#EF4444', fontVariantNumeric: 'tabular-nums' }}>
                                                     {stock.change}
                                                 </Typography>
                                             </Box>
@@ -319,65 +311,76 @@ export default function DashboardPage() {
                     </Paper>
                 </Grid>
 
-                {/* Right: Trending Stocks */}
+                {/* Right: Explore panel */}
                 <Grid size={{ xs: 12, md: 4 }}>
                     <Paper elevation={0} sx={{ bgcolor: '#0A0A0A', border: '1px solid #1e1e1e', borderRadius: 4, overflow: 'hidden' }}>
-                        <Box sx={{ p: 3, borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <Flame size={18} color="#F59E0B" />
-                                <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff', fontSize: '1rem' }}>
-                                    Trending
+                        {/* Header */}
+                        <Box sx={{ px: 3, pt: 3, pb: 2.5, borderBottom: '1px solid #0f0f0f' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+                                <Compass size={16} color="#00E5FF" strokeWidth={1.5} />
+                                <Typography sx={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', letterSpacing: '-0.01em' }}>
+                                    Explore
                                 </Typography>
                             </Box>
-                            <Typography variant="caption" sx={{ color: '#333', fontSize: '0.65rem', fontWeight: 600 }}>NSE LARGE CAP</Typography>
+                            <Typography variant="caption" sx={{ color: '#333', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.1em' }}>
+                                NSE LARGE CAP · CLICK TO ANALYSE
+                            </Typography>
                         </Box>
 
-                        {[
-                            { symbol: 'RELIANCE', name: 'Reliance Industries' },
-                            { symbol: 'TCS', name: 'Tata Consultancy' },
-                            { symbol: 'HDFCBANK', name: 'HDFC Bank' },
-                            { symbol: 'INFY', name: 'Infosys' },
-                            { symbol: 'ICICIBANK', name: 'ICICI Bank' },
-                            { symbol: 'BAJFINANCE', name: 'Bajaj Finance' },
-                            { symbol: 'SBIN', name: 'State Bank of India' },
-                            { symbol: 'TATAMOTORS', name: 'Tata Motors' },
-                        ].map((stock, i) => (
-                            <Box
-                                key={stock.symbol}
-                                onClick={() => router.push(`/market/${stock.symbol}`)}
-                                sx={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    px: 3, py: 1.8, cursor: 'pointer',
-                                    borderBottom: '1px solid #0f0f0f',
-                                    transition: 'background 0.15s',
-                                    '&:hover': { bgcolor: 'rgba(245,158,11,0.03)' }
-                                }}
-                            >
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                    <Box sx={{
-                                        width: 30, height: 30, borderRadius: 1.5,
-                                        bgcolor: 'rgba(245,158,11,0.08)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '0.65rem', fontWeight: 800, color: '#F59E0B'
-                                    }}>
-                                        {stock.symbol.slice(0, 2)}
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#ddd', fontSize: '0.85rem' }}>{stock.symbol}</Typography>
-                                        <Typography variant="caption" sx={{ color: '#444', fontSize: '0.65rem' }}>{stock.name}</Typography>
-                                    </Box>
+                        {/* 2-column chip grid */}
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', p: 2, gap: 1 }}>
+                            {[
+                                { symbol: 'RELIANCE', name: 'Reliance Ind.' },
+                                { symbol: 'TCS', name: 'Tata Consult.' },
+                                { symbol: 'HDFCBANK', name: 'HDFC Bank' },
+                                { symbol: 'INFY', name: 'Infosys' },
+                                { symbol: 'ICICIBANK', name: 'ICICI Bank' },
+                                { symbol: 'BAJFINANCE', name: 'Bajaj Finance' },
+                                { symbol: 'SBIN', name: 'State Bank' },
+                                { symbol: 'TATAMOTORS', name: 'Tata Motors' },
+                                { symbol: 'HDFC', name: 'HDFC Ltd.' },
+                                { symbol: 'WIPRO', name: 'Wipro' },
+                                { symbol: 'ADANIENT', name: 'Adani Ent.' },
+                                { symbol: 'MARUTI', name: 'Maruti Suzuki' },
+                            ].map((stock) => (
+                                <Box
+                                    key={stock.symbol}
+                                    onClick={() => router.push(`/market/${stock.symbol}`)}
+                                    sx={{
+                                        px: 1.5, py: 1.2,
+                                        borderRadius: 2,
+                                        border: '1px solid #161616',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s',
+                                        '&:hover': {
+                                            borderColor: 'rgba(0,229,255,0.2)',
+                                            bgcolor: 'rgba(0,229,255,0.03)',
+                                            '& .sym': { color: '#00E5FF' }
+                                        }
+                                    }}
+                                >
+                                    <Typography className="sym" sx={{ fontWeight: 700, color: '#bbb', fontSize: '0.78rem', letterSpacing: '0.01em', transition: 'color 0.15s' }}>
+                                        {stock.symbol}
+                                    </Typography>
+                                    <Typography sx={{ color: '#2e2e2e', fontSize: '0.62rem', mt: 0.2, lineHeight: 1 }}>
+                                        {stock.name}
+                                    </Typography>
                                 </Box>
-                                <ArrowUpRight size={14} color="#333" />
-                            </Box>
-                        ))}
+                            ))}
+                        </Box>
 
-                        <Box sx={{ p: 2, textAlign: 'center', borderTop: '1px solid #111' }}>
+                        <Box sx={{ px: 3, pb: 2.5, pt: 0.5 }}>
                             <Button
+                                fullWidth
                                 size="small"
                                 onClick={() => router.push('/market')}
-                                sx={{ color: '#444', fontSize: '0.75rem', textTransform: 'none', '&:hover': { color: '#F59E0B' } }}
+                                sx={{
+                                    color: '#2e2e2e', fontSize: '0.72rem', textTransform: 'none',
+                                    border: '1px solid #161616', borderRadius: 2, py: 1,
+                                    '&:hover': { color: '#00E5FF', borderColor: 'rgba(0,229,255,0.2)', bgcolor: 'rgba(0,229,255,0.03)' }
+                                }}
                             >
-                                Explore all stocks →
+                                Browse all stocks
                             </Button>
                         </Box>
                     </Paper>
