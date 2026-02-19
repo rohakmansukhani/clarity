@@ -1,3 +1,5 @@
+'use client';
+
 import Sidebar from '@/components/layout/Sidebar';
 import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
 import DisclaimerModal from '@/components/layout/DisclaimerModal';
