@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str | None = None
     REDIS_URL: str
     DATABASE_URL: str | None = None # Kept for reference or explicit DB access if needed
+
+    # Email Settings
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
     
     class Config:
         case_sensitive = True

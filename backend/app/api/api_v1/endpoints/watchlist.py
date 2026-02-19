@@ -1,40 +1,42 @@
-from fastapi import APIRouter, HTTPException, Depends, Request
-from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
-from app.api.deps import get_current_user, get_user_supabase
+from fastapi import APIRouter, Depends, HTTPException, Request
 from supabase import Client
-import logging
+from app.api.deps import get_user_supabase
+from app.api.deps import get_current_user
 from app.core.rate_limit import limiter
-
-logger = logging.getLogger(__name__)
+from pydantic import BaseModel
+from typing import Optional, List
+from app.services.market_service import MarketService, get_market_service
 
 router = APIRouter()
 
-# --- Models ---
 class WatchlistCreate(BaseModel):
     ticker: str
     exchange: str = "NSE"
-    target_buy_price: Optional[float] = None
-    target_sell_price: Optional[float] = None
     notes: Optional[str] = None
+    target_price: Optional[float] = None
+    tags: Optional[List[str]] = []
+    rsi_alert: Optional[bool] = False
 
-# --- Endpoints ---
-@router.get("", response_model=List[Dict[str, Any]])
+class WatchlistUpdate(BaseModel):
+    notes: Optional[str] = None
+    target_price: Optional[float] = None
+    tags: Optional[List[str]] = None
+    rsi_alert: Optional[bool] = None
+
+@router.get("", response_model=None)
 @limiter.limit("30/minute")
 def get_watchlist(
     request: Request,
     user = Depends(get_current_user),
     supabase: Client = Depends(get_user_supabase)
 ):
-    """Get user's watchlist."""
     try:
-        res = supabase.table("watchlists").select("*").eq("user_id", user.id).order("created_at", desc=True).execute()
+        res = supabase.table("watchlists").select("*").execute()
         return res.data
     except Exception as e:
-        logger.error(f"Error fetching watchlist: {e}")
-        return []
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("")
+@router.post("", response_model=None)
 @limiter.limit("20/minute")
 def add_to_watchlist(
     request: Request,
@@ -42,50 +44,68 @@ def add_to_watchlist(
     user = Depends(get_current_user),
     supabase: Client = Depends(get_user_supabase)
 ):
-    """Add a stock to watchlist."""
     try:
-        # Check if already exists
-        existing = supabase.table("watchlists").select("*").eq("user_id", user.id).eq("ticker", item.ticker).execute()
+        # Check if exists
+        existing = supabase.table("watchlists").select("*").eq("ticker", item.ticker).execute()
         if existing.data:
-            # Optional: Update existing if needed? For now just return existing.
-            # actually, if they are adding again, maybe they want to update targets?
-            # Let's update if exists.
-            update_data = {}
-            if item.target_buy_price is not None: update_data['target_buy_price'] = item.target_buy_price
-            if item.target_sell_price is not None: update_data['target_sell_price'] = item.target_sell_price
-            if item.notes is not None: update_data['notes'] = item.notes
-            
-            if update_data:
-                res = supabase.table("watchlists").update(update_data).eq("id", existing.data[0]['id']).execute()
-                return res.data[0]
             return existing.data[0]
-
-        new_item = {
+            
+        data = {
             "user_id": user.id,
             "ticker": item.ticker,
             "exchange": item.exchange,
-            "target_buy_price": item.target_buy_price,
-            "target_sell_price": item.target_sell_price,
-            "notes": item.notes
+            "notes": item.notes,
+            "target_price": item.target_price,
+            "tags": item.tags,
+            "rsi_alert": item.rsi_alert
         }
-        res = supabase.table("watchlists").insert(new_item).execute()
+        res = supabase.table("watchlists").insert(data).execute()
         return res.data[0]
     except Exception as e:
-        logger.error(f"Error adding to watchlist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/{ticker}")
+@limiter.limit("20/minute")
+def update_watchlist_item(
+    request: Request,
+    ticker: str,
+    update: WatchlistUpdate,
+    user = Depends(get_current_user),
+    supabase: Client = Depends(get_user_supabase)
+):
+    try:
+        data = {k: v for k, v in update.dict().items() if v is not None}
+        if not data:
+            return {"message": "No changes"}
+            
+        res = supabase.table("watchlists").update(data).eq("ticker", ticker).execute()
+        if not res.data:
+             raise HTTPException(status_code=404, detail="Item not found")
+        return res.data[0]
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/{ticker}")
 @limiter.limit("20/minute")
 def remove_from_watchlist(
-    ticker: str,
     request: Request,
+    ticker: str,
     user = Depends(get_current_user),
     supabase: Client = Depends(get_user_supabase)
 ):
-    """Remove a stock from watchlist."""
     try:
-        res = supabase.table("watchlists").delete().eq("user_id", user.id).eq("ticker", ticker).execute()
+        res = supabase.table("watchlists").delete().eq("ticker", ticker).execute()
         return {"message": "Removed"}
     except Exception as e:
-        logger.error(f"Error removing from watchlist: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/analysis/{ticker}")
+@limiter.limit("20/minute")
+async def get_watchlist_analysis(
+    request: Request,
+    ticker: str,
+    user = Depends(get_current_user),
+    market_service: MarketService = Depends(get_market_service)
+):
+    """Get technical summary (RSI, Trend) for a watchlist item"""
+    return await market_service.get_technical_summary(ticker)

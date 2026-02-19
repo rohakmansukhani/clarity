@@ -49,6 +49,20 @@ async def get_top_movers(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/analysis/{symbol}")
+@limiter.limit("30/minute")
+async def get_technical_analysis(request: Request, symbol: str):
+    """
+    Get technical analysis (RSI, MA, etc.) for a stock.
+    Public endpoint.
+    """
+    try:
+        return await market_service.get_technical_summary(symbol)
+    except Exception as e:
+        # Return empty dict on error to not break frontend
+        logger.error(f"Technical analysis failed for {symbol}: {e}")
+        return {}
+
 # --- Backtest ---
 from pydantic import BaseModel
 

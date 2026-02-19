@@ -9,20 +9,25 @@ import { TrendingUp, Flame } from 'lucide-react';
 import StockSearchInput from '@/components/market/StockSearchInput';
 import { marketService } from '@/services/marketService';
 
-const TRENDING_STOCKS = [
-    { symbol: 'RELIANCE', label: 'Reliance' },
-    { symbol: 'TCS', label: 'TCS' },
-    { symbol: 'HDFCBANK', label: 'HDFC Bank' },
-    { symbol: 'INFY', label: 'Infosys' },
-    { symbol: 'BAJFINANCE', label: 'Bajaj Finance' },
-    { symbol: 'TATAMOTORS', label: 'Tata Motors' },
-    { symbol: 'WIPRO', label: 'Wipro' },
-    { symbol: 'ADANIENT', label: 'Adani Ent.' },
-];
-
 export default function MarketHome() {
     const router = useRouter();
     const [query, setQuery] = useState('');
+    const [movers, setMovers] = useState<any[]>([]);
+    const [loadingMovers, setLoadingMovers] = useState(true);
+
+    React.useEffect(() => {
+        const fetchMovers = async () => {
+            try {
+                const data = await marketService.getTopMovers();
+                setMovers(data || []);
+            } catch (e) {
+                console.error("Failed to fetch top movers", e);
+            } finally {
+                setLoadingMovers(false);
+            }
+        };
+        fetchMovers();
+    }, []);
 
     return (
         <Box
@@ -95,30 +100,36 @@ export default function MarketHome() {
                                 TRENDING TODAY
                             </Typography>
                         </Box>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-                            {TRENDING_STOCKS.map((stock, i) => (
-                                <motion.div
-                                    key={stock.symbol}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    <Chip
-                                        label={stock.label}
-                                        onClick={() => router.push(`/market/${stock.symbol}`)}
-                                        sx={{
-                                            bgcolor: '#111',
-                                            color: '#888',
-                                            border: '1px solid #333',
-                                            fontWeight: 500,
-                                            '&:hover': {
-                                                bgcolor: '#222',
-                                                color: '#fff',
-                                                borderColor: '#444'
-                                            }
-                                        }}
-                                    />
-                                </motion.div>
-                            ))}
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', minHeight: '32px' }}>
+                            {loadingMovers ? (
+                                <Typography variant="caption" sx={{ color: '#333' }}>Loading...</Typography>
+                            ) : movers.length > 0 ? (
+                                movers.map((stock, i) => (
+                                    <motion.div
+                                        key={stock.symbol}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <Chip
+                                            label={`${stock.symbol} ${stock.change}`}
+                                            onClick={() => router.push(`/market/${stock.symbol}`)}
+                                            sx={{
+                                                bgcolor: '#111',
+                                                color: stock.isUp ? '#10B981' : '#EF4444',
+                                                border: '1px solid #333',
+                                                fontWeight: 600,
+                                                fontSize: '0.75rem',
+                                                '&:hover': {
+                                                    bgcolor: '#222',
+                                                    borderColor: stock.isUp ? '#10B98188' : '#EF444488'
+                                                }
+                                            }}
+                                        />
+                                    </motion.div>
+                                ))
+                            ) : (
+                                <Typography variant="caption" sx={{ color: '#333' }}>No data available</Typography>
+                            )}
                         </Box>
                     </Box>
                 </motion.div>

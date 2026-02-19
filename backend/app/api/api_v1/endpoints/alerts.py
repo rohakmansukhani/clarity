@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from typing import List, Optional
 from app.api.deps import get_current_user, get_user_supabase
+from app.services.email_service import EmailService
+from app.services.market_service import MarketService, get_market_service
 from supabase import Client
 import logging
 
@@ -87,3 +89,83 @@ def delete_alert(
     except Exception as e:
         logger.error(f"Error deleting alert: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/check")
+async def check_and_trigger_alerts(
+    current_user = Depends(get_current_user),
+    supabase: Client = Depends(get_user_supabase),
+    market_service: MarketService = Depends(get_market_service)
+):
+    """
+    Evaluate all active alerts for the current user against live prices.
+    Sends an email and deactivates the alert when a condition is triggered.
+    """
+    user_id = current_user.id
+    # Get user email from Supabase auth
+    user_email = current_user.email
+
+    if not user_email:
+        raise HTTPException(status_code=400, detail="User email not found")
+
+    # Fetch all active alerts for this user
+    res = supabase.table("alerts").select("*").eq("user_id", user_id).eq("is_active", True).execute()
+    active_alerts = res.data or []
+
+    triggered = []
+
+    for alert in active_alerts:
+        ticker = alert["ticker"]
+        condition = alert["condition"]
+        target_price = alert.get("target_price")
+        target_pct = alert.get("target_percent_change")
+        initial_price = alert.get("initial_price")
+
+        try:
+            # Fetch current price
+            details = await market_service.get_stock_details(ticker)
+            current_price = details.get("market_data", {}).get("current_price") if details else None
+            if current_price is None:
+                continue
+
+            fired = False
+            trigger_desc = ""
+
+            if condition == "ABOVE" and target_price and current_price >= target_price:
+                fired = True
+                trigger_desc = f"{ticker} has crossed ABOVE ₹{target_price:.2f} (current: ₹{current_price:.2f})"
+            elif condition == "BELOW" and target_price and current_price <= target_price:
+                fired = True
+                trigger_desc = f"{ticker} has dropped BELOW ₹{target_price:.2f} (current: ₹{current_price:.2f})"
+            elif condition == "GAIN_PCT" and target_pct and initial_price:
+                pct_gain = ((current_price - initial_price) / initial_price) * 100
+                if pct_gain >= target_pct:
+                    fired = True
+                    trigger_desc = f"{ticker} gained +{pct_gain:.1f}% (target: +{target_pct}%)"
+            elif condition == "LOSS_PCT" and target_pct and initial_price:
+                pct_loss = ((initial_price - current_price) / initial_price) * 100
+                if pct_loss >= target_pct:
+                    fired = True
+                    trigger_desc = f"{ticker} dropped -{pct_loss:.1f}% (target: -{target_pct}%)"
+
+            if fired:
+                # Send email notification
+                subject = f"🔔 Clarity Alert: {ticker} triggered"
+                body = f"""
+                <h2 style="color:#00E5FF">Clarity Price Alert Triggered</h2>
+                <p><strong>{trigger_desc}</strong></p>
+                <p>Your alert for <strong>{ticker}</strong> has been triggered. Log in to Clarity to take action.</p>
+                <hr/>
+                <p style="color:#888;font-size:12px">This is an automated alert from Clarity. You can manage your alerts in the Portfolio section.</p>
+                """
+                await EmailService.send_email(user_email, subject, body, html=True)
+
+                # Mark alert as triggered (deactivate)
+                supabase.table("alerts").update({"is_active": False, "email_sent": True}).eq("id", alert["id"]).execute()
+                triggered.append({"ticker": ticker, "condition": condition, "trigger_desc": trigger_desc})
+
+        except Exception as e:
+            logger.error(f"Error checking alert for {ticker}: {e}")
+            continue
+
+    return {"checked": len(active_alerts), "triggered": len(triggered), "details": triggered}

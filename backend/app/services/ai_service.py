@@ -2,6 +2,7 @@ from app.core.groq_client import get_groq_client
 from app.core.cache import cache
 import logging
 import json
+import re
 
 # Import extracted configurations
 from app.services.ai.prompts import (
@@ -269,7 +270,6 @@ class AIService:
                 
                 # 2. Key-based extraction if body access failed
                 if not raw_gen:
-                    import re
                     # Improved regex to handle escaped quotes: 'failed_generation': '...content...'
                     # Matches content until a non-escaped quote
                     match = re.search(r"'failed_generation':\s*'((?:[^'\\]|\\.)*)'", error_str)

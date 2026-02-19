@@ -201,22 +201,54 @@ async def get_portfolio_performance(
                 # Get Day Change Info
                 change = m_data.get('change', 0.0)
                 change_pct = m_data.get('changePercent', 0.0)
+                prev_close = float(m_data.get('previousClose', 0.0))
             except Exception as e:
                 logger.error(f"Failed to fetch price for {symbol}: {e}")
                 curr_price = 0.0 # Fallback
                 change = 0.0
                 change_pct = 0.0
+                prev_close = 0.0
             
             shares = float(h.get('shares', 0))
             avg_price = float(h.get('avg_price', 0))
             
+            # Day Change Logic (Broker Style)
+            # 1. If holding was created TODAY (purchase_date or created_at), Day Change = (Current - AvgPrice) * Shares
+            # 2. Else, Day Change = (Current - PrevClose) * Shares
+            
+            from datetime import datetime, date
+            purchase_date_str = h.get('created_at', '')
+            is_today = False
+            if purchase_date_str:
+                try:
+                    # Supabase returns ISO string like '2023-10-27T10:00:00+00:00' or similar
+                    # Only check if YYYY-MM-DD matches today
+                    p_date = datetime.fromisoformat(purchase_date_str.replace('Z', '+00:00')).date()
+                    if p_date == date.today():
+                        is_today = True
+                except:
+                    pass
+
+            if is_today:
+                # Bought today: Day change is P&L since purchase
+                day_change = (curr_price - avg_price) * shares
+                # Percent change relevant to purchase price
+                day_change_pct = ((curr_price - avg_price) / avg_price * 100) if avg_price > 0 else 0.0
+            else:
+                # Held previously: Day change is value change since yesterday's close
+                if prev_close > 0:
+                     day_change = (curr_price - prev_close) * shares
+                     # Percent change relevant to previous close
+                     day_change_pct = ((curr_price - prev_close) / prev_close * 100)
+                else:
+                     # Fallback if no prev_close
+                     day_change = change * shares
+                     day_change_pct = change_pct
+
             curr_val = shares * curr_price
             invested_val = shares * avg_price
             gain = curr_val - invested_val
             gain_pct = (gain / invested_val * 100) if invested_val > 0 else 0.0
-            
-            # Day Change Value = Change per share * Shares
-            day_change = change * shares
             
             return {
                 "ticker": symbol,
@@ -307,6 +339,24 @@ def create_portfolio(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.put("/{portfolio_id}")
+@limiter.limit("10/minute")
+def update_portfolio(
+    request: Request,
+    portfolio_id: str,
+    update: PortfolioCreate, # Re-using create schema for name update
+    user = Depends(get_current_user),
+    supabase: Client = Depends(get_user_supabase)
+):
+    """Update portfolio details (Name)"""
+    try:
+        res = supabase.table("portfolios").update({"name": update.name}).eq("id", portfolio_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Portfolio not found or not authorized")
+        return res.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.delete("/{portfolio_id}")
 @limiter.limit("10/minute")
 def delete_portfolio(
@@ -378,59 +428,3 @@ def update_holding(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# --- Watchlists ---
-
-class WatchlistCreate(BaseModel):
-    ticker: str
-    exchange: str = "NSE"
-
-@router.get("/watchlists")
-@limiter.limit("30/minute")
-def get_watchlist(
-    request: Request,
-    user = Depends(get_current_user),
-    supabase: Client = Depends(get_user_supabase)
-):
-    try:
-        res = supabase.table("watchlists").select("*").execute()
-        return res.data
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/watchlists")
-@limiter.limit("20/minute")
-def add_to_watchlist(
-    request: Request,
-    item: WatchlistCreate,
-    user = Depends(get_current_user),
-    supabase: Client = Depends(get_user_supabase)
-):
-    try:
-        # Check if exists
-        existing = supabase.table("watchlists").select("*").eq("ticker", item.ticker).execute()
-        if existing.data:
-            return existing.data[0]
-            
-        data = {
-            "user_id": user.id,
-            "ticker": item.ticker,
-            "exchange": item.exchange
-        }
-        res = supabase.table("watchlists").insert(data).execute()
-        return res.data[0]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.delete("/watchlists/{ticker}")
-@limiter.limit("20/minute")
-def remove_from_watchlist(
-    request: Request,
-    ticker: str,
-    user = Depends(get_current_user),
-    supabase: Client = Depends(get_user_supabase)
-):
-    try:
-        res = supabase.table("watchlists").delete().eq("ticker", ticker).execute()
-        return {"message": "Removed"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))

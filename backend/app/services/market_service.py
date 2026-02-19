@@ -115,6 +115,7 @@ class MarketService:
                 "change": change,
                 "pChange": p_change,
                 "changePercent": p_change, # Fix for frontend (0%) issue
+                "previousClose": rich_details.get('previousClose') or rich_details.get('regularMarketPreviousClose') or 0.0,
                 "open": rich_details.get('Open') or rich_details.get('regularMarketOpen'),
                 "high": rich_details.get('dayHigh') or rich_details.get('dayLow') or rich_details.get('regularMarketDayHigh'), # NSE uses dayHigh
                 "low": rich_details.get('dayLow') or rich_details.get('regularMarketDayLow'),
@@ -418,12 +419,12 @@ class MarketService:
                 # Sort by change_pct
                 movers.sort(key=lambda x: x['change_val'], reverse=True)
                 
-                # Top 3 Gainers
-                top_gainers = movers[:3]
+                # Top 5 Gainers
+                top_gainers = movers[:5]
                 
-                # Top 2 Losers (from end)
-                top_losers = movers[-2:]
-                top_losers.reverse() # Show worst first? Or just list them.
+                # Top 5 Losers (from end)
+                top_losers = movers[-5:]
+                top_losers.reverse() 
                 
                 # Combine
                 # Ensure we only return if we have data
@@ -640,3 +641,32 @@ class MarketService:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _fetch)
 
+
+    @cache(expire=300, key_prefix="tech_summary")
+    async def get_technical_summary(self, symbol: str) -> Dict[str, Any]:
+        """
+        Lightweight technical summary (RSI, Trend) for Watchlist/Market Page.
+        """
+        try:
+            # Fetch minimal history (e.g. 3mo is enough for RSI)
+            history = await self.get_history(symbol, period="3mo") 
+            if not history:
+                return {}
+                
+            analysis = self.technical_analyzer.analyze(history)
+            if "error" in analysis:
+                return {}
+                
+            return {
+                "rsi": analysis.get("rsi"),
+                "signal": analysis.get("signal"),
+                "current_price": analysis.get("current_price"),
+                "ma50": analysis.get("moving_averages", {}).get("ma50_signal")
+            }
+        except Exception as e:
+            logger.error(f"Error getting technical summary for {symbol}: {e}")
+            return {}
+
+
+def get_market_service():
+    return MarketService()
