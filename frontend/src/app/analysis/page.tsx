@@ -175,9 +175,9 @@ export default function AnalysisPage() {
                 </Box>
 
                 {/* Header */}
-                <AnimatePresence>
-                    {!isComparing && (
-                        <Box sx={{ textAlign: 'center', mb: 10, mt: 4 }}>
+                <AnimatePresence mode="wait">
+                    {!isComparing ? (
+                        <Box key="hero" sx={{ textAlign: 'center', mb: 10, mt: 4 }}>
                             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }}>
                                 <Typography variant="overline" sx={{ color: '#00E5FF', fontWeight: 700, letterSpacing: '0.2em', mb: 1, display: 'block', textShadow: '0 0 40px rgba(0, 229, 255, 0.5)' }}>
                                     MARKET INTELLIGENCE
@@ -187,6 +187,17 @@ export default function AnalysisPage() {
                                 </Typography>
                                 <Typography variant="body1" sx={{ color: '#888', maxWidth: 600, mx: 'auto', fontSize: '1.1rem' }}>
                                     Institutional-grade comparison. Add up to 5 assets to visualize relative performance and fundamental strength.
+                                </Typography>
+                            </motion.div>
+                        </Box>
+                    ) : (
+                        <Box key="compact" sx={{ mb: 4, mt: 2 }}>
+                            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+                                <Typography variant="overline" sx={{ color: '#00E5FF', fontWeight: 700, letterSpacing: '0.15em', display: 'block', mb: 0.5 }}>
+                                    COMPARISON RESULTS
+                                </Typography>
+                                <Typography variant="h4" sx={{ fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
+                                    {selectedStocks.join(' vs ')}
                                 </Typography>
                             </motion.div>
                         </Box>

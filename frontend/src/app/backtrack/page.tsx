@@ -117,7 +117,7 @@ export default function BacktrackPage() {
     return (
         <Box sx={{ display: 'flex', bgcolor: '#0B0B0B', minHeight: '100vh' }}>
             <Sidebar />
-            <Box sx={{ flexGrow: 1, p: 4, pl: { xs: 4, md: '140px' }, maxWidth: 1200, mx: 'auto' }}>
+            <Box sx={{ flexGrow: 1, p: 4, pl: { xs: 2, md: 4 }, maxWidth: 1200, mx: 'auto' }}>
                 <Button
                     startIcon={<ArrowLeft size={20} />}
                     onClick={() => router.back()}
