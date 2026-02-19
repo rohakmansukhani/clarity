@@ -172,10 +172,7 @@ export default function SectorDetailPage({ params }: { params: { sector: string 
             display: 'flex',
             minHeight: '100vh',
             bgcolor: 'background.default',
-            position: 'relative',
-            background: mode === 'dark'
-                ? 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #0B0B0B 70%)'
-                : 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05) 0%, #FFFFFF 70%)'
+            position: 'relative'
         }}>
             <Sidebar />
 

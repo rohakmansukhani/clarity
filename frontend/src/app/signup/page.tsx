@@ -70,29 +70,9 @@ export default function SignupPage() {
                 overflowY: { xs: 'auto', md: 'hidden' },
                 overflowX: 'hidden',
                 position: 'relative',
-                py: { xs: 4, md: 0 },
-                background: mode === 'dark'
-                    ? 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #0B0B0B 70%)'
-                    : 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05) 0%, #FFFFFF 70%)'
+                py: { xs: 4, md: 0 }
             }}
         >
-            {/* Grid Decoration */}
-            <Box
-                sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundImage: mode === 'dark'
-                        ? 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)'
-                        : 'linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px',
-                    maskImage: 'radial-gradient(circle at 50% 50%, black, transparent 80%)',
-                    pointerEvents: 'none',
-                    zIndex: 0
-                }}
-            />
             <Container maxWidth="lg">
                 <Grid container spacing={{ xs: 6, md: 8 }} alignItems="center">
                     {/* Left: Brand */}

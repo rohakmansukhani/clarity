@@ -232,10 +232,7 @@ export default function PortfolioPage() {
                 height: '100vh',
                 justifyContent: 'center',
                 alignItems: 'center',
-                bgcolor: 'background.default',
-                background: mode === 'dark'
-                    ? 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #0B0B0B 70%)'
-                    : 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05) 0%, #FFFFFF 70%)'
+                bgcolor: 'background.default'
             }}>
                 <CircularProgress size={24} sx={{ color: 'primary.main' }} />
             </Box>
@@ -252,28 +249,8 @@ export default function PortfolioPage() {
         <Box sx={{
             bgcolor: 'background.default',
             minHeight: '100vh',
-            position: 'relative',
-            background: mode === 'dark'
-                ? 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.15) 0%, #0B0B0B 70%)'
-                : 'radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.05) 0%, #FFFFFF 70%)'
+            position: 'relative'
         }}>
-            {/* Grid Decoration */}
-            <Box
-                sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundImage: mode === 'dark'
-                        ? 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)'
-                        : 'linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px',
-                    maskImage: 'radial-gradient(circle at 50% 50%, black, transparent 80%)',
-                    pointerEvents: 'none',
-                    zIndex: 0
-                }}
-            />
             <Sidebar />
             <Box
                 component={motion.div}
