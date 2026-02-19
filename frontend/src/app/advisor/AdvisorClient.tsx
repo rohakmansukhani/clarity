@@ -575,24 +575,21 @@ export default function AdvisorClient() {
                                     </Typography>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl px-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl px-4">
                                     {SUGGESTED_PROMPTS.map((prompt, i) => (
                                         <motion.button
                                             key={i}
-                                            whileHover={{ scale: 1.02, backgroundColor: mode === 'dark' ? 'rgba(0, 229, 255, 0.08)' : 'rgba(0, 178, 204, 0.08)' }}
-                                            whileTap={{ scale: 0.98 }}
+                                            whileHover={{ scale: 1.05, backgroundColor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+                                            whileTap={{ scale: 0.95 }}
                                             onClick={() => handleSend(prompt.text)}
-                                            className="flex items-center p-4 gap-4 rounded-xl border transition-colors group cursor-pointer text-left"
+                                            className="flex flex-col items-center justify-center p-6 gap-3 rounded-2xl border transition-colors group cursor-pointer text-center"
                                             style={{
                                                 backgroundColor: theme.palette.background.paper,
-                                                borderColor: theme.palette.divider,
-                                                boxShadow: theme.shadows[1]
+                                                borderColor: theme.palette.divider
                                             }}
                                         >
-                                            <div className="p-2 rounded-full bg-opacity-10" style={{ backgroundColor: 'rgba(0, 229, 255, 0.1)' }}>
-                                                <prompt.icon color={theme.palette.primary.main} size={20} />
-                                            </div>
-                                            <span className="text-sm font-medium" style={{ color: theme.palette.text.primary }}>{prompt.text}</span>
+                                            <prompt.icon className="text-[#00E5FF] group-hover:text-primary-main transition-colors" size={24} />
+                                            <span className="text-sm font-medium transition-colors" style={{ color: theme.palette.text.secondary }}>{prompt.text}</span>
                                         </motion.button>
                                     ))}
                                 </div>
