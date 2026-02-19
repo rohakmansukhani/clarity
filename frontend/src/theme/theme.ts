@@ -6,30 +6,31 @@ import { Inter, Outfit } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 const outfit = Outfit({ subsets: ['latin'], display: 'swap' });
 
-const theme = createTheme({
+export const getThemeConfig = (mode: 'light' | 'dark') => ({
     palette: {
-        mode: 'dark',
+        mode,
         primary: {
-            main: '#00E5FF', // Electric Cyan
+            main: mode === 'dark' ? '#00E5FF' : '#00B2CC', // Deepened Electric Cyan for light mode
             light: '#5FFFFF',
-            dark: '#00B2CC',
+            dark: '#008C9E',
         },
         secondary: {
-            main: '#7C3AED', // Electric Violet
+            main: '#7C3AED',
         },
         background: {
-            default: '#0F172A', // Slate 900
-            paper: '#1E293B',   // Slate 800
+            default: mode === 'dark' ? '#0F172A' : '#FFFFFF', // Slate 900 vs Pure Alabaster
+            paper: mode === 'dark' ? '#1E293B' : '#F8F9FA',   // Slate 800 vs Soft Porcelain
         },
         text: {
-            primary: '#F8FAFC',
-            secondary: '#94A3B8',
+            primary: mode === 'dark' ? '#F8FAFC' : '#0F172A',
+            secondary: mode === 'dark' ? '#94A3B8' : '#64748B',
         },
+        divider: mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
         success: {
-            main: '#10B981', // Emerald 500
+            main: '#10B981',
         },
         error: {
-            main: '#EF4444', // Red 500
+            main: '#EF4444',
         },
     },
     typography: {
@@ -61,11 +62,13 @@ const theme = createTheme({
         MuiButton: {
             styleOverrides: {
                 root: {
-                    borderRadius: '99px', // Pill shape for that modern feel
+                    borderRadius: '99px',
                     padding: '10px 24px',
                     boxShadow: 'none',
                     '&:hover': {
-                        boxShadow: '0 4px 12px rgba(0, 229, 255, 0.2)', // Glow effect
+                        boxShadow: mode === 'dark'
+                            ? '0 4px 12px rgba(0, 229, 255, 0.2)'
+                            : '0 4px 12px rgba(0, 178, 204, 0.15)',
                     },
                 },
             },
@@ -74,10 +77,13 @@ const theme = createTheme({
             styleOverrides: {
                 root: {
                     backgroundImage: 'none',
+                    boxShadow: mode === 'light' ? '0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02)' : 'none',
                 },
             },
         },
     },
 });
 
+const theme = createTheme(getThemeConfig('dark'));
 export default theme;
+

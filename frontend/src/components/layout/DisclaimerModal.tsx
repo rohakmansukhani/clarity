@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogActions, Button, Typography, Box, useTheme, useMediaQuery } from '@mui/material';
+import { useColorMode } from '@/theme/ThemeContext';
 import { AlertTriangle } from 'lucide-react';
 
 export default function DisclaimerModal() {
@@ -21,6 +22,8 @@ export default function DisclaimerModal() {
         setOpen(false);
     };
 
+    const { mode } = useColorMode();
+
     return (
         <Dialog
             open={open}
@@ -29,13 +32,13 @@ export default function DisclaimerModal() {
             fullWidth
             PaperProps={{
                 sx: {
-                    bgcolor: '#0B0B0B',
-                    border: { md: '1px solid #333' },
+                    bgcolor: theme.palette.background.default,
+                    border: { md: `1px solid ${theme.palette.divider}` },
                     borderRadius: { md: 4 },
-                    // Let the dialog grow naturally — no fixed maxHeight that clips content
                     maxHeight: '90vh',
                     display: 'flex',
                     flexDirection: 'column',
+                    backgroundImage: 'none'
                 }
             }}
         >
@@ -48,31 +51,29 @@ export default function DisclaimerModal() {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    // Start from top, not centre
                     justifyContent: 'flex-start',
                     pt: 6,
                     pb: 4,
-                    // Allow scrolling if content overflows
                     overflowY: 'auto',
                 }}
             >
-                <Box sx={{ mb: 4, p: 2, bgcolor: 'rgba(0, 229, 255, 0.1)', borderRadius: '50%' }}>
-                    <AlertTriangle size={64} color="#00E5FF" />
+                <Box sx={{ mb: 4, p: 2, bgcolor: `${theme.palette.primary.main}15`, borderRadius: '50%' }}>
+                    <AlertTriangle size={64} color={theme.palette.primary.main} />
                 </Box>
 
-                <Typography variant="h2" sx={{ fontWeight: 800, color: '#fff', mb: 2, letterSpacing: '-0.02em' }}>
+                <Typography variant="h2" sx={{ fontWeight: 800, color: theme.palette.text.primary, mb: 2, letterSpacing: '-0.02em' }}>
                     EDUCATIONAL USE ONLY
                 </Typography>
 
-                <Typography variant="h5" sx={{ color: '#888', mb: 6, fontWeight: 400, lineHeight: 1.6 }}>
+                <Typography variant="h5" sx={{ color: theme.palette.text.secondary, mb: 6, fontWeight: 400, lineHeight: 1.6 }}>
                     Clarity is a simulation and analysis tool designed strictly for educational purposes.
                 </Typography>
 
-                <Box sx={{ textAlign: 'left', bgcolor: '#111', p: 4, borderRadius: 4, border: '1px solid #222', mb: 6, width: '100%' }}>
-                    <Typography variant="body1" sx={{ color: '#ccc', mb: 2, fontWeight: 500 }}>
+                <Box sx={{ textAlign: 'left', bgcolor: theme.palette.background.paper, p: 4, borderRadius: 4, border: `1px solid ${theme.palette.divider}`, mb: 6, width: '100%' }}>
+                    <Typography variant="body1" sx={{ color: theme.palette.text.primary, mb: 2, fontWeight: 500 }}>
                         By proceeding, you acknowledge that:
                     </Typography>
-                    <ul style={{ color: '#888', paddingLeft: '20px', lineHeight: '1.8' }}>
+                    <ul style={{ color: theme.palette.text.secondary, paddingLeft: '20px', lineHeight: '1.8' }}>
                         <li>This platform does <strong>not</strong> provide financial advice.</li>
                         <li>No real money is involved in simulated trades.</li>
                         <li>Data provided may not be accurate or real-time.</li>
@@ -85,13 +86,13 @@ export default function DisclaimerModal() {
                     size="large"
                     onClick={handleAcknowledge}
                     sx={{
-                        bgcolor: '#00E5FF',
-                        color: '#000',
+                        bgcolor: theme.palette.primary.main,
+                        color: mode === 'dark' ? '#000' : '#fff',
                         fontWeight: 800,
                         py: 2,
                         px: 8,
                         fontSize: '1.1rem',
-                        '&:hover': { bgcolor: '#fff' }
+                        '&:hover': { bgcolor: theme.palette.primary.dark }
                     }}
                 >
                     I UNDERSTAND & AGREE

@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, Typography, Chip } from '@mui/material';
+import { Box, Typography, Chip, useTheme } from '@mui/material';
+import { useColorMode } from '@/theme/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { TrendingUp, Flame } from 'lucide-react';
@@ -11,6 +12,8 @@ import { marketService } from '@/services/marketService';
 
 export default function MarketHome() {
     const router = useRouter();
+    const theme = useTheme();
+    const { mode } = useColorMode();
     const [query, setQuery] = useState('');
     const [movers, setMovers] = useState<any[]>([]);
     const [loadingMovers, setLoadingMovers] = useState(true);
@@ -59,14 +62,15 @@ export default function MarketHome() {
                             textAlign: 'center',
                             mb: 2,
                             letterSpacing: '-0.03em',
-                            lineHeight: 1
+                            lineHeight: 1,
+                            color: theme.palette.text.primary
                         }}
                     >
                         MARKET<br />INTELLIGENCE
-                        <Box component="span" sx={{ color: '#00E5FF' }}>.</Box>
+                        <Box component="span" sx={{ color: theme.palette.primary.main }}>.</Box>
                     </Typography>
 
-                    <Typography variant="h5" sx={{ textAlign: 'center', color: '#666', mb: 8, fontWeight: 400 }}>
+                    <Typography variant="h5" sx={{ textAlign: 'center', color: theme.palette.text.secondary, mb: 8, fontWeight: 400 }}>
                         Search any asset to unlock AI-powered insights.
                     </Typography>
                 </motion.div>
@@ -95,14 +99,14 @@ export default function MarketHome() {
                 >
                     <Box sx={{ mt: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Flame size={14} color="#00E5FF" />
-                            <Typography variant="caption" sx={{ color: '#555', letterSpacing: '0.12em', fontWeight: 700, fontSize: '0.7rem' }}>
+                            <Flame size={14} color={theme.palette.primary.main} />
+                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, letterSpacing: '0.12em', fontWeight: 700, fontSize: '0.7rem' }}>
                                 TRENDING TODAY
                             </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', minHeight: '32px' }}>
                             {loadingMovers ? (
-                                <Typography variant="caption" sx={{ color: '#333' }}>Loading...</Typography>
+                                <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>Loading...</Typography>
                             ) : movers.length > 0 ? (
                                 movers.map((stock, i) => (
                                     <motion.div
@@ -114,21 +118,23 @@ export default function MarketHome() {
                                             label={`${stock.symbol} ${stock.change}`}
                                             onClick={() => router.push(`/market/${stock.symbol}`)}
                                             sx={{
-                                                bgcolor: '#111',
-                                                color: stock.isUp ? '#10B981' : '#EF4444',
-                                                border: '1px solid #333',
-                                                fontWeight: 600,
+                                                bgcolor: theme.palette.background.paper,
+                                                color: stock.isUp ? theme.palette.success.main : theme.palette.error.main,
+                                                border: `1px solid ${theme.palette.divider}`,
+                                                fontWeight: 800,
                                                 fontSize: '0.75rem',
+                                                boxShadow: mode === 'light' ? '0 2px 4px rgba(0,0,0,0.02)' : 'none',
                                                 '&:hover': {
-                                                    bgcolor: '#222',
-                                                    borderColor: stock.isUp ? '#10B98188' : '#EF444488'
+                                                    bgcolor: theme.palette.background.paper,
+                                                    borderColor: stock.isUp ? theme.palette.success.main : theme.palette.error.main,
+                                                    boxShadow: mode === 'light' ? '0 4px 8px rgba(0,0,0,0.05)' : 'none'
                                                 }
                                             }}
                                         />
                                     </motion.div>
                                 ))
                             ) : (
-                                <Typography variant="caption" sx={{ color: '#333' }}>No data available</Typography>
+                                <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>No data available</Typography>
                             )}
                         </Box>
                     </Box>

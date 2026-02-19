@@ -7,9 +7,12 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { marketService } from '@/services/marketService';
 
-
+import { useTheme } from '@mui/material/styles';
+import { useColorMode } from '@/theme/ThemeContext';
 export default function DashboardPage() {
     const router = useRouter();
+    const theme = useTheme();
+    const { mode } = useColorMode();
     const [greeting, setGreeting] = useState('Good Evening');
     const [marketStatus, setMarketStatus] = useState<any[]>([]);
     const [topMovers, setTopMovers] = useState<any[]>([]);
@@ -102,10 +105,10 @@ export default function DashboardPage() {
             {/* Header: Minimal Greeting + Search */}
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: { xs: 4, md: 8 }, gap: { xs: 3, md: 0 } }}>
                 <Box>
-                    <Typography variant="h3" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 0.5, color: '#fff', fontSize: { xs: '2rem', md: '3rem' } }}>
+                    <Typography variant="h3" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 0.5, color: theme.palette.text.primary, fontSize: { xs: '2rem', md: '3rem' } }}>
                         {greeting}, {user?.display_name || 'Trader'}
                     </Typography>
-                    <Typography variant="body1" sx={{ color: '#666', fontWeight: 500 }}>
+                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
                         Market is <span style={{ color: statusObj.color, fontWeight: 700 }}>{statusObj.text}</span> ({statusObj.sub}).
                     </Typography>
                 </Box>
@@ -145,15 +148,15 @@ export default function DashboardPage() {
                                 InputProps={{
                                     ...params.InputProps,
                                     disableUnderline: true,
-                                    startAdornment: <Search size={20} color="#666" style={{ marginRight: 10 }} />,
+                                    startAdornment: <Search size={20} color={theme.palette.text.secondary} style={{ marginRight: 10 }} />,
                                     sx: {
                                         fontSize: '1rem',
-                                        color: '#fff',
-                                        borderBottom: '1px solid #333',
+                                        color: theme.palette.text.primary,
+                                        borderBottom: `1px solid ${theme.palette.divider}`,
                                         pb: 0.5,
                                         transition: 'all 0.2s',
-                                        '&:hover': { borderBottom: '1px solid #666' },
-                                        '&.Mui-focused': { borderBottom: '1px solid #00E5FF' }
+                                        '&:hover': { borderBottom: `1px solid ${theme.palette.text.secondary}` },
+                                        '&.Mui-focused': { borderBottom: `1px solid ${theme.palette.primary.main}` }
                                     }
                                 }}
                             />
@@ -161,17 +164,17 @@ export default function DashboardPage() {
                         renderOption={(props, option: any) => {
                             const { key, ...otherProps } = props;
                             return (
-                                <li key={key} {...otherProps} style={{ backgroundColor: '#111', color: '#fff', borderBottom: '1px solid #222' }}>
+                                <li key={key} {...otherProps} style={{ backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderBottom: `1px solid ${theme.palette.divider}` }}>
                                     <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                                         <Typography variant="body1" sx={{ fontWeight: 600 }}>{option.symbol}</Typography>
-                                        <Typography variant="caption" sx={{ color: '#888' }}>{option.name}</Typography>
+                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>{option.name}</Typography>
                                     </Box>
                                 </li>
                             );
                         }}
                     />
 
-                    <Box sx={{ width: 36, height: 36, minWidth: 36, borderRadius: '50%', bgcolor: '#00E5FF', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem', border: '2px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
+                    <Box sx={{ width: 36, height: 36, minWidth: 36, borderRadius: '50%', bgcolor: theme.palette.primary.main, color: mode === 'dark' ? '#000' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem', border: `2px solid ${theme.palette.divider}`, flexShrink: 0 }}>
                         {(user?.full_name || user?.email || 'T').charAt(0).toUpperCase()}
                     </Box>
                 </Box>
@@ -181,36 +184,36 @@ export default function DashboardPage() {
                 {/* Left Col: Main Stats (Portfolio) */}
                 <Grid size={{ xs: 12, md: 8 }}>
                     <Box sx={{ mb: 6 }}>
-                        <Typography variant="h5" sx={{ color: '#fff', fontWeight: 700, mb: 3 }}>Market Overview</Typography>
+                        <Typography variant="h5" sx={{ color: theme.palette.text.primary, fontWeight: 700, mb: 3 }}>Market Overview</Typography>
                         {loading ? (
                             <Box sx={{ display: 'flex', gap: 2 }}>
-                                <CircularProgress size={20} sx={{ color: '#444' }} />
-                                <Typography sx={{ color: '#666' }}>Loading market data...</Typography>
+                                <CircularProgress size={20} sx={{ color: theme.palette.text.secondary }} />
+                                <Typography sx={{ color: theme.palette.text.secondary }}>Loading market data...</Typography>
                             </Box>
                         ) : (
                             <Grid container spacing={4}>
                                 {marketStatus.length > 0 ? marketStatus.map((index) => (
                                     <Grid size={{ xs: 12, sm: 4 }} key={index.index}>
                                         <Box>
-                                            <Typography variant="caption" sx={{ color: '#888', fontWeight: 600, letterSpacing: '0.05em' }}>{index.index}</Typography>
-                                            <Typography variant="h3" sx={{ fontWeight: 700, my: 0.5, fontSize: '2.5rem' }}>{index.current_formatted}</Typography>
+                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>{index.index}</Typography>
+                                            <Typography variant="h3" sx={{ fontWeight: 700, my: 0.5, fontSize: '2.5rem', color: theme.palette.text.primary }}>{index.current_formatted}</Typography>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                {index.change >= 0 ? <ArrowUpRight size={20} color="#10B981" /> : <ArrowDownRight size={20} color="#EF4444" />}
-                                                <Typography variant="body1" sx={{ color: index.change >= 0 ? '#10B981' : '#EF4444', fontWeight: 600 }}>
+                                                {index.change >= 0 ? <ArrowUpRight size={20} color={theme.palette.success.main} /> : <ArrowDownRight size={20} color={theme.palette.error.main} />}
+                                                <Typography variant="body1" sx={{ color: index.change >= 0 ? theme.palette.success.main : theme.palette.error.main, fontWeight: 600 }}>
                                                     {index.change >= 0 ? '+' : ''}{index.change_formatted} ({index.percent_change_formatted})
                                                 </Typography>
                                             </Box>
                                         </Box>
                                     </Grid>
                                 )) : (
-                                    <Typography sx={{ color: '#666' }}>Market data unavailable.</Typography>
+                                    <Typography sx={{ color: theme.palette.text.secondary }}>Market data unavailable.</Typography>
                                 )}
                             </Grid>
                         )}
                     </Box>
 
                     {/* Quick Actions Grid */}
-                    <Typography variant="h6" sx={{ color: '#fff', mb: 3, fontWeight: 600 }}>Quick Actions</Typography>
+                    <Typography variant="h6" sx={{ color: theme.palette.text.primary, mb: 3, fontWeight: 600 }}>Quick Actions</Typography>
                     <Grid container spacing={3}>
                         <ActionCard
                             icon={Zap}
@@ -249,19 +252,20 @@ export default function DashboardPage() {
                         sx={{
                             p: 3,
                             borderRadius: 4,
-                            bgcolor: '#0A0A0A',
-                            border: '1px solid #222',
+                            bgcolor: theme.palette.background.paper,
+                            border: `1px solid ${theme.palette.divider}`,
                             height: '100%',
                             position: 'relative',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            boxShadow: mode === 'light' ? '0 4px 20px rgba(0,0,0,0.03)' : 'none'
                         }}
                     >
                         {/* Decorative Background Glow */}
-                        <Box sx={{ position: 'absolute', top: -100, right: -100, width: 200, height: 200, bgcolor: '#00E5FF', filter: 'blur(100px)', opacity: 0.1, borderRadius: '50%' }} />
+                        <Box sx={{ position: 'absolute', top: -100, right: -100, width: 200, height: 200, bgcolor: theme.palette.primary.main, filter: 'blur(100px)', opacity: 0.1, borderRadius: '50%' }} />
 
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                            <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <TrendingUp size={20} className="text-[#00E5FF]" />
+                            <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                <TrendingUp size={20} color={theme.palette.primary.main} />
                                 Top Movers
                             </Typography>
                         </Box>
@@ -278,7 +282,7 @@ export default function DashboardPage() {
                                 />
                             )) : (
                                 <Box sx={{ py: 4, textAlign: 'center' }}>
-                                    <CircularProgress size={20} color="inherit" sx={{ color: '#444' }} />
+                                    <CircularProgress size={20} color="inherit" sx={{ color: theme.palette.text.secondary }} />
                                 </Box>
                             )}
                         </Box>
@@ -298,6 +302,8 @@ export default function DashboardPage() {
 }
 
 function ActionCard({ icon: Icon, title, desc, onClick, delay }: any) {
+    const theme = useTheme();
+    const { mode } = useColorMode();
     return (
         <Grid size={{ xs: 12, sm: 4 }}>
             <Paper
@@ -309,44 +315,50 @@ function ActionCard({ icon: Icon, title, desc, onClick, delay }: any) {
                 sx={{
                     p: 3,
                     borderRadius: 3,
-                    bgcolor: '#111',
-                    border: '1px solid #222',
+                    bgcolor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
                     cursor: 'pointer',
                     height: '100%',
                     minHeight: 160,
                     display: 'flex',
                     flexDirection: 'column',
                     transition: 'all 0.2s',
+                    boxShadow: mode === 'light' ? '0 2px 8px rgba(0,0,0,0.02)' : 'none',
                     '&:hover': {
-                        borderColor: '#00E5FF',
+                        borderColor: theme.palette.primary.main,
                         transform: 'translateY(-4px)',
-                        boxShadow: '0 10px 30px -10px rgba(0, 229, 255, 0.1)'
+                        boxShadow: mode === 'dark'
+                            ? '0 10px 30px -10px rgba(0, 229, 255, 0.1)'
+                            : `0 10px 30px -10px ${theme.palette.primary.main}20`
                     }
                 }}
             >
-                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                    <Icon size={20} color="#fff" />
+                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                    <Icon size={20} color={theme.palette.text.primary} />
                 </Box>
-                <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600, mb: 0.5 }}>{title}</Typography>
-                <Typography variant="body2" sx={{ color: '#666', fontSize: '0.85rem' }}>{desc}</Typography>
+                <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600, mb: 0.5, color: theme.palette.text.primary }}>{title}</Typography>
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: '0.85rem' }}>{desc}</Typography>
             </Paper>
         </Grid>
     );
 }
 
 function MarketRow({ name, value, change, isUp }: any) {
+    const theme = useTheme();
     return (
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="body2" sx={{ fontWeight: 600, color: '#fff' }}>{name}</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>{name}</Typography>
             <Box sx={{ textAlign: 'right' }}>
-                <Typography variant="body2" sx={{ fontWeight: 500, color: '#ddd' }}>{value}</Typography>
-                <Typography variant="caption" sx={{ color: isUp ? '#10B981' : '#EF4444', fontWeight: 600 }}>{change}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500, color: theme.palette.text.secondary }}>{value}</Typography>
+                <Typography variant="caption" sx={{ color: isUp ? theme.palette.success.main : theme.palette.error.main, fontWeight: 600 }}>{change}</Typography>
             </Box>
         </Box>
     );
 }
 
 function MoverRow({ symbol, price, change, isUp, onClick }: any) {
+    const theme = useTheme();
+    const { mode } = useColorMode();
     return (
         <Box
             onClick={onClick}
@@ -358,23 +370,26 @@ function MoverRow({ symbol, price, change, isUp, onClick }: any) {
                 borderRadius: 2,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.05)', transform: 'translateX(4px)' }
+                '&:hover': {
+                    bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                    transform: 'translateX(4px)'
+                }
             }}
         >
             <Box sx={{ display: 'flex', items: 'center', gap: 2 }}>
-                <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: '#1A1A1A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem', color: '#666' }}>
+                <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: mode === 'dark' ? '#1A1A1A' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem', color: theme.palette.text.secondary }}>
                     {symbol[0]}
                 </Box>
                 <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#fff' }}>{symbol}</Typography>
-                    <Typography variant="caption" sx={{ color: '#666' }}>NSE</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>{symbol}</Typography>
+                    <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>NSE</Typography>
                 </Box>
             </Box>
             <Box sx={{ textAlign: 'right' }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#fff' }}>₹{price}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>₹{price}</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-                    {isUp ? <ArrowUpRight size={14} className="text-emerald-500" /> : <ArrowDownRight size={14} className="text-red-500" />}
-                    <Typography variant="caption" sx={{ color: isUp ? '#10B981' : '#EF4444', fontWeight: 700 }}>{change}</Typography>
+                    {isUp ? <ArrowUpRight size={14} color={theme.palette.success.main} /> : <ArrowDownRight size={14} color={theme.palette.error.main} />}
+                    <Typography variant="caption" sx={{ color: isUp ? theme.palette.success.main : theme.palette.error.main, fontWeight: 700 }}>{change}</Typography>
                 </Box>
             </Box>
         </Box>

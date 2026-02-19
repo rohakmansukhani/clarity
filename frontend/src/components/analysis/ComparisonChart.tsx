@@ -1,5 +1,4 @@
-import React from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface ComparisonChartProps {
@@ -9,12 +8,13 @@ interface ComparisonChartProps {
 }
 
 export function ComparisonChart({ chartData, selectedStocks, chartPeriod }: ComparisonChartProps) {
-    const colors = ['#00E5FF', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
+    const theme = useTheme();
+    const colors = [theme.palette.primary.main, '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
 
     return (
         <>
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: 2, pt: 2, px: 1 }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#fff', letterSpacing: '-0.01em', mb: { xs: 1, md: 0 } }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: theme.palette.text.primary, letterSpacing: '-0.01em', mb: { xs: 1, md: 0 } }}>
                     Relative Performance
                 </Typography>
             </Box>
@@ -37,9 +37,9 @@ export function ComparisonChart({ chartData, selectedStocks, chartPeriod }: Comp
                     <XAxis
                         dataKey="date"
                         stroke="none"
-                        tick={{ fill: '#666', fontSize: 11, fontWeight: 500 }}
+                        tick={{ fill: theme.palette.text.secondary, fontSize: 11, fontWeight: 500 }}
                         tickLine={false}
-                        axisLine={{ stroke: '#222', strokeWidth: 1 }}
+                        axisLine={{ stroke: theme.palette.divider, strokeWidth: 1 }}
                         dy={10}
                         tickFormatter={(value) => {
                             const date = new Date(value);
@@ -57,9 +57,9 @@ export function ComparisonChart({ chartData, selectedStocks, chartPeriod }: Comp
 
                     <YAxis
                         stroke="none"
-                        tick={{ fill: '#666', fontSize: 11, fontWeight: 500 }}
+                        tick={{ fill: theme.palette.text.secondary, fontSize: 11, fontWeight: 500 }}
                         tickLine={false}
-                        axisLine={{ stroke: '#222', strokeWidth: 1 }}
+                        axisLine={{ stroke: theme.palette.divider, strokeWidth: 1 }}
                         dx={-5}
                         tickFormatter={(value) => `${value}`}
                         domain={['auto', 'auto']}
@@ -79,15 +79,15 @@ export function ComparisonChart({ chartData, selectedStocks, chartPeriod }: Comp
 
                                 return (
                                     <Box sx={{
-                                        bgcolor: 'rgba(0, 0, 0, 0.95)',
+                                        bgcolor: theme.palette.background.paper,
                                         backdropFilter: 'blur(20px)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                        border: `1px solid ${theme.palette.divider}`,
                                         borderRadius: 3,
                                         p: 2,
                                         minWidth: 180,
-                                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+                                        boxShadow: theme.palette.mode === 'light' ? '0 8px 32px rgba(0, 0, 0, 0.08)' : '0 8px 32px rgba(0, 0, 0, 0.4)'
                                     }}>
-                                        <Typography variant="caption" sx={{ color: '#888', mb: 1.5, display: 'block', fontWeight: 500, fontSize: '0.7rem', letterSpacing: '0.05em' }}>
+                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, mb: 1.5, display: 'block', fontWeight: 500, fontSize: '0.7rem', letterSpacing: '0.05em' }}>
                                             {formattedDate}
                                         </Typography>
                                         {sortedPayload.map((entry: any, index: number) => {
@@ -100,12 +100,12 @@ export function ComparisonChart({ chartData, selectedStocks, chartPeriod }: Comp
                                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
                                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                             <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: entry.stroke }} />
-                                                            <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600, fontSize: '0.875rem' }}>
+                                                            <Typography variant="body2" sx={{ color: theme.palette.text.primary, fontWeight: 600, fontSize: '0.875rem' }}>
                                                                 {stockSymbol}
                                                             </Typography>
                                                         </Box>
                                                         <Typography variant="body2" sx={{
-                                                            color: '#fff',
+                                                            color: theme.palette.text.primary,
                                                             fontWeight: 700,
                                                             fontSize: '0.875rem'
                                                         }}>
@@ -120,7 +120,7 @@ export function ComparisonChart({ chartData, selectedStocks, chartPeriod }: Comp
                             }
                             return null;
                         }}
-                        cursor={{ stroke: 'rgba(255, 255, 255, 0.1)', strokeWidth: 1 }}
+                        cursor={{ stroke: theme.palette.divider, strokeWidth: 1 }}
                     />
 
                     {selectedStocks.map((s, i) => (
@@ -131,7 +131,7 @@ export function ComparisonChart({ chartData, selectedStocks, chartPeriod }: Comp
                             stroke={colors[i % 5]}
                             strokeWidth={2.5}
                             dot={false}
-                            activeDot={{ r: 5, strokeWidth: 2, stroke: '#000', fill: colors[i % 5] }}
+                            activeDot={{ r: 5, strokeWidth: 2, stroke: theme.palette.background.default, fill: colors[i % 5] }}
                             animationDuration={1000}
                             animationEasing="ease-in-out"
                         />

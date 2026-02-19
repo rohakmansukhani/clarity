@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Box, Typography, Grid, Chip, CircularProgress, Button, Tab, Tabs, Tooltip, Menu, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert } from '@mui/material';
+import { Box, Typography, Grid, Chip, CircularProgress, Button, Tab, Tabs, Tooltip, Menu, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, useTheme } from '@mui/material';
+import { useColorMode } from '@/theme/ThemeContext';
 import { ArrowUpRight, ArrowDownRight, Zap, TrendingUp, Activity, Newspaper, Brain, Info, ArrowLeft } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
@@ -14,6 +15,8 @@ import Sidebar from '@/components/layout/Sidebar';
 export default function StockPage() {
     const params = useParams();
     const router = useRouter();
+    const theme = useTheme();
+    const { mode } = useColorMode();
     const symbol = (params.symbol as string).toUpperCase();
 
     // State
@@ -114,8 +117,8 @@ export default function StockPage() {
 
     if (initialLoading) {
         return (
-            <Box sx={{ display: 'flex', height: '80vh', justifyContent: 'center', alignItems: 'center' }}>
-                <CircularProgress size={24} sx={{ color: '#00E5FF' }} />
+            <Box sx={{ display: 'flex', height: '80vh', justifyContent: 'center', alignItems: 'center', bgcolor: theme.palette.background.default }}>
+                <CircularProgress size={24} sx={{ color: theme.palette.primary.main }} />
             </Box>
         );
     }
@@ -136,7 +139,7 @@ export default function StockPage() {
     const changePercent = data.market_data?.changePercent || 0;
 
     return (
-        <Box sx={{ display: 'flex', bgcolor: '#0B0B0B', minHeight: '100vh' }}>
+        <Box sx={{ display: 'flex', bgcolor: theme.palette.background.default, minHeight: '100vh', color: theme.palette.text.primary }}>
             <Sidebar />
             <Box sx={{ flexGrow: 1, maxWidth: 1600, mx: 'auto', pb: 10, pt: 6, pr: { xs: 2, md: 6 }, pl: { xs: 2, md: '140px' } }}>
                 {/* Back Button */}
@@ -144,10 +147,10 @@ export default function StockPage() {
                     startIcon={<ArrowLeft size={20} />}
                     onClick={() => router.back()}
                     sx={{
-                        color: '#666',
+                        color: theme.palette.text.secondary,
                         mb: 2,
                         pl: 0,
-                        '&:hover': { color: '#fff', bgcolor: 'transparent' }
+                        '&:hover': { color: theme.palette.text.primary, bgcolor: 'transparent' }
                     }}
                 >
                     Back
@@ -156,18 +159,18 @@ export default function StockPage() {
                 {/* Minimal Header */}
                 <Box sx={{ mb: 6 }}>
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 1 }}>
-                        <Typography variant="h1" sx={{ fontWeight: 700, fontSize: { xs: '3rem', md: '5rem' }, lineHeight: 0.9, letterSpacing: '-0.04em' }}>
+                        <Typography variant="h1" sx={{ fontWeight: 700, fontSize: { xs: '3rem', md: '5rem' }, lineHeight: 0.9, letterSpacing: '-0.04em', color: theme.palette.text.primary }}>
                             {data.symbol}
                         </Typography>
-                        <Typography variant="h4" sx={{ color: '#666', fontWeight: 400 }}>
+                        <Typography variant="h4" sx={{ color: theme.palette.text.secondary, fontWeight: 400 }}>
                             {data.name || data.symbol}
                         </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <Typography variant="h2" sx={{ fontWeight: 600, fontSize: { xs: '2rem', md: '3rem' } }}>
+                        <Typography variant="h2" sx={{ fontWeight: 600, fontSize: { xs: '2rem', md: '3rem' }, color: theme.palette.text.primary }}>
                             {price}
                         </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', color: change >= 0 ? '#10B981' : '#EF4444', bgcolor: change >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', px: 1.5, py: 0.5, borderRadius: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', color: change >= 0 ? theme.palette.success.main : theme.palette.error.main, bgcolor: change >= 0 ? `${theme.palette.success.main}15` : `${theme.palette.error.main}15`, px: 1.5, py: 0.5, borderRadius: 1 }}>
                             {change >= 0 ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />}
                             <Typography variant="h6" sx={{ fontWeight: 600, ml: 0.5 }}>
                                 {change > 0 ? '+' : ''}{Number(change).toFixed(2)} ({Number(changePercent).toFixed(2)}%)
@@ -180,7 +183,7 @@ export default function StockPage() {
                     {/* Left Column: Chart & Analysis */}
                     <Grid size={{ xs: 12, md: 8 }}>
                         {/* Chart Container */}
-                        <Box sx={{ height: 450, bgcolor: '#111', borderRadius: 4, p: 3, border: '1px solid #222', mb: 6, position: 'relative' }}>
+                        <Box sx={{ height: 450, bgcolor: theme.palette.background.paper, borderRadius: 4, p: 3, border: `1px solid ${theme.palette.divider}`, mb: 6, position: 'relative' }}>
                             {/* Loading Overlay */}
                             {chartLoading && (
                                 <Box sx={{
@@ -189,7 +192,7 @@ export default function StockPage() {
                                     left: 0,
                                     right: 0,
                                     bottom: 0,
-                                    bgcolor: 'rgba(0,0,0,0.5)',
+                                    bgcolor: mode === 'dark' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)',
                                     zIndex: 20,
                                     display: 'flex',
                                     justifyContent: 'center',
@@ -197,7 +200,7 @@ export default function StockPage() {
                                     borderRadius: 4,
                                     backdropFilter: 'blur(2px)'
                                 }}>
-                                    <CircularProgress size={30} sx={{ color: '#00E5FF' }} />
+                                    <CircularProgress size={30} sx={{ color: theme.palette.primary.main }} />
                                 </Box>
                             )}
 
@@ -211,10 +214,10 @@ export default function StockPage() {
                                         sx={{
                                             minWidth: 0,
                                             px: 1.5,
-                                            color: timeRange === range ? '#00E5FF' : '#666',
+                                            color: timeRange === range ? theme.palette.primary.main : theme.palette.text.secondary,
                                             fontWeight: 700,
-                                            bgcolor: timeRange === range ? 'rgba(0, 229, 255, 0.1)' : 'transparent',
-                                            '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }
+                                            bgcolor: timeRange === range ? `${theme.palette.primary.main}15` : 'transparent',
+                                            '&:hover': { color: theme.palette.text.primary, bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }
                                         }}
                                     >
                                         {range.toUpperCase()}
@@ -225,7 +228,7 @@ export default function StockPage() {
                                     <IconButton
                                         size="small"
                                         onClick={() => setConfigOpen(true)}
-                                        sx={{ color: '#444', ml: 1, '&:hover': { color: '#fff' } }}
+                                        sx={{ color: theme.palette.text.secondary, ml: 1, '&:hover': { color: theme.palette.text.primary } }}
                                     >
                                         <TrendingUp size={16} />
                                     </IconButton>
@@ -245,8 +248,8 @@ export default function StockPage() {
                                                 <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                                     <defs>
                                                         <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="5%" stopColor="#00E5FF" stopOpacity={0.2} />
-                                                            <stop offset="95%" stopColor="#00E5FF" stopOpacity={0} />
+                                                            <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.2} />
+                                                            <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0} />
                                                         </linearGradient>
                                                     </defs>
                                                     <XAxis
@@ -260,7 +263,7 @@ export default function StockPage() {
                                                         }}
                                                         axisLine={false}
                                                         tickLine={false}
-                                                        tick={{ fill: '#666', fontSize: 12 }}
+                                                        tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
                                                         dy={10}
                                                         minTickGap={30}
                                                     />
@@ -268,15 +271,15 @@ export default function StockPage() {
                                                         domain={['auto', 'auto']}
                                                         axisLine={false}
                                                         tickLine={false}
-                                                        tick={{ fill: '#666', fontSize: 12 }}
+                                                        tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
                                                         width={45}
                                                         tickFormatter={(val) => `₹${val}`}
                                                     />
-                                                    <RechartsTooltip content={<CustomTooltip timeRange={timeRange} showYear={showYear} />} cursor={{ stroke: 'rgba(255, 255, 255, 0.1)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                                                    <RechartsTooltip content={<CustomTooltip timeRange={timeRange} showYear={showYear} theme={theme} />} cursor={{ stroke: theme.palette.divider, strokeWidth: 1, strokeDasharray: '4 4' }} />
                                                     <Area
                                                         type="monotone"
                                                         dataKey="close"
-                                                        stroke="#00E5FF"
+                                                        stroke={theme.palette.primary.main}
                                                         strokeWidth={2}
                                                         fillOpacity={1}
                                                         fill="url(#colorPrice)"
@@ -295,13 +298,13 @@ export default function StockPage() {
                         </Box>
 
                         {/* AI Verdict Section */}
-                        <Box sx={{ p: 4, borderRadius: 4, background: 'linear-gradient(180deg, rgba(0, 229, 255, 0.05) 0%, rgba(0,0,0,0) 100%)', border: '1px solid rgba(0, 229, 255, 0.1)' }}>
+                        <Box sx={{ p: 4, borderRadius: 4, background: mode === 'dark' ? 'linear-gradient(180deg, rgba(0, 229, 255, 0.05) 0%, rgba(0,0,0,0) 100%)' : 'linear-gradient(180deg, rgba(0, 150, 255, 0.03) 0%, rgba(255,255,255,0) 100%)', border: `1px solid ${theme.palette.divider}` }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                                <Brain size={28} color="#00E5FF" />
-                                <Typography variant="h5" sx={{ fontWeight: 700, color: '#fff' }}>The Clarity Verdict</Typography>
-                                <Chip label={data.scores?.recommendation?.action || "AI ANALYZING"} sx={{ bgcolor: '#10B981', color: '#000', fontWeight: 700, borderRadius: 1 }} />
+                                <Brain size={28} color={theme.palette.primary.main} />
+                                <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>The Clarity Verdict</Typography>
+                                <Chip label={data.scores?.recommendation?.action || "AI ANALYZING"} sx={{ bgcolor: theme.palette.success.main, color: mode === 'dark' ? '#000' : '#fff', fontWeight: 700, borderRadius: 1 }} />
                             </Box>
-                            <Typography variant="body1" sx={{ color: '#ccc', fontSize: '1.1rem', lineHeight: 1.6, maxWidth: '90%' }}>
+                            <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontSize: '1.1rem', lineHeight: 1.6, maxWidth: '90%' }}>
                                 {data.scores?.recommendation?.reasoning || aiSummary || "Generating real-time analysis..."}
                             </Typography>
                         </Box>
@@ -309,15 +312,15 @@ export default function StockPage() {
 
                     {/* Right Column: Stats & Actions */}
                     <Grid size={{ xs: 12, md: 4 }}>
-                        <Typography variant="caption" sx={{ color: '#666', letterSpacing: '0.1em', fontWeight: 600, mb: 3, display: 'block' }}>KEY STATISTICS</Typography>
+                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, letterSpacing: '0.1em', fontWeight: 600, mb: 3, display: 'block' }}>KEY STATISTICS</Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 6 }}>
-                            <StatRow label="Market Cap" value={formatMarketCap(data.fundamentals?.market_cap)} />
-                            <StatRow label="P/E Ratio" value={getPE(data.fundamentals)} />
+                            <StatRow label="Market Cap" value={formatMarketCap(data.fundamentals?.market_cap)} theme={theme} />
+                            <StatRow label="P/E Ratio" value={getPE(data.fundamentals)} theme={theme} />
                             <StatRow
                                 label="RSI"
                                 value={
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Typography sx={{ fontWeight: 600, color: '#fff' }}>
+                                        <Typography sx={{ fontWeight: 600, color: theme.palette.text.primary }}>
                                             {(() => {
                                                 const rsiObj = technicalData?.rsi;
                                                 const val = typeof rsiObj === 'object' ? rsiObj?.value : rsiObj;
@@ -329,11 +332,11 @@ export default function StockPage() {
                                         <Tooltip
                                             title={
                                                 <Box sx={{ p: 1 }}>
-                                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5, color: '#00E5FF' }}>Relative Strength Index (RSI)</Typography>
-                                                    <Typography variant="body2" sx={{ fontSize: '0.8rem', color: '#ccc' }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5, color: theme.palette.primary.main }}>Relative Strength Index (RSI)</Typography>
+                                                    <Typography variant="body2" sx={{ fontSize: '0.8rem', color: theme.palette.text.secondary }}>
                                                         Measures the speed and change of price movements.
                                                     </Typography>
-                                                    <Box sx={{ mt: 1, fontSize: '0.75rem', color: '#888' }}>
+                                                    <Box sx={{ mt: 1, fontSize: '0.75rem', color: theme.palette.text.secondary }}>
                                                         • &gt;70: Overbought (Potential Sell)<br />
                                                         • &lt;30: Oversold (Potential Buy)
                                                     </Box>
@@ -342,16 +345,17 @@ export default function StockPage() {
                                             arrow
                                             placement="top"
                                         >
-                                            <Info size={14} color="#666" style={{ cursor: 'help' }} />
+                                            <Info size={14} color={theme.palette.text.secondary} style={{ cursor: 'help' }} />
                                         </Tooltip>
                                     </Box>
                                 }
+                                theme={theme}
                             />
-                            <StatRow label="52W High" value={getHighLow(data.fundamentals).high} />
-                            <StatRow label="52W Low" value={getHighLow(data.fundamentals).low} />
+                            <StatRow label="52W High" value={getHighLow(data.fundamentals).high} theme={theme} />
+                            <StatRow label="52W Low" value={getHighLow(data.fundamentals).low} theme={theme} />
                         </Box>
 
-                        <Typography variant="caption" sx={{ color: '#666', letterSpacing: '0.1em', fontWeight: 600, mb: 3, display: 'block' }}>ACTIONS</Typography>
+                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, letterSpacing: '0.1em', fontWeight: 600, mb: 3, display: 'block' }}>ACTIONS</Typography>
 
                         {/* Add to Buy List */}
                         <Button
@@ -360,13 +364,13 @@ export default function StockPage() {
                             size="large"
                             onClick={() => setBuyListModalOpen(true)}
                             sx={{
-                                bgcolor: '#fff',
-                                color: '#000',
+                                bgcolor: mode === 'dark' ? '#fff' : '#000',
+                                color: mode === 'dark' ? '#000' : '#fff',
                                 py: 2,
                                 fontWeight: 700,
                                 fontSize: '1rem',
                                 mb: 2,
-                                '&:hover': { bgcolor: '#ddd' }
+                                '&:hover': { bgcolor: mode === 'dark' ? '#ddd' : '#333' }
                             }}
                         >
                             Add to Buy List
@@ -392,11 +396,11 @@ export default function StockPage() {
                             startIcon={<Zap size={18} />}
                             onClick={() => setPortfolioModalOpen(true)}
                             sx={{
-                                color: '#00E5FF',
-                                borderColor: 'rgba(0, 229, 255, 0.3)',
+                                color: theme.palette.primary.main,
+                                borderColor: `${theme.palette.primary.main}40`,
                                 py: 2,
                                 fontWeight: 600,
-                                '&:hover': { borderColor: '#00E5FF', bgcolor: 'rgba(0, 229, 255, 0.05)' }
+                                '&:hover': { borderColor: theme.palette.primary.main, bgcolor: `${theme.palette.primary.main}10` }
                             }}
                         >
                             Add to Portfolio
@@ -407,10 +411,10 @@ export default function StockPage() {
                             open={portfolioModalOpen}
                             onClose={() => setPortfolioModalOpen(false)}
                             PaperProps={{
-                                sx: { bgcolor: '#0B0B0B', border: '1px solid #333', borderRadius: 4, minWidth: 500, p: 2 }
+                                sx: { bgcolor: theme.palette.background.default, border: `1px solid ${theme.palette.divider}`, borderRadius: 4, minWidth: 500, p: 2, backgroundImage: 'none' }
                             }}
                         >
-                            <DialogTitle sx={{ color: '#fff', fontWeight: 800, fontSize: '1.4rem', textAlign: 'center', mb: 2 }}>
+                            <DialogTitle sx={{ color: theme.palette.text.primary, fontWeight: 800, fontSize: '1.4rem', textAlign: 'center', mb: 2 }}>
                                 SELECT PORTFOLIO
                             </DialogTitle>
                             <DialogContent>
@@ -426,20 +430,20 @@ export default function StockPage() {
                                             sx={{
                                                 justifyContent: 'space-between',
                                                 textTransform: 'none',
-                                                bgcolor: '#111',
-                                                border: '1px solid #333',
-                                                color: '#fff',
+                                                bgcolor: theme.palette.background.paper,
+                                                border: `1px solid ${theme.palette.divider}`,
+                                                color: theme.palette.text.primary,
                                                 py: 3,
                                                 px: 3,
                                                 borderRadius: 3,
-                                                '&:hover': { bgcolor: '#222', borderColor: '#555' }
+                                                '&:hover': { bgcolor: mode === 'dark' ? '#222' : '#F1F5F9', borderColor: theme.palette.text.secondary }
                                             }}
                                         >
                                             <Typography variant="h6" sx={{ fontWeight: 600 }}>{portfolio.name}</Typography>
-                                            <Typography variant="caption" sx={{ color: '#00E5FF' }}>+ Add Stock</Typography>
+                                            <Typography variant="caption" sx={{ color: theme.palette.primary.main }}>+ Add Stock</Typography>
                                         </Button>
                                     )) : (
-                                        <Typography sx={{ color: '#666', textAlign: 'center' }}>No portfolios found.</Typography>
+                                        <Typography sx={{ color: theme.palette.text.secondary, textAlign: 'center' }}>No portfolios found.</Typography>
                                     )}
 
                                     {/* Create New Portfolio Button — uses proper modal */}
@@ -452,13 +456,13 @@ export default function StockPage() {
                                             mt: 2,
                                             justifyContent: 'center',
                                             textTransform: 'none',
-                                            bgcolor: 'rgba(255, 255, 255, 0.03)',
-                                            border: '1px dashed #444',
+                                            bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                                            border: `1px dashed ${theme.palette.divider}`,
                                             backdropFilter: 'blur(10px)',
-                                            color: '#888',
+                                            color: theme.palette.text.secondary,
                                             py: 3,
                                             borderRadius: 3,
-                                            '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)', color: '#fff', borderColor: '#fff' }
+                                            '&:hover': { bgcolor: mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)', color: theme.palette.text.primary, borderColor: theme.palette.text.primary }
                                         }}
                                     >
                                         <Typography variant="h6" sx={{ fontWeight: 600 }}>+ Create New Portfolio</Typography>
@@ -512,7 +516,7 @@ export default function StockPage() {
 
                 {/* --- NEW SECTION: News & Clarity Summary --- */}
                 <Box sx={{ mt: 8 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff', mb: 4, letterSpacing: '-0.02em' }}>Latest News</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 4, letterSpacing: '-0.02em' }}>Latest News</Typography>
 
 
 
@@ -524,17 +528,17 @@ export default function StockPage() {
                                     onClick={() => item.link && window.open(item.link, '_blank')}
                                     sx={{
                                         cursor: 'pointer',
-                                        bgcolor: 'rgba(255,255,255,0.02)',
-                                        border: '1px solid rgba(255,255,255,0.07)',
+                                        bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
+                                        border: `1px solid ${theme.palette.divider}`,
                                         borderRadius: 3,
                                         height: '100%',
                                         transition: 'border-color 0.25s, background 0.25s, transform 0.2s',
                                         '&:hover': {
-                                            borderColor: 'rgba(0, 229, 255, 0.3)',
-                                            bgcolor: 'rgba(0, 229, 255, 0.03)',
+                                            borderColor: `${theme.palette.primary.main}60`,
+                                            bgcolor: `${theme.palette.primary.main}08`,
                                             transform: 'translateY(-2px)',
                                         },
-                                        '&:hover .news-title': { color: '#00E5FF' }
+                                        '&:hover .news-title': { color: theme.palette.primary.main }
                                     }}>
                                     <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
                                         {/* Header: Logo + Source + Time */}
@@ -542,7 +546,8 @@ export default function StockPage() {
                                             {/* Logo */}
                                             <Box sx={{
                                                 width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', bgcolor: '#fff',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                border: `1px solid ${theme.palette.divider}`
                                             }}>
                                                 <img
                                                     src={`https://www.google.com/s2/favicons?domain=${item.link || item.source}&sz=64`}
@@ -552,8 +557,8 @@ export default function StockPage() {
                                                 />
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" sx={{ color: '#00E5FF', fontWeight: 700, display: 'block', lineHeight: 1 }}>{item.source || 'Market News'}</Typography>
-                                                <Typography variant="caption" sx={{ color: '#666', fontSize: '0.7rem' }}>{item.time || 'Today'}</Typography>
+                                                <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 700, display: 'block', lineHeight: 1 }}>{item.source || 'Market News'}</Typography>
+                                                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.7rem' }}>{item.time || 'Today'}</Typography>
                                             </Box>
                                         </Box>
 
@@ -562,7 +567,7 @@ export default function StockPage() {
                                             className="news-title"
                                             variant="h6"
                                             sx={{
-                                                fontWeight: 700, lineHeight: 1.3, mb: 1, color: '#eee',
+                                                fontWeight: 700, lineHeight: 1.3, mb: 1, color: theme.palette.text.primary,
                                                 transition: 'color 0.2s',
                                                 display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
                                             }}
@@ -571,7 +576,7 @@ export default function StockPage() {
                                         </Typography>
 
                                         {/* Summary */}
-                                        <Typography variant="body2" sx={{ color: '#888', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                             {item.summary || item.description}
                                         </Typography>
                                     </Box>
@@ -587,20 +592,20 @@ export default function StockPage() {
                     onClose={() => setConfigOpen(false)}
                     PaperProps={{
                         sx: {
-                            bgcolor: '#0B0B0B',
-                            border: '1px solid #333',
+                            bgcolor: theme.palette.background.default,
+                            border: `1px solid ${theme.palette.divider}`,
                             borderRadius: 4,
                             minWidth: 400,
                             backgroundImage: 'none'
                         }
                     }}
                 >
-                    <DialogTitle sx={{ color: '#fff', fontWeight: 700, borderBottom: '1px solid #222' }}>
+                    <DialogTitle sx={{ color: theme.palette.text.primary, fontWeight: 700, borderBottom: `1px solid ${theme.palette.divider}` }}>
                         Data Configuration
                     </DialogTitle>
                     <DialogContent sx={{ pt: 4 }}>
                         <Box sx={{ mt: 2 }}>
-                            <Typography sx={{ color: '#fff', fontWeight: 600, mb: 2 }}>Update Frequency</Typography>
+                            <Typography sx={{ color: theme.palette.text.primary, fontWeight: 600, mb: 2 }}>Update Frequency</Typography>
 
                             {/* Preset Buttons */}
                             <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
@@ -618,12 +623,12 @@ export default function StockPage() {
                                             setFastReload(option.value < 5);
                                         }}
                                         sx={{
-                                            bgcolor: updateInterval === option.value ? '#00E5FF' : 'transparent',
-                                            color: updateInterval === option.value ? '#000' : '#666',
-                                            borderColor: updateInterval === option.value ? '#00E5FF' : '#333',
+                                            bgcolor: updateInterval === option.value ? theme.palette.primary.main : 'transparent',
+                                            color: updateInterval === option.value ? (mode === 'dark' ? theme.palette.background.default : theme.palette.text.primary) : theme.palette.text.secondary,
+                                            borderColor: updateInterval === option.value ? theme.palette.primary.main : theme.palette.divider,
                                             '&:hover': {
-                                                bgcolor: updateInterval === option.value ? '#00E5FF' : 'rgba(255,255,255,0.05)',
-                                                borderColor: updateInterval === option.value ? '#00E5FF' : '#444'
+                                                bgcolor: updateInterval === option.value ? theme.palette.primary.main : mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                                borderColor: updateInterval === option.value ? theme.palette.primary.main : theme.palette.text.secondary
                                             }
                                         }}
                                     >
@@ -647,24 +652,24 @@ export default function StockPage() {
                                     variant="outlined"
                                     sx={{
                                         '& .MuiOutlinedInput-root': {
-                                            color: '#fff',
-                                            '& fieldset': { borderColor: '#333' },
-                                            '&:hover fieldset': { borderColor: '#444' },
-                                            '&.Mui-focused fieldset': { borderColor: '#00E5FF' }
+                                            color: theme.palette.text.primary,
+                                            '& fieldset': { borderColor: theme.palette.divider },
+                                            '&:hover fieldset': { borderColor: theme.palette.text.secondary },
+                                            '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main }
                                         },
-                                        '& .MuiInputLabel-root': { color: '#666' },
-                                        '& .MuiInputLabel-root.Mui-focused': { color: '#00E5FF' }
+                                        '& .MuiInputLabel-root': { color: theme.palette.text.secondary },
+                                        '& .MuiInputLabel-root.Mui-focused': { color: theme.palette.primary.main }
                                     }}
                                 />
                             </Box>
                         </Box>
                     </DialogContent>
-                    <DialogActions sx={{ p: 3, borderTop: '1px solid #222' }}>
-                        <Button onClick={() => setConfigOpen(false)} sx={{ color: '#666' }}>Cancel</Button>
+                    <DialogActions sx={{ p: 3, borderTop: `1px solid ${theme.palette.divider}` }}>
+                        <Button onClick={() => setConfigOpen(false)} sx={{ color: theme.palette.text.secondary }}>Cancel</Button>
                         <Button
                             onClick={() => setConfigOpen(false)}
                             variant="contained"
-                            sx={{ bgcolor: '#fff', color: '#000', fontWeight: 700, '&:hover': { bgcolor: '#ddd' } }}
+                            sx={{ bgcolor: mode === 'dark' ? theme.palette.text.primary : theme.palette.primary.main, color: theme.palette.background.default, fontWeight: 700, '&:hover': { bgcolor: mode === 'dark' ? '#ddd' : theme.palette.primary.dark } }}
                         >
                             Save Preferences
                         </Button>
@@ -681,7 +686,7 @@ export default function StockPage() {
                     <Alert
                         severity={toast.severity}
                         onClose={() => setToast(prev => ({ ...prev, open: false }))}
-                        sx={{ bgcolor: toast.severity === 'success' ? '#10B981' : '#EF4444', color: '#000', fontWeight: 600 }}
+                        sx={{ bgcolor: toast.severity === 'success' ? theme.palette.success.main : theme.palette.error.main, color: theme.palette.background.default, fontWeight: 600 }}
                     >
                         {toast.message}
                     </Alert>
@@ -737,16 +742,16 @@ function getHighLow(fundamentals: any) {
     return { high: 'N/A', low: 'N/A' };
 }
 
-function StatRow({ label, value }: { label: string, value: string | number | React.ReactNode }) {
+function StatRow({ label, value, theme }: { label: string, value: string | number | React.ReactNode, theme: any }) {
     return (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 2, borderBottom: '1px solid #222' }}>
-            <Typography variant="body1" sx={{ color: '#888' }}>{label}</Typography>
-            <Typography variant="body1" sx={{ fontWeight: 600, color: '#fff' }}>{value}</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 2, borderBottom: `1px solid ${theme.palette.divider}` }}>
+            <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>{label}</Typography>
+            <Typography variant="body1" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>{value}</Typography>
         </Box>
     );
 }
 
-function CustomTooltip({ active, payload, label, timeRange, showYear }: any) {
+function CustomTooltip({ active, payload, label, timeRange, showYear, theme }: any) {
     if (active && payload && payload.length) {
         let dateStr = '';
         const dateObj = new Date(label);
@@ -771,23 +776,23 @@ function CustomTooltip({ active, payload, label, timeRange, showYear }: any) {
 
         return (
             <Box sx={{
-                bgcolor: 'rgba(10, 10, 10, 0.8)',
-                border: '1px solid #333',
+                bgcolor: theme.palette.background.paper,
+                border: `1px solid ${theme.palette.divider}`,
                 borderRadius: 2,
                 p: 1.5,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                boxShadow: theme.palette.mode === 'light' ? '0 4px 20px rgba(0,0,0,0.08)' : '0 4px 20px rgba(0,0,0,0.5)',
                 backdropFilter: 'blur(10px)',
                 minWidth: 140
             }}>
-                <Typography variant="body2" sx={{ color: '#888', mb: 0.5, fontWeight: 500, fontSize: '0.75rem' }}>
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 0.5, fontWeight: 500, fontSize: '0.75rem' }}>
                     {dateStr}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-                    <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+                    <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 700, lineHeight: 1 }}>
                         ₹{parseFloat(payload[0].value).toFixed(2)}
                     </Typography>
                 </Box>
-                <Typography variant="caption" sx={{ color: '#00E5FF', fontWeight: 600, fontSize: '0.7rem' }}>
+                <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 600, fontSize: '0.7rem' }}>
                     Market Price
                 </Typography>
             </Box>

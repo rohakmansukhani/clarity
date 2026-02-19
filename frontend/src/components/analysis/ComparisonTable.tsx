@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Typography, Tooltip } from '@mui/material';
+import { Box, Typography, Tooltip, useTheme } from '@mui/material';
+import { useColorMode } from '@/theme/ThemeContext';
 import { Info, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 type MetricDefinition = {
@@ -19,10 +20,12 @@ type SortConfig = {
 // Helper component for displaying comparison data
 export function ComparisonTable({ comparisonData, selectedStocks }: { comparisonData: any, selectedStocks: string[] }) {
     const [sortConfig, setSortConfig] = useState<SortConfig>({ key: '', direction: null });
+    const theme = useTheme();
+    const { mode } = useColorMode();
 
     if (!comparisonData || !comparisonData.comparison || Object.keys(comparisonData.comparison).length === 0) {
         return (
-            <Box sx={{ textAlign: 'center', py: 4, color: '#666' }}>
+            <Box sx={{ textAlign: 'center', py: 4, color: theme.palette.text.secondary }}>
                 <Typography>No comparison data available</Typography>
             </Box>
         );
@@ -111,7 +114,7 @@ export function ComparisonTable({ comparisonData, selectedStocks }: { comparison
         },
     ];
 
-    const colors = ['#00E5FF', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
+    const colors = [theme.palette.primary.main, '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
 
     // Sort stocks based on current sort config
     const getSortedStocks = () => {
@@ -137,7 +140,7 @@ export function ComparisonTable({ comparisonData, selectedStocks }: { comparison
     const handleSort = (metricKey: string) => {
         if (!metrics.find(m => m.key === metricKey)?.sortable) return;
 
-        setSortConfig(prev => {
+        setSortConfig((prev: SortConfig) => {
             if (prev.key !== metricKey) {
                 return { key: metricKey, direction: 'desc' };
             }
@@ -164,8 +167,8 @@ export function ComparisonTable({ comparisonData, selectedStocks }: { comparison
                             gridTemplateColumns: `180px repeat(${selectedStocks.length}, 1fr)`,
                             gap: { xs: 1, md: 2 },
                             py: { xs: 2, md: 2.5 },
-                            borderBottom: idx === metrics.length - 1 ? 'none' : '1px solid #1a1a1a',
-                            '&:hover': { bgcolor: 'rgba(255,255,255,0.02)' }
+                            borderBottom: idx === metrics.length - 1 ? 'none' : `1px solid ${theme.palette.divider}`,
+                            '&:hover': { bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' }
                         }}
                     >
                         <Box
@@ -174,15 +177,15 @@ export function ComparisonTable({ comparisonData, selectedStocks }: { comparison
                                 alignItems: 'center',
                                 gap: 0.5,
                                 cursor: metric.sortable ? 'pointer' : 'default',
-                                '&:hover': metric.sortable ? { color: '#00E5FF' } : {}
+                                '&:hover': metric.sortable ? { color: theme.palette.primary.main } : {}
                             }}
                             onClick={() => handleSort(metric.key)}
                         >
-                            <Typography variant="body2" sx={{ color: isSorted ? '#00E5FF' : '#888', fontWeight: 600, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
+                            <Typography variant="body2" sx={{ color: isSorted ? theme.palette.primary.main : theme.palette.text.secondary, fontWeight: 600, fontSize: { xs: '0.75rem', md: '0.875rem' } }}>
                                 {metric.label}
                             </Typography>
                             {metric.sortable && (
-                                <Box sx={{ display: 'flex', alignItems: 'center', color: isSorted ? '#00E5FF' : '#666' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', color: isSorted ? theme.palette.primary.main : theme.palette.text.secondary }}>
                                     {!isSorted && <ArrowUpDown size={14} />}
                                     {isSorted && sortConfig.direction === 'desc' && <ArrowDown size={14} />}
                                     {isSorted && sortConfig.direction === 'asc' && <ArrowUp size={14} />}
@@ -193,26 +196,33 @@ export function ComparisonTable({ comparisonData, selectedStocks }: { comparison
                                     title={metric.tooltip}
                                     arrow
                                     placement="top"
-                                    sx={{
-                                        '& .MuiTooltip-tooltip': {
-                                            bgcolor: 'rgba(10, 10, 10, 0.95)',
-                                            border: '1px solid #333',
-                                            borderRadius: 2,
-                                            p: 1.5,
-                                            maxWidth: 300,
-                                            fontSize: '0.875rem',
-                                            lineHeight: 1.5
+                                    componentsProps={{
+                                        tooltip: {
+                                            sx: {
+                                                bgcolor: theme.palette.background.paper,
+                                                color: theme.palette.text.primary,
+                                                border: `1px solid ${theme.palette.divider}`,
+                                                borderRadius: 2,
+                                                p: 1.5,
+                                                maxWidth: 300,
+                                                fontSize: '0.875rem',
+                                                lineHeight: 1.5,
+                                                boxShadow: theme.palette.mode === 'light' ? '0 4px 20px rgba(0,0,0,0.08)' : '0 4px 20px rgba(0,0,0,0.4)',
+                                            }
                                         },
-                                        '& .MuiTooltip-arrow': {
-                                            color: 'rgba(10, 10, 10, 0.95)',
-                                            '&::before': {
-                                                border: '1px solid #333'
+                                        arrow: {
+                                            sx: {
+                                                color: theme.palette.background.paper,
+                                                '&::before': {
+                                                    border: `1px solid ${theme.palette.divider}`,
+                                                    bgcolor: theme.palette.background.paper,
+                                                }
                                             }
                                         }
                                     }}
                                 >
                                     <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'help' }}>
-                                        <Info size={14} color="#666" />
+                                        <Info size={14} color={theme.palette.text.secondary} />
                                     </Box>
                                 </Tooltip>
                             )}
@@ -226,8 +236,8 @@ export function ComparisonTable({ comparisonData, selectedStocks }: { comparison
 
                             // Special coloring for action
                             const textColor = isActionRow
-                                ? (value === 'BUY' ? '#10B981' : value === 'SELL' ? '#EF4444' : '#F59E0B')
-                                : (isWinner ? winColor : '#fff');
+                                ? (value === 'BUY' ? theme.palette.success.main : value === 'SELL' ? theme.palette.error.main : theme.palette.warning.main)
+                                : (isWinner ? winColor : theme.palette.text.primary);
 
                             return (
                                 <Typography
@@ -241,7 +251,7 @@ export function ComparisonTable({ comparisonData, selectedStocks }: { comparison
                                         fontSize: { xs: '0.75rem', md: '0.875rem' }
                                     }}
                                 >
-                                    {value ? metric.format(value) : 'N/A'}
+                                    {value !== undefined && value !== null ? metric.format(value) : 'N/A'}
                                 </Typography>
                             );
                         })}

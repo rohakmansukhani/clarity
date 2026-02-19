@@ -1,5 +1,4 @@
-import React from 'react';
-import { Paper, TextField, InputAdornment, CircularProgress, List, ListItem, ListItemButton, Box, Typography } from '@mui/material';
+import { Paper, TextField, InputAdornment, CircularProgress, List, ListItem, ListItemButton, Box, Typography, useTheme } from '@mui/material';
 import { Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -13,6 +12,8 @@ interface StockSearchBarProps {
 }
 
 export function StockSearchBar({ search, searchResults, searchLoading, disabled, onSearchChange, onSelectStock }: StockSearchBarProps) {
+    const theme = useTheme();
+
     return (
         <Box sx={{ width: '100%', maxWidth: 500, position: 'relative', zIndex: 10 }}>
             <Paper
@@ -23,11 +24,14 @@ export function StockSearchBar({ search, searchResults, searchLoading, disabled,
                     display: 'flex',
                     alignItems: 'center',
                     borderRadius: '24px',
-                    bgcolor: '#0A0A0A',
-                    border: '1px solid #222',
+                    bgcolor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
                     transition: 'all 0.3s',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                    '&:focus-within': { borderColor: '#00E5FF', boxShadow: '0 0 0 2px rgba(0, 229, 255, 0.1)' }
+                    boxShadow: theme.palette.mode === 'light' ? '0 4px 20px rgba(0,0,0,0.05)' : '0 4px 20px rgba(0,0,0,0.4)',
+                    '&:focus-within': {
+                        borderColor: theme.palette.primary.main,
+                        boxShadow: `0 0 0 2px ${theme.palette.primary.main}15`
+                    }
                 }}
             >
                 <TextField
@@ -41,11 +45,11 @@ export function StockSearchBar({ search, searchResults, searchLoading, disabled,
                         disableUnderline: true,
                         startAdornment: (
                             <InputAdornment position="start">
-                                <Search size={20} color={search ? "#fff" : "#666"} />
+                                <Search size={20} color={search ? theme.palette.text.primary : theme.palette.text.secondary} />
                             </InputAdornment>
                         ),
-                        endAdornment: searchLoading ? <CircularProgress size={20} sx={{ color: '#666' }} /> : null,
-                        sx: { color: '#fff', fontSize: '1rem', fontWeight: 500, px: 2, py: 1.5 }
+                        endAdornment: searchLoading ? <CircularProgress size={20} sx={{ color: theme.palette.text.secondary }} /> : null,
+                        sx: { color: theme.palette.text.primary, fontSize: '1rem', fontWeight: 500, px: 2, py: 1.5 }
                     }}
                 />
             </Paper>
@@ -66,8 +70,8 @@ export function StockSearchBar({ search, searchResults, searchLoading, disabled,
                             mt: 1,
                             borderRadius: 3,
                             overflow: 'hidden',
-                            bgcolor: '#0A0A0A',
-                            border: '1px solid #222',
+                            bgcolor: theme.palette.background.paper,
+                            border: `1px solid ${theme.palette.divider}`,
                             zIndex: 20,
                             maxHeight: 300,
                             overflowY: 'auto'
@@ -81,13 +85,13 @@ export function StockSearchBar({ search, searchResults, searchLoading, disabled,
                                         sx={{
                                             py: 2,
                                             px: 3,
-                                            borderBottom: '1px solid #1a1a1a',
-                                            '&:hover': { bgcolor: 'rgba(0, 229, 255, 0.05)' }
+                                            borderBottom: `1px solid ${theme.palette.divider}`,
+                                            '&:hover': { bgcolor: `${theme.palette.primary.main}10` }
                                         }}
                                     >
                                         <Box>
-                                            <Typography sx={{ fontWeight: 700, color: '#fff' }}>{item.symbol}</Typography>
-                                            <Typography variant="body2" sx={{ color: '#666' }}>{item.name}</Typography>
+                                            <Typography sx={{ fontWeight: 700, color: theme.palette.text.primary }}>{item.symbol}</Typography>
+                                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{item.name}</Typography>
                                         </Box>
                                     </ListItemButton>
                                 </ListItem>

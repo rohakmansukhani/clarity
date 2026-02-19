@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Box, List, ListItem, ListItemButton, Tooltip, IconButton, useMediaQuery, useTheme } from '@mui/material';
-import { LayoutDashboard, TrendingUp, PieChart, MessageSquare, LogOut, Menu, X, ChevronRight, ChevronLeft, Eye, RotateCcw, BarChart2, Compass } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, PieChart, MessageSquare, LogOut, Menu, X, ChevronRight, ChevronLeft, Eye, RotateCcw, BarChart2, Compass, Moon, Sun } from 'lucide-react';
 import { useUIStore } from '@/lib/ui-store';
+import { useColorMode } from '@/theme/ThemeContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -22,6 +23,7 @@ export default function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const theme = useTheme();
+    const { mode, toggleColorMode } = useColorMode();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     const { isSidebarOpen, toggleSidebar, closeSidebar } = useUIStore();
@@ -95,8 +97,8 @@ export default function Sidebar() {
                             alignItems: 'center',
                             pt: 3,
                             pb: 4,
-                            background: '#0B0B0B',
-                            border: '1px solid #333', // Border for visibility
+                            background: theme.palette.background.paper,
+                            border: `1px solid ${theme.palette.divider}`, // Border for visibility
                             borderRadius: 4, // Rounded Corners
                             zIndex: 50,
                         }}
@@ -128,11 +130,11 @@ export default function Sidebar() {
                                                     justifyContent: 'center',
                                                     p: 1.5,
                                                     borderRadius: 3,
-                                                    color: isActive ? '#00E5FF' : '#666',
+                                                    color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
                                                     transition: 'all 0.2s',
                                                     '&:hover': {
-                                                        color: '#fff',
-                                                        background: 'rgba(255,255,255,0.05)',
+                                                        color: theme.palette.text.primary,
+                                                        background: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
                                                         transform: 'scale(1.05)'
                                                     }
                                                 }}
@@ -149,7 +151,7 @@ export default function Sidebar() {
                                                             transform: 'translateY(-50%)',
                                                             height: 4,
                                                             width: 4,
-                                                            background: '#00E5FF',
+                                                            background: theme.palette.primary.main,
                                                             borderRadius: '50%'
                                                         }}
                                                     />
@@ -161,13 +163,25 @@ export default function Sidebar() {
                             })}
                         </List>
 
-                        {/* Logout */}
-                        <Box sx={{ mt: 'auto', pb: 2 }}>
+                        {/* Theme Toggle & Logout */}
+                        <Box sx={{ mt: 'auto', pb: 2, display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
+                            <Tooltip title={mode === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"} placement="right">
+                                <IconButton
+                                    onClick={toggleColorMode}
+                                    sx={{
+                                        color: theme.palette.text.secondary,
+                                        '&:hover': { color: theme.palette.primary.main, bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }
+                                    }}
+                                >
+                                    {mode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                                </IconButton>
+                            </Tooltip>
+
                             <Tooltip title="Logout" placement="right">
                                 <ListItemButton onClick={() => {
                                     sessionStorage.removeItem('clarity_disclaimer_acknowledged');
                                     router.push('/login');
-                                }} sx={{ color: '#666', borderRadius: 3, '&:hover': { color: '#EF4444', bgcolor: 'rgba(239, 68, 68, 0.1)' } }}>
+                                }} sx={{ color: theme.palette.text.secondary, borderRadius: 3, '&:hover': { color: theme.palette.error.main, bgcolor: 'rgba(239, 68, 68, 0.1)' } }}>
                                     <LogOut size={22} />
                                 </ListItemButton>
                             </Tooltip>

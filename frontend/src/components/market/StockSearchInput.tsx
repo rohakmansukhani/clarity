@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Box, TextField, InputAdornment, Paper, List, ListItem, ListItemButton, Typography } from '@mui/material';
+import { Box, TextField, InputAdornment, Paper, List, ListItem, ListItemButton, Typography, useTheme } from '@mui/material';
 import { Search, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { marketService } from '@/services/marketService';
@@ -23,6 +23,7 @@ export default function StockSearchInput({
     placeholder = 'Search stocks...',
     autoFocus = false
 }: StockSearchInputProps) {
+    const theme = useTheme();
     const [options, setOptions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -73,27 +74,27 @@ export default function StockSearchInput({
                         <InputAdornment position="start">
                             <Search
                                 size={isHero ? 28 : 20}
-                                color={isHero ? (value ? "#fff" : "#666") : "#666"}
+                                color={isHero ? (value ? theme.palette.text.primary : theme.palette.text.secondary) : theme.palette.text.secondary}
                             />
                         </InputAdornment>
                     ),
                     sx: isHero ? {
                         fontSize: { xs: '1.5rem', md: '2rem' },
                         fontWeight: 500,
-                        color: '#fff',
+                        color: theme.palette.text.primary,
                         py: 2,
-                        borderBottom: '2px solid #333',
+                        borderBottom: `2px solid ${theme.palette.divider}`,
                         transition: 'all 0.3s',
                         '&.Mui-focused': {
-                            borderBottom: '2px solid #00E5FF'
+                            borderBottom: `2px solid ${theme.palette.primary.main}`
                         }
                     } : {
-                        color: '#fff',
-                        bgcolor: '#111',
+                        color: theme.palette.text.primary,
+                        bgcolor: theme.palette.background.paper,
                         borderRadius: 2,
-                        '& fieldset': { borderColor: '#333' },
-                        '&:hover fieldset': { borderColor: '#444' },
-                        '&.Mui-focused fieldset': { borderColor: '#00E5FF' }
+                        '& fieldset': { borderColor: theme.palette.divider },
+                        '&:hover fieldset': { borderColor: theme.palette.text.secondary },
+                        '&.Mui-focused fieldset': { borderColor: theme.palette.primary.main }
                     }
                 }}
             />
@@ -115,9 +116,10 @@ export default function StockSearchInput({
                             maxHeight: 300,
                             overflow: 'auto',
                             borderRadius: 3,
-                            bgcolor: '#111',
-                            border: '1px solid #222',
-                            zIndex: 1000
+                            bgcolor: theme.palette.background.paper,
+                            border: `1px solid ${theme.palette.divider}`,
+                            zIndex: 1000,
+                            boxShadow: theme.palette.mode === 'light' ? '0 4px 20px rgba(0,0,0,0.08)' : 'none'
                         }}
                     >
                         <List disablePadding>
@@ -132,21 +134,21 @@ export default function StockSearchInput({
                                         sx={{
                                             py: isHero ? 2.5 : 1.5,
                                             px: isHero ? 3 : 2,
-                                            borderBottom: '1px solid #222',
+                                            borderBottom: `1px solid ${theme.palette.divider}`,
                                             display: 'flex',
                                             justifyContent: 'space-between',
-                                            '&:hover': { bgcolor: 'rgba(0, 229, 255, 0.05)' }
+                                            '&:hover': { bgcolor: `${theme.palette.primary.main}10` }
                                         }}
                                     >
                                         <Box>
-                                            <Typography sx={{ fontWeight: 700, fontSize: isHero ? '1.1rem' : '0.95rem', color: '#fff' }}>
+                                            <Typography sx={{ fontWeight: 700, fontSize: isHero ? '1.1rem' : '0.95rem', color: theme.palette.text.primary }}>
                                                 {item.symbol}
                                             </Typography>
-                                            <Typography variant="body2" sx={{ color: '#666', fontSize: isHero ? '0.875rem' : '0.75rem' }}>
+                                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: isHero ? '0.875rem' : '0.75rem' }}>
                                                 {item.name}
                                             </Typography>
                                         </Box>
-                                        {isHero && <ArrowRight size={20} color="#333" />}
+                                        {isHero && <ArrowRight size={20} color={theme.palette.text.secondary} />}
                                     </ListItemButton>
                                 </ListItem>
                             ))}
