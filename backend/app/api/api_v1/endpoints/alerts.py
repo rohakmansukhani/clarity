@@ -149,16 +149,30 @@ async def check_and_trigger_alerts(
                     trigger_desc = f"{ticker} dropped -{pct_loss:.1f}% (target: -{target_pct}%)"
 
             if fired:
+                # 1. Fetch comprehensive analysis for the triggered stock
+                analysis_data = await market_service.get_comprehensive_analysis(ticker)
+                
+                # 2. Prepare context for EmailTemplateService
+                context = {
+                    "ticker": ticker,
+                    "trigger_title": trigger_desc,
+                    "current_price": f"{current_price:,.2f}",
+                    "initial_price": f"{initial_price:,.2f}" if initial_price else "N/A",
+                    "percent_change": f"{((current_price - initial_price) / initial_price * 100):+.1f}" if initial_price else "0.0",
+                    "technical_analysis": analysis_data.get("analysis", {}).get("technical"),
+                    "fundamental_analysis": analysis_data.get("analysis", {}).get("fundamental"),
+                    "tech_signal": analysis_data.get("analysis", {}).get("technical", {}).get("signal", "NEUTRAL"),
+                    "expert_notes": analysis_data.get("expert_insights", {}).get("valuation_context", ""),
+                    "action_url": f"https://clarity-invest.vercel.app/market/{ticker}"
+                }
+
+                # 3. Render HTML using Template Service
+                from app.services.email_template_service import EmailTemplateService
+                html_body = EmailTemplateService.render_alert(context)
+
                 # Send email notification
-                subject = f"🔔 Clarity Alert: {ticker} triggered"
-                body = f"""
-                <h2 style="color:#00E5FF">Clarity Price Alert Triggered</h2>
-                <p><strong>{trigger_desc}</strong></p>
-                <p>Your alert for <strong>{ticker}</strong> has been triggered. Log in to Clarity to take action.</p>
-                <hr/>
-                <p style="color:#888;font-size:12px">This is an automated alert from Clarity. You can manage your alerts in the Portfolio section.</p>
-                """
-                await EmailService.send_email(user_email, subject, body, html=True)
+                subject = f"🔔 Clarity Alert: {ticker} Price Movement"
+                await EmailService.send_email(user_email, subject, html_body, html=True)
 
                 # Mark alert as triggered (deactivate)
                 supabase.table("alerts").update({"is_active": False, "email_sent": True}).eq("id", alert["id"]).execute()

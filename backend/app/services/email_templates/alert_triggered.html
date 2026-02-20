@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clarity Alert Triggered</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0B0B0B;
+            color: #FFFFFF;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #0B0B0B;
+        }
+
+        .header {
+            text-align: left;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            color: #FFFFFF;
+        }
+
+        .logo span {
+            color: #00E5FF;
+        }
+
+        .alert-card {
+            background: linear-gradient(145deg, #1A1A1A 0%, #0B0B0B 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .ticker-badge {
+            display: inline-block;
+            background: rgba(0, 229, 255, 0.1);
+            color: #00E5FF;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .trigger-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            line-height: 1.2;
+        }
+
+        .price-text {
+            font-size: 32px;
+            font-weight: 800;
+            margin: 10px 0;
+            color: #FFFFFF;
+        }
+
+        .analysis-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .section-header {
+            font-size: 14px;
+            font-weight: 700;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .insight-grid {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .insight-item {
+            flex: 1 1 200px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .insight-label {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .insight-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #FFFFFF;
+        }
+
+        .summary-box {
+            background: rgba(0, 229, 255, 0.05);
+            border-left: 3px solid #00E5FF;
+            padding: 15px;
+            border-radius: 0 12px 12px 0;
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #CCCCCC;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: #FFFFFF;
+            color: #000000;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 16px;
+            margin-top: 30px;
+            transition: transform 0.2s;
+        }
+
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 12px;
+            color: #444;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 30px;
+        }
+
+        .link {
+            color: #00E5FF;
+            text-decoration: none;
+        }
+
+        .signal-strong-buy {
+            color: #10B981 !important;
+        }
+
+        .signal-buy {
+            color: #34D399 !important;
+        }
+
+        .signal-sell {
+            color: #F87171 !important;
+        }
+
+        .signal-strong-sell {
+            color: #EF4444 !important;
+        }
+
+        .signal-neutral {
+            color: #FFFFFF !important;
+        }
+
+        .button-container {
+            text-align: right;
+            margin-top: 30px;
+        }
+
+        @media only screen and (max-width: 480px) {
+            .container {
+                padding: 20px 10px !important;
+            }
+
+            .alert-card {
+                padding: 20px !important;
+            }
+
+            .trigger-title {
+                font-size: 20px !important;
+            }
+
+            .price-text {
+                font-size: 28px !important;
+            }
+
+            .insight-item {
+                flex: 1 1 100% !important;
+            }
+
+            .cta-button {
+                width: 100% !important;
+                box-sizing: border-box !important;
+                text-align: center !important;
+            }
+
+            .button-container {
+                text-align: center !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">CLARITY<span>.</span></div>
+        </div>
+
+        <div class="alert-card">
+            <div class="ticker-badge">{{ ticker }}</div>
+            <h1 class="trigger-title">{{ trigger_title }}</h1>
+            <div class="price-text">₹{{ current_price }}</div>
+
+            <p style="color: #888; font-size: 14px; margin-top: 5px;">
+                Initial Price: ₹{{ initial_price }} ({{ percent_change }}%)
+            </p>
+
+            {% if technical_analysis or fundamental_analysis %}
+            <div class="analysis-section">
+                <div class="section-header">Expert Insights</div>
+
+                <div class="insight-grid">
+                    {% if technical_analysis %}
+                    <div class="insight-item">
+                        <div class="insight-label">Technical Signal</div>
+                        <div class="insight-value {{ tech_class }}">{{ tech_signal }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if fundamental_analysis %}
+                    <div class="insight-item">
+                        <div class="insight-label">Fundamental Health</div>
+                        <div class="insight-value">{{ fundamental_analysis.health_score }}/100</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if expert_notes %}
+                <div class="summary-box">
+                    <strong>Context:</strong> {{ expert_notes }}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="button-container">
+                <a href="{{ action_url }}" class="cta-button">View Full Analysis</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2025 Clarity Financial. All rights reserved.</p>
+            <p>You received this because you set an alert for {{ ticker }}. <br />
+                <a href="{{ action_url }}" class="link">Manage Alerts</a> | <a href="#" class="link">Unsubscribe</a>
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>
