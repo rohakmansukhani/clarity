@@ -17,6 +17,7 @@ import { TrendingUp } from 'lucide-react';
 interface SIPCalculatorStockProps {
   currentPrice: number;
   symbol: string;
+  defaultReturnRate?: number; // Optional 3Y CAGR to pre-fill
 }
 
 interface CalculationResult {
@@ -29,10 +30,11 @@ interface CalculationResult {
 const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
   currentPrice,
   symbol,
+  defaultReturnRate = 12, // Default to 12% if no 3Y CAGR available
 }) => {
   const [investmentType, setInvestmentType] = useState<'sip' | 'lumpsum'>('sip');
   const [amount, setAmount] = useState<string>('');
-  const [returnRate, setReturnRate] = useState<string>('');
+  const [returnRate, setReturnRate] = useState<string>(defaultReturnRate.toString());
   const [tenure, setTenure] = useState<string>('');
   const [result, setResult] = useState<CalculationResult | null>(null);
 
