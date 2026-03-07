@@ -26,10 +26,6 @@ export default function AnalysisPage() {
     const { mode } = useColorMode();
     const [hasMounted, setHasMounted] = useState(false);
 
-    useEffect(() => {
-        setHasMounted(true);
-    }, []);
-
     const [search, setSearch] = useState('');
     const [exchangeFilter, setExchangeFilter] = useState('ALL');
     const [selectedStocks, setSelectedStocks] = useState<string[]>([]);
@@ -47,72 +43,10 @@ export default function AnalysisPage() {
 
     const MAX_SLOTS = 5;
 
-    // --- Mobile Block Screen ---
-    if (hasMounted && isMobile) {
-        return (
-            <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-                <Sidebar />
-                <Box sx={{
-                    flexGrow: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    p: 4,
-                    textAlign: 'center',
-                    ml: { md: '140px' }
-                }}>
-                    <Box sx={{
-                        p: 4,
-                        bgcolor: 'background.paper',
-                        borderRadius: 6,
-                        border: `1px solid ${theme.palette.divider}`,
-                        maxWidth: 400,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: 3,
-                        boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
-                    }}>
-                        <Box sx={{
-                            width: 80,
-                            height: 80,
-                            borderRadius: '50%',
-                            bgcolor: `${theme.palette.primary.main}15`,
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            mb: 1
-                        }}>
-                            <Laptop size={40} color={theme.palette.primary.main} />
-                        </Box>
-                        <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
-                            Desktop Only
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
-                            The Comparison engine is a powerful tool designed for deep analysis and data visualization, which is best experienced on a laptop or desktop.
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            onClick={() => router.push('/dashboard')}
-                            sx={{
-                                mt: 2,
-                                bgcolor: 'text.primary',
-                                color: 'background.paper',
-                                borderRadius: 3,
-                                px: 4,
-                                py: 1.5,
-                                fontWeight: 600,
-                                '&:hover': { bgcolor: 'text.secondary' }
-                            }}
-                        >
-                            Back to Dashboard
-                        </Button>
-                    </Box>
-                </Box>
-            </Box>
-        );
-    }
+    // ALL hooks must be declared before any conditional return (Rules of Hooks)
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -233,6 +167,111 @@ export default function AnalysisPage() {
     };
 
     const quickInfo = stockPrices[search.toUpperCase()];
+
+    // Mobile Block Screen — rendered after all hooks (Rules of Hooks compliant)
+    if (hasMounted && isMobile) {
+        return (
+            <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: theme.palette.background.default, overflow: 'hidden' }}>
+                <Sidebar />
+                <Box sx={{
+                    flexGrow: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    p: 3,
+                    textAlign: 'center',
+                    position: 'relative',
+                }}>
+                    {/* Ambient background glows */}
+                    <Box sx={{
+                        position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)',
+                        width: 300, height: 300, borderRadius: '50%',
+                        background: `radial-gradient(circle, ${theme.palette.primary.main}20 0%, transparent 70%)`,
+                        pointerEvents: 'none',
+                    }} />
+
+                    <Box component={motion.div}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+                        sx={{
+                            position: 'relative',
+                            zIndex: 1,
+                            maxWidth: 380,
+                            width: '100%',
+                            p: { xs: 3, sm: 4 },
+                            borderRadius: 5,
+                            bgcolor: theme.palette.background.paper,
+                            border: `1px solid ${theme.palette.divider}`,
+                            boxShadow: mode === 'dark'
+                                ? '0 40px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)'
+                                : '0 40px 80px rgba(0,0,0,0.1)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 2.5,
+                        }}
+                    >
+                        {/* Icon */}
+                        <Box component={motion.div}
+                            animate={{ y: [0, -6, 0] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                            sx={{
+                                width: 72, height: 72, borderRadius: 4,
+                                bgcolor: `${theme.palette.primary.main}15`,
+                                border: `1px solid ${theme.palette.primary.main}30`,
+                                display: 'flex', justifyContent: 'center', alignItems: 'center',
+                            }}
+                        >
+                            <Laptop size={34} color={theme.palette.primary.main} />
+                        </Box>
+
+                        <Box>
+                            <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.03em', mb: 1 }}>
+                                Built for Desktop
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, lineHeight: 1.7 }}>
+                                The Comparison Engine is a heavyweight analysis tool. Charts, data tables, and AI verdicts work best on a larger screen.
+                            </Typography>
+                        </Box>
+
+                        {/* Feature pills */}
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 1 }}>
+                            {['Side-by-Side Charts', 'AI Verdict', 'Key Metrics', 'Performance Table'].map((f) => (
+                                <Box key={f} sx={{
+                                    px: 1.5, py: 0.5, borderRadius: 2, bgcolor: `${theme.palette.primary.main}10`,
+                                    border: `1px solid ${theme.palette.primary.main}25`,
+                                    fontSize: '0.72rem', color: theme.palette.primary.main, fontWeight: 600
+                                }}>{f}</Box>
+                            ))}
+                        </Box>
+
+                        <Button
+                            variant="contained"
+                            fullWidth
+                            onClick={() => router.push('/dashboard')}
+                            sx={{
+                                mt: 1,
+                                bgcolor: mode === 'dark' ? '#fff' : theme.palette.primary.main,
+                                color: mode === 'dark' ? '#000' : '#fff',
+                                borderRadius: 3,
+                                py: 1.5,
+                                fontWeight: 700,
+                                fontSize: '0.95rem',
+                                '&:hover': { bgcolor: mode === 'dark' ? '#e0e0e0' : theme.palette.primary.dark }
+                            }}
+                        >
+                            Back to Dashboard
+                        </Button>
+                        <Typography variant="caption" sx={{ color: theme.palette.text.disabled }}>
+                            Open clarity-invest.vercel.app on your laptop for the full experience
+                        </Typography>
+                    </Box>
+                </Box>
+            </Box>
+        );
+    }
 
     return (
         <Box sx={{
