@@ -43,7 +43,7 @@ ssh -i /Users/rohakmansukhani/Documents/Coding/Projects/Clarity/Clarity_Aws.pem 
 ### Install Docker and Docker Compose
 ```bash
 sudo apt-get update
-sudo apt-get install -y docker.io docker-compose
+sudo apt-get install -y docker.io docker-buildx-plugin docker-compose-plugin
 sudo usermod -aG docker ubuntu
 # Log out and log back in to apply group changes
 exit
@@ -62,22 +62,28 @@ chmod +x deploy_vm_setup.sh
 Using Docker Compose ensures both the API and Redis are connected on the same network.
 ```bash
 cd ~/clarity-project/backend
-docker-compose up --build -d
+docker compose up --build -d
 ```
 
 ### Useful Maintenance Commands
 ```bash
 # Check status
-docker-compose ps
+docker compose ps
 
 # View logs
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # Stop everything
-docker-compose down
+docker compose down
 
 # Re-launch after code changes
-docker-compose up --build -d
+docker compose up --build -d
+
+# Restart and Clear Cache (Use this when updating code)
+cd ~/clarity-project/backend
+docker compose down
+docker compose up --build -d
+docker exec -it clarity-redis redis-cli flushdb
 ```
 
 ## 5. Frontend Configuration

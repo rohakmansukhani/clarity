@@ -118,7 +118,13 @@ class MarketService:
         inst_type = info.instrument_type.value if info else "STOCK"
 
         # For ETFs/Commodities, fundamentals are skipped or empty, but Yahoo returns stats in rich_details
+        # Note: ETFs often don't have P/E ratio or market cap, but may have 52W high/low
         if not fund_data and (is_commodity or inst_type == "ETF"):
+            # For ETFs, explicitly fetch Yahoo stats if not already present
+            if inst_type == "ETF" and not rich_details.get('fiftyTwoWeekHigh'):
+                yahoo_stats = await self.yahoo.get_stock_details(symbol)
+                rich_details.update(yahoo_stats)
+
             fund_data = {
                 "market_cap": rich_details.get('market_cap') or rich_details.get('marketCap'),
                 "pe_ratio": rich_details.get('pe_ratio') or rich_details.get('trailingPE'),

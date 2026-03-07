@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
-import { Box, Typography, ToggleButton, ToggleButtonGroup, useTheme } from '@mui/material';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useMemo, useState } from 'react';
+import { Box, Typography, Button, useTheme } from '@mui/material';
+import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { format, parse } from 'date-fns';
+import { useColorMode } from '@/theme/ThemeContext';
 
 interface NAVChartProps {
     data: { date: string; nav: string }[];
@@ -9,6 +10,7 @@ interface NAVChartProps {
 
 export default function NAVChart({ data }: NAVChartProps) {
     const theme = useTheme();
+    const { mode } = useColorMode();
     const [period, setPeriod] = useState<string>('1Y');
 
     const formattedData = useMemo(() => {
@@ -49,7 +51,7 @@ export default function NAVChart({ data }: NAVChartProps) {
         return filtered.map(item => {
             const parsedDate = parse(item.date, 'dd-MM-yyyy', new Date());
             return {
-                date: format(parsedDate, 'PP'),
+                date: parsedDate.toISOString(),
                 shortDate: format(parsedDate, 'MMM yyyy'),
                 nav: parseFloat(item.nav),
             };
@@ -60,76 +62,123 @@ export default function NAVChart({ data }: NAVChartProps) {
         return <Typography variant="body2" color="text.secondary">No historical NAV data available.</Typography>;
     }
 
+    const years = new Set(formattedData.map(d => new Date(d.date).getFullYear()));
+    const showYear = years.size > 1;
+
     return (
-        <Box sx={{ width: '100%', height: '100%' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                <ToggleButtonGroup
-                    value={period}
-                    exclusive
-                    onChange={(e, newPeriod) => {
-                        if (newPeriod !== null) setPeriod(newPeriod);
-                    }}
-                    size="small"
-                >
-                    <ToggleButton value="1M">1M</ToggleButton>
-                    <ToggleButton value="6M">6M</ToggleButton>
-                    <ToggleButton value="1Y">1Y</ToggleButton>
-                    <ToggleButton value="3Y">3Y</ToggleButton>
-                    <ToggleButton value="5Y">5Y</ToggleButton>
-                    <ToggleButton value="ALL">ALL</ToggleButton>
-                </ToggleButtonGroup>
+        <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
+            {/* Time Range Buttons - Matching Stock Page Style */}
+            <Box sx={{ position: 'absolute', top: 0, right: 0, zIndex: 10, display: 'flex', gap: 1 }}>
+                {['1M', '6M', '1Y', '3Y', '5Y', 'ALL'].map((range) => (
+                    <Button
+                        key={range}
+                        size="small"
+                        onClick={() => setPeriod(range)}
+                        sx={{
+                            minWidth: 0,
+                            px: 1.5,
+                            color: period === range ? theme.palette.primary.main : theme.palette.text.secondary,
+                            fontWeight: 700,
+                            bgcolor: period === range ? `${theme.palette.primary.main}15` : 'transparent',
+                            '&:hover': {
+                                color: theme.palette.text.primary,
+                                bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'
+                            }
+                        }}
+                    >
+                        {range}
+                    </Button>
+                ))}
             </Box>
 
-            <Box sx={{ width: '100%', height: 320 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={formattedData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                        <defs>
-                            <linearGradient id="colorNav" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.3} />
-                                <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0} />
-                            </linearGradient>
-                        </defs>
-                        <XAxis
-                            dataKey="shortDate"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
-                            minTickGap={50}
-                        />
-                        <YAxis
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
-                            domain={['auto', 'auto']}
-                        />
-                        <Tooltip
-                            contentStyle={{
-                                backgroundColor: theme.palette.background.paper,
-                                borderRadius: 8,
-                                border: `1px solid ${theme.palette.divider}`,
-                                boxShadow: theme.shadows[3]
-                            }}
-                            labelStyle={{ color: theme.palette.text.secondary, marginBottom: 4 }}
-                            itemStyle={{ color: theme.palette.primary.main, fontWeight: 700 }}
-                            formatter={(value: any) => [`₹${value.toFixed(4)}`, 'NAV']}
-                            labelFormatter={(label, payload) => {
-                                if (payload && payload.length > 0) {
-                                    return payload[0].payload.date;
-                                }
-                                return label;
-                            }}
-                        />
-                        <Area
-                            type="monotone"
-                            dataKey="nav"
-                            stroke={theme.palette.primary.main}
-                            strokeWidth={2}
-                            fillOpacity={1}
-                            fill="url(#colorNav)"
-                        />
-                    </AreaChart>
-                </ResponsiveContainer>
+            <Box sx={{ width: '100%', height: '100%', mt: 4 }}>
+                {formattedData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={formattedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="colorNav" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.2} />
+                                    <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <XAxis
+                                dataKey="date"
+                                tickFormatter={(val) => {
+                                    const d = new Date(val);
+                                    if (period === '1M') return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
+                                    return d.toLocaleDateString([], { month: 'short', year: '2-digit' });
+                                }}
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                                dy={10}
+                                minTickGap={30}
+                            />
+                            <YAxis
+                                domain={['auto', 'auto']}
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                                width={45}
+                                tickFormatter={(val) => `₹${val.toFixed(2)}`}
+                            />
+                            <RechartsTooltip
+                                content={<CustomTooltip showYear={showYear} theme={theme} />}
+                                cursor={{ stroke: theme.palette.divider, strokeWidth: 1, strokeDasharray: '4 4' }}
+                            />
+                            <Area
+                                type="monotone"
+                                dataKey="nav"
+                                stroke={theme.palette.primary.main}
+                                strokeWidth={2}
+                                fillOpacity={1}
+                                fill="url(#colorNav)"
+                                animationDuration={500}
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <Box sx={{ display: 'flex', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                        <Typography color="text.secondary">No data for this period</Typography>
+                    </Box>
+                )}
             </Box>
         </Box>
     );
+}
+
+function CustomTooltip({ active, payload, label, showYear, theme }: any) {
+    if (active && payload && payload.length) {
+        const dateObj = new Date(label);
+        const options: any = { month: 'short', day: 'numeric' };
+        if (showYear) {
+            options.year = 'numeric';
+        }
+        const dateStr = dateObj.toLocaleDateString([], options);
+
+        return (
+            <Box sx={{
+                bgcolor: theme.palette.background.paper,
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: 2,
+                p: 1.5,
+                boxShadow: theme.palette.mode === 'light' ? '0 4px 20px rgba(0,0,0,0.08)' : '0 4px 20px rgba(0,0,0,0.5)',
+                backdropFilter: 'blur(10px)',
+                minWidth: 140
+            }}>
+                <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 0.5, fontWeight: 500, fontSize: '0.75rem' }}>
+                    {dateStr}
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                    <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 700, lineHeight: 1 }}>
+                        ₹{parseFloat(payload[0].value).toFixed(4)}
+                    </Typography>
+                </Box>
+                <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 600, fontSize: '0.7rem' }}>
+                    NAV
+                </Typography>
+            </Box>
+        );
+    }
+    return null;
 }

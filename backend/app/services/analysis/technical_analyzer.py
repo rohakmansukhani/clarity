@@ -44,6 +44,9 @@ class TechnicalAnalyzer:
             # Bollinger Bands
             bb_data = self._calc_bollinger_bands(df)
             
+            # Support and Resistance
+            sr_data = self._calc_support_resistance(df)
+            
             # Volume Analysis
             volume_data = self._analyze_volume(df)
             
@@ -100,10 +103,14 @@ class TechnicalAnalyzer:
         
         rs = avg_gain / avg_loss
         rsi_series = 100 - (100 / (1 + rs))
-        current_rsi = rsi_series[-1]
-        
-        if current_rsi is None or np.isnan(current_rsi):
-             current_rsi = 50.0  # Fallback
+
+        # Extract scalar value from Polars series
+        try:
+            current_rsi = float(rsi_series[-1])
+            if np.isnan(current_rsi) or np.isinf(current_rsi):
+                current_rsi = 50.0  # Fallback for invalid values
+        except (TypeError, ValueError, IndexError):
+            current_rsi = 50.0  # Fallback if extraction fails
              
         if current_rsi < 30:
             signal = 'OVERSOLD'

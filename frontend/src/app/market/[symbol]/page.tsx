@@ -11,6 +11,7 @@ import AddTransactionModal from '@/components/portfolio/AddTransactionModal';
 import CreatePortfolioModal from '@/components/portfolio/CreatePortfolioModal';
 import AddToWatchlistModal from '@/components/watchlist/AddToWatchlistModal';
 import Sidebar from '@/components/layout/Sidebar';
+import SIPCalculatorStock from '@/components/stocks/SIPCalculatorStock';
 
 export default function StockPage() {
     const params = useParams();
@@ -607,6 +608,17 @@ export default function StockPage() {
                         </Box>
                     </Box>
                 )}
+
+                {/* SIP Calculator Section */}
+                <Box sx={{ mt: 8 }}>
+                    <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 4, letterSpacing: '-0.02em' }}>
+                        Investment Calculator
+                    </Typography>
+                    <SIPCalculatorStock
+                        currentPrice={data.market_data?.price || 0}
+                        symbol={symbol}
+                    />
+                </Box>
 
                 {/* Configuration Modal */}
                 <Dialog

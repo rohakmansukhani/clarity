@@ -28,6 +28,18 @@ class MoneyControlProvider(BaseDataSource):
     async def get_stock_details(self, symbol: str, company_name: str = None) -> Dict[str, Any]:
         return {"news": await self.get_news(symbol, company_name)}
 
+    def _build_keywords(self, ticker: str, company_name: str = None) -> Dict[str, Any]:
+        """Build relevance keywords from ticker and company name."""
+        result = {"ticker": ticker.lower(), "company_words": []}
+        if company_name:
+            # Extract meaningful words
+            words = []
+            for word in company_name.lower().split():
+                if len(word) > 2 and word not in {'limited', 'india', 'stock', 'fund', 'house', 'asset', 'etf', 'ltd'}:
+                    words.append(word)
+            result["company_words"] = words
+        return result
+
     async def get_news(self, symbol: str, company_name: str = None) -> List[Dict[str, str]]:
         try:
             ticker = symbol.replace('.NS', '').replace('.BO', '').strip().upper()
@@ -54,17 +66,6 @@ class MoneyControlProvider(BaseDataSource):
         except Exception as e:
             logger.error(f"News Error: {e}")
             return []
-
-        # Return both the ticker and the full meaningful search name
-        result = {"ticker": ticker.lower(), "company_words": []}
-        if company_name:
-            # Extract meaningful words
-            words = []
-            for word in company_name.lower().split():
-                if len(word) > 2 and word not in {'limited', 'india', 'stock', 'fund', 'house', 'asset', 'etf', 'ltd'}:
-                    words.append(word)
-            result["company_words"] = words
-        return result
 
     def _is_recent(self, pub_date_str: str) -> bool:
         """Return True if the article was published within NEWS_RECENCY_DAYS days."""
@@ -100,7 +101,28 @@ class MoneyControlProvider(BaseDataSource):
         for item in news:
             title = item.get('title', '')
             pub_date = item.get('pubDate', '')
-            if self._is_recent(pub_date) and self._is_relevant(title, keywords):
+            if self._is_recent(pub_date) and self._is_relevant(title, rules):
+                # Format the date for frontend display
+                try:
+                    pub_dt = parsedate_to_datetime(pub_date)
+                    now = datetime.now(pub_dt.tzinfo)
+                    diff = now - pub_dt
+
+                    # Format based on age
+                    if diff.days == 0:
+                        if diff.seconds < 3600:
+                            item['time'] = f"{diff.seconds // 60}m ago"
+                        else:
+                            item['time'] = f"{diff.seconds // 3600}h ago"
+                    elif diff.days == 1:
+                        item['time'] = "Yesterday"
+                    elif diff.days < 7:
+                        item['time'] = f"{diff.days}d ago"
+                    else:
+                        item['time'] = pub_dt.strftime("%b %d, %Y")
+                except Exception:
+                    item['time'] = pub_date
+
                 filtered.append(item)
         return filtered
 
