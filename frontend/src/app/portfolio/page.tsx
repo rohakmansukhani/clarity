@@ -457,7 +457,7 @@ export default function PortfolioPage() {
                                             </Box>
                                         ) : (
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-1px' }}>
+                                                <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-1px', color: 'text.primary' }}>
                                                     {activePortfolio.name}
                                                 </Typography>
                                                 <IconButton

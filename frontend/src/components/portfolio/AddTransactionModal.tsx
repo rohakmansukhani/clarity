@@ -110,6 +110,8 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
         <Dialog
             open={open}
             onClose={handleClose}
+            maxWidth="sm"
+            fullWidth
             PaperProps={{
                 sx: {
                     bgcolor: 'background.paper',
@@ -118,7 +120,8 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                     border: '1px solid',
                     borderColor: 'divider',
                     p: 1,
-                    backgroundImage: 'none'
+                    backgroundImage: 'none',
+                    boxShadow: theme.shadows[16]
                 }
             }}
         >
@@ -198,14 +201,21 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                             fullWidth
                             value={shares}
                             onChange={(e) => setShares(e.target.value)}
-                            InputProps={{ sx: { color: '#fff', bgcolor: '#111', borderRadius: 2, '& fieldset': { borderColor: '#333' } } }}
-                            InputLabelProps={{ sx: { color: '#666' } }}
+                            InputProps={{
+                                sx: {
+                                    color: 'text.primary',
+                                    bgcolor: 'background.default',
+                                    borderRadius: 2,
+                                    '& fieldset': { borderColor: 'divider' }
+                                }
+                            }}
+                            InputLabelProps={{ sx: { color: 'text.secondary' } }}
                         />
                     </Box>
 
                     {mode === 'HISTORICAL' && (
                         <Box>
-                            <Typography sx={{ color: '#666', fontSize: '0.8rem', mb: 1, ml: 1 }}>Purchase Date</Typography>
+                            <Typography sx={{ color: 'text.secondary', fontSize: '0.8rem', mb: 1, ml: 1 }}>Purchase Date</Typography>
                             <CustomDatePicker
                                 value={date ? date.toISOString().split('T')[0] : ''}
                                 onChange={(d) => setDate(d ? new Date(d) : undefined)}
@@ -223,23 +233,29 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                         onChange={(e) => setPrice(e.target.value)}
                         InputProps={{
                             sx: {
-                                color: '#00E5FF',
-                                bgcolor: '#0A0A0A',
+                                color: 'primary.main',
+                                bgcolor: 'background.default',
                                 borderRadius: 2,
-                                '& fieldset': { borderColor: '#333' },
+                                '& fieldset': { borderColor: 'divider' },
                                 fontWeight: 700
                             },
-                            startAdornment: <Typography sx={{ color: '#00E5FF', mr: 1 }}>₹</Typography>
+                            startAdornment: <Typography sx={{ color: 'primary.main', mr: 1 }}>₹</Typography>
                         }}
-                        InputLabelProps={{ sx: { color: '#666' } }}
+                        InputLabelProps={{ sx: { color: 'text.secondary' } }}
                         helperText={fetchingPrice ? "Fetching..." : (mode === 'PRESENT' ? "Auto-updates with market" : "Enter manually or select date")}
-                        FormHelperTextProps={{ sx: { color: '#666', fontSize: '0.7rem' } }}
+                        FormHelperTextProps={{ sx: { color: 'text.secondary', fontSize: '0.7rem' } }}
                     />
 
                     {price && shares && (
-                        <Box sx={{ p: 2, bgcolor: 'rgba(0, 229, 255, 0.05)', borderRadius: 2, border: '1px solid rgba(0, 229, 255, 0.2)' }}>
-                            <Typography variant="caption" sx={{ color: '#888' }}>Total Investment</Typography>
-                            <Typography variant="h5" sx={{ color: '#00E5FF', fontWeight: 700 }}>
+                        <Box sx={{
+                            p: 2,
+                            bgcolor: (theme) => `${theme.palette.primary.main}10`,
+                            borderRadius: 2,
+                            border: '1px solid',
+                            borderColor: (theme) => `${theme.palette.primary.main}30`
+                        }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Investment</Typography>
+                            <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 700 }}>
                                 ₹{(Number(price) * Number(shares)).toLocaleString()}
                             </Typography>
                         </Box>
@@ -253,8 +269,14 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                     onClick={handleSubmit}
                     disabled={!ticker || !shares || !price || Number(shares) <= 0 || Number(price) <= 0 || (fetchingPrice && mode === 'PRESENT') || (mode === 'HISTORICAL' && !date && !price)}
                     sx={{
-                        bgcolor: '#fff', color: '#000', fontWeight: 700, py: 1.5, borderRadius: 3,
-                        '&:hover': { bgcolor: '#e0e0e0' }
+                        bgcolor: 'text.primary',
+                        color: 'background.paper',
+                        fontWeight: 700,
+                        py: 1.5,
+                        borderRadius: 3,
+                        '&:hover': {
+                            bgcolor: 'text.secondary'
+                        }
                     }}
                 >
                     {fetchingPrice && mode === 'PRESENT' ? 'Fetching Price...' : 'Confirm Transaction'}
