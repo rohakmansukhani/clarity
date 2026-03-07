@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Paper, IconButton, TextField, InputAdornment, Button, Tooltip, CircularProgress, Autocomplete, Snackbar, Alert } from '@mui/material';
-import { Search, Bell, Settings, TrendingUp, ArrowUpRight, ArrowDownRight, Zap, MessageSquare, PieChart, Lightbulb } from 'lucide-react';
+import { Search, Bell, Settings, TrendingUp, ArrowUpRight, ArrowDownRight, PieChart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { marketService } from '@/services/marketService';
@@ -282,37 +282,7 @@ export default function DashboardPage() {
                         )}
                     </Box>
 
-                    {/* Quick Actions Grid */}
-                    <Typography variant="h6" sx={{ color: theme.palette.text.primary, mb: 3, fontWeight: 600 }}>Quick Actions</Typography>
-                    <Grid container spacing={3}>
-                        <ActionCard
-                            icon={Zap}
-                            title="Compare Stocks"
-                            desc="Compare performance & AI insights"
-                            onClick={() => {
-                                if (window.innerWidth < 768) {
-                                    setToast({ open: true, message: 'For the best analytical experience, please access this feature on a tablet or desktop.', severity: 'info' });
-                                } else {
-                                    router.push('/analysis');
-                                }
-                            }}
-                            delay={0.1}
-                        />
-                        <ActionCard
-                            icon={MessageSquare}
-                            title="Ask Advisor"
-                            desc="Chat with Clarity AI about strategy"
-                            onClick={() => router.push('/advisor')}
-                            delay={0.2}
-                        />
-                        <ActionCard
-                            icon={Lightbulb}
-                            title="Discovery Hub"
-                            desc="Research sectors & build portfolios"
-                            onClick={() => router.push('/sectors')}
-                            delay={0.3}
-                        />
-                    </Grid>
+
                 </Grid>
 
                 {/* Right Col: Top Movers */}
@@ -381,47 +351,7 @@ export default function DashboardPage() {
     );
 }
 
-function ActionCard({ icon: Icon, title, desc, onClick, delay }: any) {
-    const theme = useTheme();
-    const { mode } = useColorMode();
-    return (
-        <Grid size={{ xs: 12, sm: 4 }}>
-            <Paper
-                component={motion.div}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay, duration: 0.5 }}
-                onClick={onClick}
-                sx={{
-                    p: 3,
-                    borderRadius: 3,
-                    bgcolor: theme.palette.background.paper,
-                    border: `1px solid ${theme.palette.divider}`,
-                    cursor: 'pointer',
-                    height: '100%',
-                    minHeight: 160,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'all 0.2s',
-                    boxShadow: mode === 'light' ? '0 2px 8px rgba(0,0,0,0.02)' : 'none',
-                    '&:hover': {
-                        borderColor: theme.palette.primary.main,
-                        transform: 'translateY(-4px)',
-                        boxShadow: mode === 'dark'
-                            ? '0 10px 30px -10px rgba(0, 229, 255, 0.1)'
-                            : `0 10px 30px -10px ${theme.palette.primary.main}20`
-                    }
-                }}
-            >
-                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                    <Icon size={20} color={theme.palette.text.primary} />
-                </Box>
-                <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600, mb: 0.5, color: theme.palette.text.primary }}>{title}</Typography>
-                <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontSize: '0.85rem' }}>{desc}</Typography>
-            </Paper>
-        </Grid>
-    );
-}
+
 
 function MarketRow({ name, value, change, isUp }: any) {
     const theme = useTheme();
