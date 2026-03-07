@@ -19,11 +19,12 @@ const ColorModeContext = createContext<ColorModeContextType>({
 export const useColorMode = () => useContext(ColorModeContext);
 
 export const ColorModeProvider = ({ children }: { children: React.ReactNode }) => {
-    // Always initialize with 'dark' for server-side consistency
+    // Always initialize with 'dark' for server-side consistency (avoids hydration mismatch)
     const [mode, setMode] = useState<ColorMode>('dark');
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        // Runs only on client, after hydration is complete
         setMounted(true);
         const savedMode = localStorage.getItem('clarity-theme-mode') as ColorMode;
         if (savedMode) {
@@ -43,6 +44,7 @@ export const ColorModeProvider = ({ children }: { children: React.ReactNode }) =
 
     // Update root background color
     useEffect(() => {
+        if (!mounted) return;
         const root = document.documentElement;
         if (mode === 'dark') {
             root.style.backgroundColor = '#0B0B0B';
@@ -51,27 +53,18 @@ export const ColorModeProvider = ({ children }: { children: React.ReactNode }) =
             root.style.backgroundColor = '#FFFFFF';
             root.classList.remove('dark');
         }
-    }, [mode]);
+    }, [mode, mounted]);
 
     const theme = useMemo(() => createTheme(getThemeConfig(mode)), [mode]);
 
-    // Prevent flash of incorrect theme or hydration mismatch
-    if (!mounted) {
-        return (
-            <ColorModeContext.Provider value={{ mode: 'dark', toggleColorMode: () => { } }}>
-                <ThemeProvider theme={theme}>
-                    <div style={{ visibility: 'hidden' }}>
-                        {children}
-                    </div>
-                </ThemeProvider>
-            </ColorModeContext.Provider>
-        );
-    }
-
+    // IMPORTANT: No conditional early return here — that violates the Rules of Hooks (Error #300).
+    // Instead, we use CSS visibility to hide children until mounted, preventing theme flash.
     return (
         <ColorModeContext.Provider value={{ mode, toggleColorMode }}>
             <ThemeProvider theme={theme}>
-                {children}
+                <div style={mounted ? undefined : { visibility: 'hidden' }}>
+                    {children}
+                </div>
             </ThemeProvider>
         </ColorModeContext.Provider>
     );
