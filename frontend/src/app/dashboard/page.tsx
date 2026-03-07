@@ -11,6 +11,8 @@ import { mutualFundService, MutualFundHolding } from '@/services/mutualFundServi
 
 import { useTheme } from '@mui/material/styles';
 import { useColorMode } from '@/theme/ThemeContext';
+import Sidebar from '@/components/layout/Sidebar';
+
 interface UserMetadata {
     full_name?: string;
     display_name?: string;
@@ -152,243 +154,251 @@ export default function DashboardPage() {
     const handleCloseToast = () => setToast({ ...toast, open: false });
 
     return (
-        <Box sx={{ maxWidth: 1600, mx: 'auto', px: { xs: 2, md: 6 }, pb: 4 }}>
-            {/* Header: Minimal Greeting + Search */}
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: { xs: 4, md: 8 }, gap: { xs: 3, md: 0 } }}>
-                <Box>
-                    <Typography variant="h3" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 0.5, color: theme.palette.text.primary, fontSize: { xs: '2rem', md: '3rem' } }}>
-                        {greeting}, {user?.display_name || 'Trader'}
-                    </Typography>
-                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
-                        Market is <span style={{ color: statusObj.color, fontWeight: 700 }}>{statusObj.text}</span> ({statusObj.sub}).
-                    </Typography>
-                </Box>
+        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+            <Sidebar />
+            <Box component="main" sx={{
+                flexGrow: 1,
+                maxWidth: 1600,
+                mx: 'auto',
+                px: { xs: 2, md: 6 },
+                pt: { xs: 4, md: 6 },
+                pb: 4,
+                ml: { md: '140px' }
+            }}>
+                {/* Header: Minimal Greeting + Search */}
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: { xs: 4, md: 8 }, gap: { xs: 3, md: 0 } }}>
+                    <Box>
+                        <Typography variant="h3" sx={{ fontWeight: 700, letterSpacing: '-0.02em', mb: 0.5, color: theme.palette.text.primary, fontSize: { xs: '2rem', md: '3rem' } }}>
+                            {greeting}, {user?.display_name || 'Trader'}
+                        </Typography>
+                        <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
+                            Market is <span style={{ color: statusObj.color, fontWeight: 700 }}>{statusObj.text}</span> ({statusObj.sub}).
+                        </Typography>
+                    </Box>
 
-                <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', width: { xs: '100%', md: 400 } }}>
-                    <Autocomplete
-                        freeSolo
-                        id="dashboard-search-autocomplete"
-                        options={searchOptions}
-                        getOptionLabel={(option: SearchOption | string) => typeof option === 'string' ? option : `${option.symbol} - ${option.name}`}
-                        filterOptions={(x) => x} // Disable built-in filter, we use backend search
-                        sx={{ width: '100%' }}
-                        onInputChange={async (event, newInputValue) => {
-                            if (newInputValue.length > 1) {
-                                try {
-                                    const results = await marketService.searchStocks(newInputValue);
-                                    setSearchOptions(results || []);
-                                } catch (e) {
-                                    console.error(e);
-                                }
-                            } else {
-                                setSearchOptions([]);
-                            }
-                        }}
-                        onChange={(event, value: SearchOption | string | null) => {
-                            if (value) {
-                                const symbol = typeof value === 'string' ? value : value.symbol;
-                                router.push(`/market/${symbol}`);
-                            }
-                        }}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                variant="standard"
-                                placeholder="Search stocks..."
-                                fullWidth
-                                InputProps={{
-                                    ...params.InputProps,
-                                    disableUnderline: true,
-                                    startAdornment: <Search size={20} color={theme.palette.text.secondary} style={{ marginRight: 10 }} />,
-                                    sx: {
-                                        fontSize: '1rem',
-                                        color: theme.palette.text.primary,
-                                        borderBottom: `1px solid ${theme.palette.divider}`,
-                                        pb: 0.5,
-                                        transition: 'all 0.2s',
-                                        '&:hover': { borderBottom: `1px solid ${theme.palette.text.secondary}` },
-                                        '&.Mui-focused': { borderBottom: `1px solid ${theme.palette.primary.main}` }
+                    <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', width: { xs: '100%', md: 400 } }}>
+                        <Autocomplete
+                            freeSolo
+                            id="dashboard-search-autocomplete"
+                            options={searchOptions}
+                            getOptionLabel={(option: SearchOption | string) => typeof option === 'string' ? option : `${option.symbol} - ${option.name}`}
+                            filterOptions={(x) => x} // Disable built-in filter, we use backend search
+                            sx={{ width: '100%' }}
+                            onInputChange={async (event, newInputValue) => {
+                                if (newInputValue.length > 1) {
+                                    try {
+                                        const results = await marketService.searchStocks(newInputValue);
+                                        setSearchOptions(results || []);
+                                    } catch (e) {
+                                        console.error(e);
                                     }
-                                }}
-                            />
-                        )}
-                        renderOption={(props, option: SearchOption) => {
-                            const { key, ...otherProps } = props;
-                            return (
-                                <li key={key} {...otherProps} style={{ backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderBottom: `1px solid ${theme.palette.divider}` }}>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                        <Typography variant="body1" sx={{ fontWeight: 600 }}>{option.symbol}</Typography>
-                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>{option.name}</Typography>
-                                    </Box>
-                                </li>
-                            );
-                        }}
-                    />
+                                } else {
+                                    setSearchOptions([]);
+                                }
+                            }}
+                            onChange={(event, value: SearchOption | string | null) => {
+                                if (value) {
+                                    const symbol = typeof value === 'string' ? value : value.symbol;
+                                    router.push(`/market/${symbol}`);
+                                }
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    variant="standard"
+                                    placeholder="Search stocks..."
+                                    fullWidth
+                                    InputProps={{
+                                        ...params.InputProps,
+                                        disableUnderline: true,
+                                        startAdornment: <Search size={20} color={theme.palette.text.secondary} style={{ marginRight: 10 }} />,
+                                        sx: {
+                                            fontSize: '1rem',
+                                            color: theme.palette.text.primary,
+                                            borderBottom: `1px solid ${theme.palette.divider}`,
+                                            pb: 0.5,
+                                            transition: 'all 0.2s',
+                                            '&:hover': { borderBottom: `1px solid ${theme.palette.text.secondary}` },
+                                            '&.Mui-focused': { borderBottom: `1px solid ${theme.palette.primary.main}` }
+                                        }
+                                    }}
+                                />
+                            )}
+                            renderOption={(props, option: SearchOption) => {
+                                const { key, ...otherProps } = props;
+                                return (
+                                    <li key={key} {...otherProps} style={{ backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderBottom: `1px solid ${theme.palette.divider}` }}>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                            <Typography variant="body1" sx={{ fontWeight: 600 }}>{option.symbol}</Typography>
+                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>{option.name}</Typography>
+                                        </Box>
+                                    </li>
+                                );
+                            }}
+                        />
 
-                    <Box sx={{ width: 36, height: 36, minWidth: 36, borderRadius: '50%', bgcolor: theme.palette.primary.main, color: mode === 'dark' ? '#000' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem', border: `2px solid ${theme.palette.divider}`, flexShrink: 0 }}>
-                        {(user?.full_name || user?.email || 'T').charAt(0).toUpperCase()}
+                        <Box sx={{ width: 36, height: 36, minWidth: 36, borderRadius: '50%', bgcolor: theme.palette.primary.main, color: mode === 'dark' ? '#000' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '1rem', border: `2px solid ${theme.palette.divider}`, flexShrink: 0 }}>
+                            {(user?.full_name || user?.email || 'T').charAt(0).toUpperCase()}
+                        </Box>
                     </Box>
                 </Box>
-            </Box>
 
-            <Grid container spacing={{ xs: 3, md: 6 }}>
-                {/* Left Col: Main Stats (Portfolio) */}
-                <Grid size={{ xs: 12, md: 8 }}>
-                    {/* Net Worth Section */}
-                    <Box sx={{ mb: 6 }}>
-                        <Typography variant="h5" sx={{ color: theme.palette.text.primary, fontWeight: 700, mb: 3 }}>My Net Worth</Typography>
-                        {netWorthLoading ? (
-                            <Box sx={{ display: 'flex', gap: 2 }}>
-                                <CircularProgress size={20} sx={{ color: theme.palette.text.secondary }} />
-                            </Box>
-                        ) : (
-                            <Grid container spacing={4}>
-                                <Grid size={{ xs: 12, sm: 2.4 }}>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL VALUE</Typography>
-                                        <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5, color: theme.palette.text.primary }}>
-                                            ₹{netWorth.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                        </Typography>
-                                    </Box>
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 2.4 }}>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>INVESTED</Typography>
-                                        <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
-                                            ₹{netWorth.invested.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                        </Typography>
-                                    </Box>
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 2.4 }}>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL P&L</Typography>
-                                        <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5, color: netWorth.gain >= 0 ? theme.palette.success.main : theme.palette.error.main }}>
-                                            ₹{netWorth.gain.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                            <Typography component="span" variant="caption" sx={{ ml: 0.5, fontWeight: 600 }}>
-                                                ({netWorth.gainPct >= 0 ? '+' : ''}{netWorth.gainPct.toFixed(2)}%)
-                                            </Typography>
-                                        </Typography>
-                                    </Box>
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 2.4 }}>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>STOCKS</Typography>
-                                        <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
-                                            ₹{netWorth.stocks.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                        </Typography>
-                                    </Box>
-                                </Grid>
-                                <Grid size={{ xs: 12, sm: 2.4 }}>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>MUTUAL FUNDS</Typography>
-                                        <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
-                                            ₹{netWorth.mf.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                        </Typography>
-                                    </Box>
-                                </Grid>
-                            </Grid>
-                        )}
-                    </Box>
-
-                    <Box sx={{ mb: 6 }}>
-                        <Typography variant="h5" sx={{ color: theme.palette.text.primary, fontWeight: 700, mb: 3 }}>Market Overview</Typography>
-                        {loading ? (
-                            <Box sx={{ display: 'flex', gap: 2 }}>
-                                <CircularProgress size={20} sx={{ color: theme.palette.text.secondary }} />
-                                <Typography sx={{ color: theme.palette.text.secondary }}>Loading market data...</Typography>
-                            </Box>
-                        ) : (
-                            <Grid container spacing={4}>
-                                {marketStatus.length > 0 ? marketStatus.map((index) => (
-                                    <Grid size={{ xs: 12, sm: 4 }} key={index.index}>
+                <Grid container spacing={{ xs: 3, md: 6 }}>
+                    {/* Left Col: Main Stats (Portfolio) */}
+                    <Grid size={{ xs: 12, md: 8 }}>
+                        {/* Net Worth Section */}
+                        <Box sx={{ mb: 6 }}>
+                            <Typography variant="h5" sx={{ color: theme.palette.text.primary, fontWeight: 700, mb: 3 }}>My Net Worth</Typography>
+                            {netWorthLoading ? (
+                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                    <CircularProgress size={20} sx={{ color: theme.palette.text.secondary }} />
+                                </Box>
+                            ) : (
+                                <Grid container spacing={4}>
+                                    <Grid size={{ xs: 12, sm: 2.4 }}>
                                         <Box>
-                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>{index.index}</Typography>
-                                            <Typography variant="h3" sx={{ fontWeight: 700, my: 0.5, fontSize: '2.5rem', color: theme.palette.text.primary }}>{index.current_formatted}</Typography>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                {index.change >= 0 ? <ArrowUpRight size={20} color={theme.palette.success.main} /> : <ArrowDownRight size={20} color={theme.palette.error.main} />}
-                                                <Typography variant="body1" sx={{ color: index.change >= 0 ? theme.palette.success.main : theme.palette.error.main, fontWeight: 600 }}>
-                                                    {index.change >= 0 ? '+' : ''}{index.change_formatted} ({index.percent_change_formatted})
-                                                </Typography>
-                                            </Box>
+                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL VALUE</Typography>
+                                            <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5, color: theme.palette.text.primary }}>
+                                                ₹{netWorth.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                            </Typography>
                                         </Box>
                                     </Grid>
-                                )) : (
-                                    <Typography sx={{ color: theme.palette.text.secondary }}>Market data unavailable.</Typography>
-                                )}
-                            </Grid>
-                        )}
-                    </Box>
-
-
-                </Grid>
-
-                {/* Right Col: Top Movers */}
-                <Grid size={{ xs: 12, md: 4 }}>
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            p: 3,
-                            borderRadius: 4,
-                            bgcolor: theme.palette.background.paper,
-                            border: `1px solid ${theme.palette.divider}`,
-                            height: '100%',
-                            position: 'relative',
-                            overflow: 'hidden',
-                            boxShadow: mode === 'light' ? '0 4px 20px rgba(0,0,0,0.03)' : 'none'
-                        }}
-                    >
-                        {/* Decorative Background Glow */}
-                        <Box sx={{ position: 'absolute', top: -100, right: -100, width: 200, height: 200, bgcolor: theme.palette.primary.main, filter: 'blur(100px)', opacity: 0.1, borderRadius: '50%' }} />
-
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                            <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                <TrendingUp size={20} color={theme.palette.primary.main} />
-                                Top Movers
-                            </Typography>
-                        </Box>
-
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {topMovers.length > 0 ? topMovers.map((stock) => (
-                                <MoverRow
-                                    key={stock.symbol}
-                                    symbol={stock.symbol}
-                                    price={stock.price}
-                                    change={stock.change}
-                                    is_up={stock.is_up}
-                                    onClick={() => router.push(`/market/${stock.symbol}`)}
-                                />
-                            )) : (
-                                <Box sx={{ py: 4, textAlign: 'center' }}>
-                                    <CircularProgress size={20} color="inherit" sx={{ color: theme.palette.text.secondary }} />
-                                </Box>
+                                    <Grid size={{ xs: 12, sm: 2.4 }}>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>INVESTED</Typography>
+                                            <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
+                                                ₹{netWorth.invested.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid size={{ xs: 12, sm: 2.4 }}>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL P&L</Typography>
+                                            <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5, color: netWorth.gain >= 0 ? theme.palette.success.main : theme.palette.error.main }}>
+                                                ₹{netWorth.gain.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                                <Typography component="span" variant="caption" sx={{ ml: 0.5, fontWeight: 600 }}>
+                                                    ({netWorth.gainPct >= 0 ? '+' : ''}{netWorth.gainPct.toFixed(2)}%)
+                                                </Typography>
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid size={{ xs: 12, sm: 2.4 }}>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>STOCKS</Typography>
+                                            <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
+                                                ₹{netWorth.stocks.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    <Grid size={{ xs: 12, sm: 2.4 }}>
+                                        <Box>
+                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>MUTUAL FUNDS</Typography>
+                                            <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
+                                                ₹{netWorth.mf.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
                             )}
                         </Box>
-                    </Paper>
+
+                        <Box sx={{ mb: 6 }}>
+                            <Typography variant="h5" sx={{ color: theme.palette.text.primary, fontWeight: 700, mb: 3 }}>Market Overview</Typography>
+                            {loading ? (
+                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                    <CircularProgress size={20} sx={{ color: theme.palette.text.secondary }} />
+                                    <Typography sx={{ color: theme.palette.text.secondary }}>Loading market data...</Typography>
+                                </Box>
+                            ) : (
+                                <Grid container spacing={4}>
+                                    {marketStatus.length > 0 ? marketStatus.map((index) => (
+                                        <Grid size={{ xs: 12, sm: 4 }} key={index.index}>
+                                            <Box>
+                                                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>{index.index}</Typography>
+                                                <Typography variant="h3" sx={{ fontWeight: 700, my: 0.5, fontSize: '2.5rem', color: theme.palette.text.primary }}>{index.current_formatted}</Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    {index.change >= 0 ? <ArrowUpRight size={20} color={theme.palette.success.main} /> : <ArrowDownRight size={20} color={theme.palette.error.main} />}
+                                                    <Typography variant="body1" sx={{ color: index.change >= 0 ? theme.palette.success.main : theme.palette.error.main, fontWeight: 600 }}>
+                                                        {index.change >= 0 ? '+' : ''}{index.change_formatted} ({index.percent_change_formatted})
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </Grid>
+                                    )) : (
+                                        <Typography sx={{ color: theme.palette.text.secondary }}>Market data unavailable.</Typography>
+                                    )}
+                                </Grid>
+                            )}
+                        </Box>
+
+
+                    </Grid>
+
+                    {/* Right Col: Top Movers */}
+                    <Grid size={{ xs: 12, md: 4 }}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 3,
+                                borderRadius: 4,
+                                bgcolor: theme.palette.background.paper,
+                                border: `1px solid ${theme.palette.divider}`,
+                                height: '100%',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                boxShadow: mode === 'light' ? '0 4px 20px rgba(0,0,0,0.03)' : 'none'
+                            }}
+                        >
+                            {/* Decorative Background Glow */}
+                            <Box sx={{ position: 'absolute', top: -100, right: -100, width: 200, height: 200, bgcolor: theme.palette.primary.main, filter: 'blur(100px)', opacity: 0.1, borderRadius: '50%' }} />
+
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                                <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <TrendingUp size={20} color={theme.palette.primary.main} />
+                                    Top Movers
+                                </Typography>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                {topMovers.length > 0 ? topMovers.map((stock) => (
+                                    <MoverRow
+                                        key={stock.symbol}
+                                        symbol={stock.symbol}
+                                        price={stock.price}
+                                        change={stock.change}
+                                        is_up={stock.is_up}
+                                        onClick={() => router.push(`/market/${stock.symbol}`)}
+                                    />
+                                )) : (
+                                    <Box sx={{ py: 4, textAlign: 'center' }}>
+                                        <CircularProgress size={20} color="inherit" sx={{ color: theme.palette.text.secondary }} />
+                                    </Box>
+                                )}
+                            </Box>
+                        </Paper>
+                    </Grid>
                 </Grid>
-            </Grid>
 
-            {/* Notification Toast */}
-            <Snackbar open={toast.open} autoHideDuration={6000} onClose={handleCloseToast} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-                <Alert
-                    onClose={handleCloseToast}
-                    severity={toast.severity}
-                    sx={{
-                        width: '100%',
-                        bgcolor: theme.palette.background.paper,
-                        color: theme.palette.text.primary,
-                        border: `1px solid ${theme.palette.divider}`,
-                        '& .MuiAlert-icon': { color: toast.severity === 'error' ? theme.palette.error.main : theme.palette.primary.main }
-                    }}
-                >
-                    {toast.message}
-                </Alert>
-            </Snackbar>
-
+                {/* Notification Toast */}
+                <Snackbar open={toast.open} autoHideDuration={6000} onClose={handleCloseToast} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+                    <Alert
+                        onClose={handleCloseToast}
+                        severity={toast.severity}
+                        sx={{
+                            width: '100%',
+                            bgcolor: theme.palette.background.paper,
+                            color: theme.palette.text.primary,
+                            border: `1px solid ${theme.palette.divider}`,
+                            '& .MuiAlert-icon': { color: toast.severity === 'error' ? theme.palette.error.main : theme.palette.primary.main }
+                        }}
+                    >
+                        {toast.message}
+                    </Alert>
+                </Snackbar>
+            </Box>
         </Box>
     );
 }
-
-
 
 function MarketRow({ name, value, change, isUp }: any) {
     const theme = useTheme();
@@ -423,7 +433,7 @@ function MoverRow({ symbol, price, change, is_up, onClick }: { symbol: string; p
                 }
             }}
         >
-            <Box sx={{ display: 'flex', items: 'center', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{ width: 32, height: 32, borderRadius: 1.5, bgcolor: mode === 'dark' ? '#1A1A1A' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem', color: theme.palette.text.secondary }}>
                     {symbol[0]}
                 </Box>

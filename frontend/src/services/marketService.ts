@@ -120,7 +120,7 @@ export const marketService = {
     },
 
     // --- Chat History API ---
-    getChatSessions: async (type?: 'advisor' | 'discovery_hub') => {
+    getChatSessions: async (type?: 'advisor') => {
         const response = await api.get('/history/sessions', {
             params: { type }
         });
@@ -132,7 +132,7 @@ export const marketService = {
         return response.data;
     },
 
-    createSession: async (title: string, initialMessages: Record<string, unknown>[] = [], type: 'advisor' | 'discovery_hub' = 'advisor') => {
+    createSession: async (title: string, initialMessages: Record<string, unknown>[] = [], type: 'advisor' = 'advisor') => {
         const response = await api.post('/history/sessions', {
             title,
             initial_messages: initialMessages,
@@ -234,24 +234,7 @@ export const marketService = {
         return response.data;
     },
 
-    createPortfolioWithHoldings: async (name: string, holdings: Array<{ ticker: string; shares: number; avg_price: number }>) => {
-        // First create the portfolio
-        const portfolioResponse = await api.post('/portfolios/', { name, currency: 'INR' });
-        const portfolio = portfolioResponse.data;
-
-        // Then add all holdings
-        const holdingPromises = holdings.map(holding =>
-            api.post(`/portfolios/${portfolio.id}/holdings`, {
-                ticker: holding.ticker,
-                shares: holding.shares,
-                avg_price: holding.avg_price,
-                exchange: 'NSE'
-            })
-        );
-
-        await Promise.all(holdingPromises);
-        return portfolio;
-    },
+    // createPortfolioWithHoldings removed: redundant with AI Advisor flow
 
     backtest: async (ticker: string, date: string, shares?: number, investment_amount?: number, sell_date?: string) => {
         const response = await api.post('/market/backtest', { ticker, date, shares, investment_amount, sell_date });
@@ -268,9 +251,5 @@ export const marketService = {
         return response.data.price;
     },
 
-    // Get Sector Performance
-    getSectorPerformance: async () => {
-        const response = await api.get('/market/sectors');
-        return response.data;
-    }
+    // getSectorPerformance removed: redundant
 };

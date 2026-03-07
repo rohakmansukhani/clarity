@@ -68,16 +68,30 @@ export default function NAVChart({ data, period, setPeriod }: NAVChartProps) {
 
     return (
         <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
-            {/* Time Range Buttons - Matching Stock Page Style */}
-            <Box sx={{ position: 'absolute', top: 0, right: 0, zIndex: 10, display: 'flex', gap: 1 }}>
+            {/* Time Range Buttons - Horizontally Scrollable on Mobile */}
+            <Box sx={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                zIndex: 10,
+                display: 'flex',
+                gap: 1,
+                maxWidth: '100%',
+                overflowX: 'auto',
+                pb: { xs: 0.5, md: 0 },
+                '&::-webkit-scrollbar': { display: 'none' },
+                msOverflowStyle: 'none',
+                scrollbarWidth: 'none'
+            }}>
                 {['1M', '6M', '1Y', '3Y', '5Y', 'ALL'].map((range) => (
                     <Button
                         key={range}
                         size="small"
                         onClick={() => setPeriod(range)}
                         sx={{
-                            minWidth: 0,
+                            minWidth: 'fit-content',
                             px: 1.5,
+                            whiteSpace: 'nowrap',
                             color: period === range ? theme.palette.primary.main : theme.palette.text.secondary,
                             fontWeight: 700,
                             bgcolor: period === range ? `${theme.palette.primary.main}15` : 'transparent',
@@ -111,17 +125,17 @@ export default function NAVChart({ data, period, setPeriod }: NAVChartProps) {
                                 }}
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                                tick={{ fill: theme.palette.text.secondary, fontSize: 10 }}
                                 dy={10}
-                                minTickGap={30}
+                                minTickGap={period === '1M' ? 30 : 50}
                             />
                             <YAxis
                                 domain={['auto', 'auto']}
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                                tick={{ fill: theme.palette.text.secondary, fontSize: 10 }}
                                 width={45}
-                                tickFormatter={(val) => `₹${val.toFixed(2)}`}
+                                tickFormatter={(val) => `₹${val.toFixed(1)}`}
                             />
                             <RechartsTooltip
                                 content={<CustomTooltip showYear={showYear} theme={theme} />}

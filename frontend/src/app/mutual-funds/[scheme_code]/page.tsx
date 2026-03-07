@@ -157,7 +157,7 @@ export default function MutualFundDetailsPage() {
                         variant="h1"
                         sx={{
                             fontWeight: 700,
-                            fontSize: { xs: '2rem', md: '3rem' },
+                            fontSize: { xs: '1.8rem', sm: '2.5rem', md: '3rem' },
                             lineHeight: 1.1,
                             letterSpacing: '-0.04em',
                             color: theme.palette.text.primary,
@@ -173,7 +173,7 @@ export default function MutualFundDetailsPage() {
                             variant="h2"
                             sx={{
                                 fontWeight: 600,
-                                fontSize: { xs: '2rem', md: '3rem' },
+                                fontSize: { xs: '1.5rem', md: '3rem' },
                                 color: theme.palette.text.primary
                             }}
                         >
@@ -192,8 +192,8 @@ export default function MutualFundDetailsPage() {
                                 py: 0.5,
                                 borderRadius: 1
                             }}>
-                                {navChange >= 0 ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />}
-                                <Typography variant="h6" sx={{ fontWeight: 600, ml: 0.5 }}>
+                                {navChange >= 0 ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
+                                <Typography variant="h6" sx={{ fontWeight: 600, ml: 0.5, fontSize: { xs: '0.9rem', md: '1.25rem' } }}>
                                     {navChange > 0 ? '+' : ''}{navChange.toFixed(2)} ({navChangePercent.toFixed(2)}%)
                                 </Typography>
                             </Box>
@@ -227,10 +227,10 @@ export default function MutualFundDetailsPage() {
                     {/* Left Column: Chart */}
                     <Grid size={{ xs: 12, md: 8 }}>
                         <Box sx={{
-                            height: 450,
+                            height: { xs: 320, md: 450 },
                             bgcolor: theme.palette.background.paper,
                             borderRadius: 4,
-                            p: 3,
+                            p: { xs: 2, md: 3 },
                             border: `1px solid ${theme.palette.divider}`,
                             mb: 6
                         }}>

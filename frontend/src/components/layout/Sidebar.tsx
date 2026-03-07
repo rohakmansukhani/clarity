@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Box, List, ListItem, ListItemButton, Tooltip, IconButton, useMediaQuery, useTheme } from '@mui/material';
-import { LayoutDashboard, TrendingUp, PieChart, MessageSquare, LogOut, Menu, X, ChevronRight, ChevronLeft, Eye, RotateCcw, BarChart2, Compass, Moon, Sun, Landmark, Calculator } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, PieChart, MessageSquare, LogOut, Menu, X, Eye, BarChart2, Moon, Sun, Landmark, Calculator } from 'lucide-react';
 import { useUIStore } from '@/lib/ui-store';
 import { useColorMode } from '@/theme/ThemeContext';
 import { usePathname, useRouter } from 'next/navigation';
@@ -69,7 +69,7 @@ export default function Sidebar() {
                         zIndex: 60,
                         color: '#fff',
                         bgcolor: mode === 'dark' ? 'rgba(11, 11, 11, 0.8)' : theme.palette.primary.main,
-                        '&:hover': { color: '#fff', bgcolor: mode === 'dark' ? 'rgba(11, 11, 11, 1)' : theme.palette.primary.dark }
+                        '&:hover': { color: 'primary.contrastText', bgcolor: mode === 'dark' ? 'rgba(11, 11, 11, 1)' : theme.palette.primary.dark }
                     }}
                 >
                     <Menu size={24} />
@@ -108,8 +108,8 @@ export default function Sidebar() {
                             onClick={toggleSidebar}
                             sx={{
                                 mb: 4,
-                                color: '#666',
-                                '&:hover': { color: '#fff', bgcolor: 'rgba(255,255,255,0.05)' }
+                                color: 'text.secondary',
+                                '&:hover': { color: 'text.primary', bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }
                             }}
                         >
                             <X size={24} />

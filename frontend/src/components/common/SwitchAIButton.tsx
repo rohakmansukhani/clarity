@@ -4,7 +4,7 @@ import { ArrowRight, Briefcase, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface SwitchAIButtonProps {
-    target: 'advisor' | 'discovery_hub';
+    target: 'advisor';
     originalQuery: string;
     reason?: string;
 }
@@ -22,19 +22,12 @@ export default function SwitchAIButton({ target, originalQuery, reason }: Switch
         router.push(`${path}?${params.toString()}`);
     };
 
-    const config = target === 'advisor'
-        ? {
-            label: 'Switch to AI Advisor',
-            icon: Briefcase,
-            color: 'bg-purple-600 hover:bg-purple-500',
-            description: 'Best for stock analysis & portfolio'
-        }
-        : {
-            label: 'Switch to Discovery Hub',
-            icon: Search,
-            color: 'bg-cyan-600 hover:bg-cyan-500',
-            description: 'Best for sector & industry research'
-        };
+    const config = {
+        label: 'Switch to AI Advisor',
+        icon: Briefcase,
+        color: 'bg-purple-600 hover:bg-purple-500',
+        description: 'Best for stock analysis & portfolio'
+    };
 
     const Icon = config.icon;
 

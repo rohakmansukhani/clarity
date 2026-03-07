@@ -1,9 +1,6 @@
-"use client";
-
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme, useMediaQuery } from "@mui/material";
 import { useState, useMemo } from "react";
-
-import { useTheme } from "@mui/material/styles";
 
 interface PortfolioChartProps {
     data: { name: string; value: number; color: string }[];
@@ -18,9 +15,12 @@ interface PortfolioChartProps {
 export default function PortfolioChart({ data }: PortfolioChartProps) {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-    const radius = 70;
+    const radius = isMobile ? 60 : 70;
     const circumference = 2 * Math.PI * radius;
+    const svgSize = isMobile ? 180 : 220;
+    const centerPoint = svgSize / 2;
 
     // Process data into percentages
     const { segments, total } = useMemo(() => {
@@ -43,8 +43,8 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                 alignItems: "center",
                 justifyContent: "center",
                 fontFamily: "inherit",
-                minHeight: "450px",
-                padding: "24px",
+                minHeight: isMobile ? "350px" : "450px",
+                padding: isMobile ? "12px" : "24px",
                 position: "relative",
             }}
         >
@@ -60,20 +60,20 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                 }}
             >
                 {/* Header */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: isMobile ? 24 : 32, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 0 }}>
                     <div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: theme.palette.primary.main, letterSpacing: 3, marginBottom: 6 }}>ALGO ALLOCATION</div>
-                        <div style={{ fontSize: 24, fontWeight: 600, color: theme.palette.text.primary, letterSpacing: -0.5 }}>Holdings Distribution</div>
+                        <div style={{ fontSize: isMobile ? 9 : 11, fontWeight: 700, color: theme.palette.primary.main, letterSpacing: isMobile ? 2 : 3, marginBottom: 4 }}>ALGO ALLOCATION</div>
+                        <div style={{ fontSize: isMobile ? 18 : 24, fontWeight: 600, color: theme.palette.text.primary, letterSpacing: -0.5 }}>Holdings Distribution</div>
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: theme.palette.text.secondary }}>Total: ₹{total.toLocaleString()}</div>
+                    <div style={{ fontSize: isMobile ? 11 : 13, fontWeight: 500, color: theme.palette.text.secondary, width: isMobile ? '100%' : 'auto', textAlign: isMobile ? 'left' : 'right' }}>Total: ₹{total.toLocaleString()}</div>
                 </div>
 
                 {/* Donut Chart */}
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
-                    <div style={{ position: "relative", width: 220, height: 220 }}>
-                        <svg width="220" height="220" viewBox="0 0 220 220" style={{ transform: "rotate(-90deg)" }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: isMobile ? 24 : 32 }}>
+                    <div style={{ position: "relative", width: svgSize, height: svgSize }}>
+                        <svg width={svgSize} height={svgSize} viewBox={`0 0 ${svgSize} ${svgSize}`} style={{ transform: "rotate(-90deg)" }}>
                             {/* Background Circle */}
-                            <circle cx="110" cy="110" r={radius} fill="none" stroke={theme.palette.divider} strokeWidth="8" />
+                            <circle cx={centerPoint} cy={centerPoint} r={radius} fill="none" stroke={theme.palette.divider} strokeWidth="8" />
 
                             {segments.map((seg, i) => {
                                 const previousSegments = segments.slice(0, i);
@@ -86,8 +86,8 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                                 return (
                                     <motion.circle
                                         key={i}
-                                        cx="110"
-                                        cy="110"
+                                        cx={centerPoint}
+                                        cy={centerPoint}
                                         r={radius}
                                         fill="none"
                                         stroke={seg.color}
@@ -97,12 +97,12 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                                         initial={{ strokeWidth: 8, opacity: 0 }}
                                         animate={{
                                             strokeDasharray: `${segmentLength} ${gapLength}`,
-                                            strokeWidth: isActive ? 14 : 8,
+                                            strokeWidth: isActive ? (isMobile ? 12 : 14) : 8,
                                             opacity: isDimmed ? 0.3 : 1,
                                         }}
                                         transition={{
-                                            strokeDasharray: { duration: 0.8, ease: "easeInOut" }, // Faster, smoother
-                                            strokeWidth: { duration: 0.3 }, // Simple ease instead of spring
+                                            strokeDasharray: { duration: 0.8, ease: "easeInOut" },
+                                            strokeWidth: { duration: 0.3 },
                                             opacity: { duration: 0.3 },
                                         }}
                                         onMouseEnter={() => setActiveIndex(i)}
@@ -120,6 +120,7 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                             left: "50%",
                             transform: "translate(-50%, -50%)",
                             textAlign: "center",
+                            width: "100%"
                         }}>
                             <AnimatePresence mode="wait">
                                 {activeIndex !== null ? (
@@ -130,13 +131,13 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                                         exit={{ opacity: 0, scale: 0.9 }}
                                         transition={{ duration: 0.3 }}
                                     >
-                                        <div style={{ fontSize: 11, color: segments[activeIndex].color, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>
+                                        <div style={{ fontSize: isMobile ? 9 : 11, color: segments[activeIndex].color, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>
                                             {segments[activeIndex].label}
                                         </div>
-                                        <div style={{ fontSize: 24, fontWeight: 700, color: theme.palette.text.primary, letterSpacing: -1 }}>
+                                        <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 700, color: theme.palette.text.primary, letterSpacing: -1 }}>
                                             {segments[activeIndex].value}%
                                         </div>
-                                        <div style={{ fontSize: 12, color: theme.palette.text.secondary, fontWeight: 700 }}>
+                                        <div style={{ fontSize: isMobile ? 10 : 12, color: theme.palette.text.secondary, fontWeight: 700 }}>
                                             ₹{segments[activeIndex].rawValue.toLocaleString()}
                                         </div>
                                     </motion.div>
@@ -148,9 +149,9 @@ export default function PortfolioChart({ data }: PortfolioChartProps) {
                                         exit={{ opacity: 0 }}
                                         transition={{ duration: 0.3 }}
                                     >
-                                        <div style={{ fontSize: 11, color: theme.palette.text.secondary, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>Portfolio</div>
-                                        <div style={{ fontSize: 24, fontWeight: 700, color: theme.palette.text.primary, letterSpacing: -1 }}>100%</div>
-                                        <div style={{ fontSize: 12, color: theme.palette.primary.main, fontWeight: 700 }}>Active</div>
+                                        <div style={{ fontSize: isMobile ? 9 : 11, color: theme.palette.text.secondary, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", marginBottom: 2 }}>Portfolio</div>
+                                        <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 700, color: theme.palette.text.primary, letterSpacing: -1 }}>100%</div>
+                                        <div style={{ fontSize: isMobile ? 10 : 12, color: theme.palette.primary.main, fontWeight: 700 }}>Active</div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>

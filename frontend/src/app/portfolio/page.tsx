@@ -300,10 +300,10 @@ export default function PortfolioPage() {
                         >
                             Back
                         </Button>
-                        <Box sx={{ mb: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box sx={{ mb: 6, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 3 }}>
                             <Box>
-                                <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 700, mb: 1 }}>My Portfolios</Typography>
-                                <Typography variant="body1" sx={{ color: 'text.secondary' }}>Select a portfolio to manage holdings and analyze performance.</Typography>
+                                <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 700, mb: 1, fontSize: { xs: '2rem', md: '2.125rem' } }}>My Portfolios</Typography>
+                                <Typography variant="body1" sx={{ color: 'text.secondary', fontSize: { xs: '0.9rem', md: '1rem' } }}>Select a portfolio to manage holdings and analyze performance.</Typography>
                             </Box>
                             <Box sx={{ display: 'flex', gap: 2 }}>
                                 <Button
@@ -361,13 +361,13 @@ export default function PortfolioPage() {
                                             }
                                         }}
                                     >
-                                        <CardContent sx={{ p: 4 }}>
+                                        <CardContent sx={{ p: { xs: 3, md: 4 } }}>
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                                     <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(0, 229, 255, 0.1)', color: 'primary.main' }}>
                                                         <Folder size={24} />
                                                     </Box>
-                                                    <Typography variant="h6" sx={{ color: mode === 'dark' ? '#fff' : '#000', fontWeight: 600 }}>{p.name}</Typography>
+                                                    <Typography variant="h6" sx={{ color: mode === 'dark' ? '#fff' : '#000', fontWeight: 600, fontSize: { xs: '1rem', md: '1.25rem' } }}>{p.name}</Typography>
                                                 </Box>
                                                 <IconButton
                                                     size="small"
@@ -383,12 +383,10 @@ export default function PortfolioPage() {
                                                     <Trash2 size={18} />
                                                 </IconButton>
                                             </Box>
-
                                             <Box sx={{ mb: 3 }}>
                                                 <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL VALUE</Typography>
-                                                <Typography variant="h3" sx={{ color: 'text.primary', fontWeight: 700, mt: 0.5 }}>₹{p.total_value.toLocaleString()}</Typography>
+                                                <Typography variant="h3" sx={{ color: 'text.primary', fontWeight: 700, mt: 0.5, fontSize: { xs: '1.8rem', md: '2.5rem' } }}>₹{p.total_value.toLocaleString()}</Typography>
                                             </Box>
-
                                             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                                                 <Chip
                                                     icon={p.total_gain >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
@@ -397,10 +395,12 @@ export default function PortfolioPage() {
                                                         bgcolor: p.total_gain >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                                                         color: p.total_gain >= 0 ? '#10B981' : '#EF4444',
                                                         fontWeight: 700,
-                                                        borderRadius: 2
+                                                        borderRadius: 2,
+                                                        height: 28,
+                                                        '& .MuiChip-label': { px: 1, fontSize: '0.75rem' }
                                                     }}
                                                 />
-                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
                                                     {p.total_gain >= 0 ? '+' : ''}₹{p.total_gain.toLocaleString()}
                                                 </Typography>
                                             </Box>
@@ -452,28 +452,29 @@ export default function PortfolioPage() {
                                 Back to Portfolios
                             </Button>
 
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <Box sx={{ flex: 1 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'flex-start' }, gap: 3 }}>
+                                <Box sx={{ flex: 1, width: '100%' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         {isRenaming ? (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
                                                 <TextField
                                                     value={newName}
                                                     onChange={(e) => setNewName(e.target.value)}
                                                     size="small"
                                                     autoFocus
+                                                    fullWidth
                                                     sx={{
                                                         bgcolor: 'background.paper',
                                                         borderRadius: 1,
-                                                        input: { color: 'text.primary', fontWeight: 700, fontSize: '1.5rem', py: 0.5 }
+                                                        input: { color: 'text.primary', fontWeight: 700, fontSize: { xs: '1.2rem', md: '1.5rem' }, py: 0.5 }
                                                     }}
                                                 />
-                                                <IconButton onClick={handleRenamePortfolio} sx={{ color: 'primary.main' }}><Check size={20} /></IconButton>
-                                                <IconButton onClick={() => setIsRenaming(false)} sx={{ color: 'text.secondary' }}><X size={20} /></IconButton>
+                                                <IconButton onClick={handleRenamePortfolio} sx={{ color: 'primary.main' }}><Check size={24} /></IconButton>
+                                                <IconButton onClick={() => setIsRenaming(false)} sx={{ color: 'text.secondary' }}><X size={24} /></IconButton>
                                             </Box>
                                         ) : (
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-1px', color: mode === 'dark' ? '#fff' : '#000' }}>
+                                                <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-1px', color: mode === 'dark' ? '#fff' : '#000', fontSize: { xs: '1.8rem', md: '3rem' } }}>
                                                     {activePortfolio.name}
                                                 </Typography>
                                                 <IconButton
@@ -482,34 +483,29 @@ export default function PortfolioPage() {
                                                         setIsRenaming(true);
                                                     }}
                                                     size="small"
-                                                    sx={{
-                                                        color: 'text.disabled',
-                                                        opacity: 0.5,
-                                                        '&:hover': { opacity: 1, color: 'primary.main' }
-                                                    }}
+                                                    sx={{ color: 'text.disabled', opacity: 0.5, '&:hover': { opacity: 1, color: 'primary.main' } }}
                                                 >
                                                     <Edit2 size={16} />
                                                 </IconButton>
                                             </Box>
                                         )}
                                     </Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mt: 0.5 }}>
-                                        <Typography variant="h1" sx={{ fontSize: { xs: '3.5rem', md: '5rem' }, fontWeight: 800, lineHeight: 0.9, letterSpacing: '-0.04em', color: 'text.primary' }}>
+                                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'baseline' }, gap: { xs: 1, sm: 2 }, mt: { xs: 1, md: 0.5 } }}>
+                                        <Typography variant="h1" sx={{ fontSize: { xs: '2.5rem', sm: '3.5rem', md: '5rem' }, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.04em', color: 'text.primary' }}>
                                             ₹{activePortfolio.total_value.toLocaleString()}
                                         </Typography>
-
                                         <Chip
-                                            icon={<TrendingUp size={20} />}
+                                            icon={<TrendingUp size={18} />}
                                             label={`+₹${activePortfolio.total_gain.toLocaleString()} (${activePortfolio.return_pct}%)`}
                                             sx={{
                                                 bgcolor: 'rgba(16, 185, 129, 0.15)',
                                                 color: '#10B981',
                                                 fontWeight: 700,
-                                                height: 40,
-                                                px: 1,
-                                                borderRadius: 3,
+                                                height: { xs: 32, md: 40 },
+                                                px: 0.5,
+                                                borderRadius: { xs: 2.5, md: 3 },
                                                 '& .lucide': { color: '#10B981' },
-                                                fontSize: '1rem'
+                                                fontSize: { xs: '0.85rem', md: '1rem' }
                                             }}
                                         />
                                     </Box>
@@ -522,8 +518,9 @@ export default function PortfolioPage() {
                                         bgcolor: '#fff',
                                         color: '#000',
                                         fontWeight: 700,
-                                        py: 2,
+                                        py: { xs: 1.5, md: 2 },
                                         px: 4,
+                                        width: { xs: '100%', md: 'auto' },
                                         borderRadius: 4,
                                         textTransform: 'none',
                                         fontSize: '1rem',

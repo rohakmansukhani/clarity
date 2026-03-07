@@ -126,8 +126,8 @@ export default function WatchlistPage() {
             <Sidebar />
             <Box sx={{
                 flexGrow: 1,
-                p: 4,
-                pl: { xs: 4, md: '140px' },
+                p: { xs: 2, md: 4 },
+                pl: { xs: 2, md: '140px' },
                 maxWidth: 1600,
                 mx: 'auto',
                 position: 'relative',
@@ -141,13 +141,13 @@ export default function WatchlistPage() {
                     Back
                 </Button>
 
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 3, mb: 4 }}>
                     <Box>
-                        <Typography variant="h3" sx={{ color: 'text.primary', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Typography variant="h3" sx={{ color: 'text.primary', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2, fontSize: { xs: '1.8rem', md: '3rem' } }}>
                             <Eye size={32} color={theme.palette.primary.main} />
                             Smart Buy List
                         </Typography>
-                        <Typography variant="body1" sx={{ color: 'text.secondary', mt: 1 }}>
+                        <Typography variant="body1" sx={{ color: 'text.secondary', mt: 1, fontSize: { xs: '0.9rem', md: '1rem' } }}>
                             Track your research, set entry targets, and monitor RSI levels.
                         </Typography>
                     </Box>
@@ -161,6 +161,7 @@ export default function WatchlistPage() {
                             fontWeight: 700,
                             py: 1.5,
                             px: 3,
+                            width: { xs: '100%', sm: 'auto' },
                             borderRadius: 3,
                             textTransform: 'none',
                             '&:hover': { bgcolor: 'primary.dark' }
@@ -211,23 +212,23 @@ export default function WatchlistPage() {
                                             flexDirection: 'column'
                                         }}
                                     >
-                                        <CardContent sx={{ p: 3, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                                        <CardContent sx={{ p: { xs: 2.5, md: 3 }, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                                             {/* Header */}
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                                 <Box>
-                                                    <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 700 }}>{item.ticker}</Typography>
-                                                    <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                                                        <Chip label="NSE" size="small" sx={{ bgcolor: 'action.hover', color: 'text.secondary', height: 20, fontSize: '0.65rem' }} />
-                                                        {item.tags?.slice(0, 2).map((tag: string) => (
-                                                            <Chip key={tag} label={tag} size="small" sx={{ bgcolor: 'rgba(0, 229, 255, 0.1)', color: 'primary.main', height: 20, fontSize: '0.65rem' }} />
+                                                    <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 700, fontSize: { xs: '1.25rem', md: '1.5rem' } }}>{item.ticker}</Typography>
+                                                    <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
+                                                        <Chip label="NSE" size="small" sx={{ bgcolor: 'action.hover', color: 'text.secondary', height: 20, fontSize: '0.6rem' }} />
+                                                        {item.tags?.slice(0, 3).map((tag: string) => (
+                                                            <Chip key={tag} label={tag} size="small" sx={{ bgcolor: 'rgba(0, 229, 255, 0.1)', color: 'primary.main', height: 20, fontSize: '0.6rem' }} />
                                                         ))}
                                                     </Box>
                                                 </Box>
                                                 <Box sx={{ textAlign: 'right' }}>
-                                                    <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 700 }}>{priceFormatted}</Typography>
+                                                    <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 700, fontSize: { xs: '1.25rem', md: '1.5rem' } }}>{priceFormatted}</Typography>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', color: change >= 0 ? '#10B981' : '#EF4444' }}>
                                                         {change >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                                                        <Typography variant="caption" sx={{ fontWeight: 700, ml: 0.5 }}>
+                                                        <Typography variant="caption" sx={{ fontWeight: 700, ml: 0.5, fontSize: '0.75rem' }}>
                                                             {Math.abs(change).toFixed(2)}%
                                                         </Typography>
                                                     </Box>

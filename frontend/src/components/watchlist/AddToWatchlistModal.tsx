@@ -228,7 +228,7 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
                 </Box>
             </DialogContent>
 
-            <DialogActions sx={{ p: 3, pt: 1, borderTop: '1px solid #222' }}>
+            <DialogActions sx={{ p: 3, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
                 <Button
                     onClick={handleClose}
                     disabled={isLoading}

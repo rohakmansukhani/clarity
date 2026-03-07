@@ -37,7 +37,7 @@ export default function MutualFundsHome() {
                     <Typography
                         variant="h1"
                         sx={{
-                            fontSize: { xs: '3rem', md: '5rem' },
+                            fontSize: { xs: '2.5rem', sm: '3.5rem', md: '5rem' },
                             fontWeight: 700,
                             textAlign: 'center',
                             mb: 2,
@@ -50,7 +50,7 @@ export default function MutualFundsHome() {
                         <Box component="span" sx={{ color: theme.palette.primary.main }}>.</Box>
                     </Typography>
 
-                    <Typography variant="h5" sx={{ textAlign: 'center', color: theme.palette.text.secondary, mb: 8, fontWeight: 400 }}>
+                    <Typography variant="h5" sx={{ textAlign: 'center', color: theme.palette.text.secondary, mb: { xs: 4, md: 8 }, fontWeight: 400, fontSize: { xs: '1rem', md: '1.5rem' }, px: 2 }}>
                         Search any AMC or scheme to track performance and calculate SIP returns.
                     </Typography>
                 </motion.div>

@@ -197,28 +197,28 @@ export default function CalculatorPage() {
                     flexGrow: 1,
                     maxWidth: 680,
                     mx: 'auto',
-                    px: { xs: 3, md: 4 },
-                    pt: { xs: 8, md: 10 },
+                    px: { xs: 2, md: 4 },
+                    pt: { xs: 4, md: 10 },
                     pb: 12,
-                    pl: { xs: 3, md: '140px' },
+                    pl: { xs: 2, md: '140px' },
                 }}
             >
                 {/* Header */}
                 <Box sx={{ mb: 7 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
                         <Calculator size={26} color={theme.palette.primary.main} />
-                        <Typography variant="h1" sx={{ fontWeight: 800, fontSize: { xs: '2rem', md: '2.6rem' }, letterSpacing: '-0.04em', lineHeight: 1 }}>
+                        <Typography variant="h1" sx={{ fontWeight: 800, fontSize: { xs: '1.8rem', md: '2.6rem' }, letterSpacing: '-0.04em', lineHeight: 1 }}>
                             SIP Calculator
                         </Typography>
                     </Box>
-                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontSize: { xs: '0.9rem', md: '1rem' } }}>
                         Project your wealth. Search any stock, ETF, or mutual fund to auto-fill the return rate from its actual 3Y CAGR.
                     </Typography>
                 </Box>
 
                 {/* ── Universal Search ── */}
                 <Box sx={{ mb: 5 }}>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', mb: 1, display: 'block', fontSize: { xs: '0.65rem', md: '0.75rem' } }}>
                         Auto-fill 3Y CAGR · Stock / ETF / Mutual Fund
                     </Typography>
                     <Box sx={{ position: 'relative' }}>
@@ -333,13 +333,13 @@ export default function CalculatorPage() {
                 <Divider sx={{ mb: 5, opacity: 0.5 }} />
 
                 {/* ── SIP / Lumpsum toggle ── */}
-                <Box sx={{ display: 'flex', gap: 1, mb: 4, p: 0.5, bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', borderRadius: 2, border: `1px solid ${theme.palette.divider}` }}>
+                <Box sx={{ display: 'flex', gap: 1, mb: 4, p: 0.5, bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', borderRadius: 2, border: `1px solid ${theme.palette.divider}`, flexDirection: { xs: 'column', sm: 'row' } }}>
                     {(['sip', 'lumpsum'] as const).map((t) => (
                         <Button
                             key={t} fullWidth disableElevation
                             variant={type === t ? 'contained' : 'text'}
                             onClick={() => { setType(t); setCalcResult(null); }}
-                            sx={{ py: 1.25, borderRadius: 1.5, fontWeight: 700, textTransform: 'none', fontSize: '0.9rem', color: type === t ? undefined : 'text.secondary' }}
+                            sx={{ py: 1.25, borderRadius: 1.5, fontWeight: 700, textTransform: 'none', fontSize: { xs: '0.85rem', md: '0.9rem' }, color: type === t ? (isDark ? '#000' : '#fff') : 'text.secondary', bgcolor: type === t ? (isDark ? '#fff' : 'primary.main') : 'transparent', '&:hover': { bgcolor: type === t ? (isDark ? '#ddd' : 'primary.dark') : 'transparent' } }}
                         >
                             {t === 'sip' ? 'SIP · Monthly' : 'Lumpsum · One-time'}
                         </Button>
@@ -454,7 +454,7 @@ export default function CalculatorPage() {
                                     <Typography variant="caption" sx={{ color: 'text.secondary', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
                                         Estimated Corpus
                                     </Typography>
-                                    <Typography sx={{ fontWeight: 900, fontSize: { xs: '2.5rem', md: '3.5rem' }, letterSpacing: '-0.03em', color: theme.palette.text.primary, lineHeight: 1.1, mt: 0.5 }}>
+                                    <Typography sx={{ fontWeight: 900, fontSize: { xs: '1.8rem', sm: '2.5rem', md: '3.5rem' }, letterSpacing: '-0.03em', color: theme.palette.text.primary, lineHeight: 1.1, mt: 0.5 }}>
                                         {formatCurrency(calcResult.maturityValue)}
                                     </Typography>
                                 </Box>

@@ -5,7 +5,7 @@ import { Box, Typography, useTheme } from '@mui/material';
 import { TrendingUp, TrendingDown, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface BacktrackInlineProps {
+interface SimulatedReturnsProps {
     symbol: string;
     startPrice: number;
     currentPrice: number;
@@ -50,7 +50,7 @@ function useAnimatedNumber(target: number, duration = 600) {
     return display;
 }
 
-const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, currentPrice, timeRange }) => {
+const SimulatedReturns: React.FC<SimulatedReturnsProps> = ({ symbol, startPrice, currentPrice, timeRange }) => {
     const theme = useTheme();
     const [amount, setAmount] = useState<number>(10000);
     const isDark = theme.palette.mode === 'dark';
@@ -147,7 +147,7 @@ const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, c
                     gap: 2,
                 }}>
                     {/* Left: sentence */}
-                    <Box>
+                    <Box sx={{ flexGrow: 1, minWidth: { xs: '100%', sm: 'auto' } }}>
                         <Typography
                             variant="body2"
                             sx={{ color: theme.palette.text.secondary, mb: 0.75, fontWeight: 500 }}
@@ -163,6 +163,7 @@ const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, c
                             borderBottom: `2px solid ${theme.palette.primary.main}`,
                             pb: 0.25,
                             mb: 1.5,
+                            width: { xs: '100%', sm: 'auto' }
                         }}>
                             <Typography sx={{
                                 fontWeight: 800,
@@ -186,7 +187,8 @@ const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, c
                                     fontWeight: 800,
                                     fontSize: '1.5rem',
                                     lineHeight: 1,
-                                    width: `${Math.max(64, amount.toString().length * 20 + 8)}px`,
+                                    width: '100%', // Take full width of container on mobile
+                                    maxWidth: '300px', // But don't grow too large
                                     outline: 'none',
                                     padding: 0,
                                     MozAppearance: 'textfield',
@@ -237,6 +239,8 @@ const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, c
                             border: `1px solid ${isPositive ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
                             minWidth: 120,
                             gap: 0.5,
+                            ml: { xs: 0, sm: 'auto' },
+                            width: { xs: '100%', sm: 'auto' }
                         }}
                     >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
@@ -272,4 +276,4 @@ const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, c
     );
 };
 
-export default BacktrackInline;
+export default SimulatedReturns;

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Box, Typography, Grid, Chip, CircularProgress, Button, Tab, Tabs, Tooltip, Menu, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, useTheme } from '@mui/material';
+import { Box, Typography, Grid, Chip, CircularProgress, Button, Tooltip, Menu, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, useTheme, useMediaQuery } from '@mui/material';
 import { useColorMode } from '@/theme/ThemeContext';
 import { ArrowUpRight, ArrowDownRight, Zap, TrendingUp, Activity, Newspaper, Brain, Info, ArrowLeft, Clock } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
@@ -11,7 +11,7 @@ import AddTransactionModal from '@/components/portfolio/AddTransactionModal';
 import CreatePortfolioModal from '@/components/portfolio/CreatePortfolioModal';
 import AddToWatchlistModal from '@/components/watchlist/AddToWatchlistModal';
 import Sidebar from '@/components/layout/Sidebar';
-import BacktrackInline from '@/components/stocks/BacktrackInline';
+import SimulatedReturns from '@/components/stocks/SimulatedReturns';
 
 export default function StockPage() {
     const params = useParams();
@@ -36,7 +36,6 @@ export default function StockPage() {
 
     // UI State
     const [timeRange, setTimeRange] = useState('1mo');
-    const [activeTab, setActiveTab] = useState(0);
     const [configOpen, setConfigOpen] = useState(false);
     const [fastReload, setFastReload] = useState(false);
     const [updateInterval, setUpdateInterval] = useState(5); // Minutes
@@ -165,10 +164,10 @@ export default function StockPage() {
                 {/* Minimal Header */}
                 <Box sx={{ mb: 6 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 1 }}>
-                        <Typography variant="h1" sx={{ fontWeight: 700, fontSize: { xs: '3rem', md: '5rem' }, lineHeight: 0.9, letterSpacing: '-0.04em', color: theme.palette.text.primary }}>
+                        <Typography variant="h1" sx={{ fontWeight: 700, fontSize: { xs: '2.2rem', sm: '3rem', md: '5rem' }, lineHeight: 0.9, letterSpacing: '-0.04em', color: theme.palette.text.primary }}>
                             {data.symbol}
                         </Typography>
-                        <Typography variant="h4" sx={{ color: theme.palette.text.secondary, fontWeight: 400, mt: { xs: 0, md: 3 } }}>
+                        <Typography variant="h4" sx={{ color: theme.palette.text.secondary, fontWeight: 400, mt: { xs: 0, md: 3 }, fontSize: { xs: '1.2rem', md: '2.125rem' } }}>
                             {data.name || data.symbol}
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 1, mt: { xs: 0, md: 3 } }}>
@@ -181,12 +180,12 @@ export default function StockPage() {
                         </Box>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <Typography variant="h2" sx={{ fontWeight: 600, fontSize: { xs: '2rem', md: '3rem' }, color: theme.palette.text.primary }}>
+                        <Typography variant="h2" sx={{ fontWeight: 600, fontSize: { xs: '1.5rem', md: '3rem' }, color: theme.palette.text.primary }}>
                             {price}
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', color: change >= 0 ? theme.palette.success.main : theme.palette.error.main, bgcolor: change >= 0 ? `${theme.palette.success.main}15` : `${theme.palette.error.main}15`, px: 1.5, py: 0.5, borderRadius: 1 }}>
-                            {change >= 0 ? <ArrowUpRight size={24} /> : <ArrowDownRight size={24} />}
-                            <Typography variant="h6" sx={{ fontWeight: 600, ml: 0.5 }}>
+                            {change >= 0 ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
+                            <Typography variant="h6" sx={{ fontWeight: 600, ml: 0.5, fontSize: { xs: '0.9rem', md: '1.25rem' } }}>
                                 {change > 0 ? '+' : ''}{Number(change).toFixed(2)} ({Number(changePercent).toFixed(2)}%)
                             </Typography>
                         </Box>
@@ -197,7 +196,7 @@ export default function StockPage() {
                     {/* Left Column: Chart & Analysis */}
                     <Grid size={{ xs: 12, md: 8 }}>
                         {/* Chart Container */}
-                        <Box sx={{ height: 450, bgcolor: theme.palette.background.paper, borderRadius: 4, p: 3, border: `1px solid ${theme.palette.divider}`, mb: 6, position: 'relative' }}>
+                        <Box sx={{ height: { xs: 280, md: 450 }, bgcolor: theme.palette.background.paper, borderRadius: 4, p: { xs: 1.5, md: 3 }, border: `1px solid ${theme.palette.divider}`, mb: 6, position: 'relative' }}>
                             {/* Loading Overlay */}
                             {chartLoading && (
                                 <Box sx={{
@@ -218,16 +217,30 @@ export default function StockPage() {
                                 </Box>
                             )}
 
-                            {/* Time Range Selectors */}
-                            <Box sx={{ position: 'absolute', top: 20, right: 24, zIndex: 10, display: 'flex', gap: 1 }}>
+                            {/* Time Range Selectors - Horizontally Scrollable on Mobile */}
+                            <Box sx={{
+                                position: 'absolute',
+                                top: { xs: 12, md: 20 },
+                                right: { xs: 12, md: 24 },
+                                zIndex: 10,
+                                display: 'flex',
+                                gap: 1,
+                                maxWidth: { xs: 'calc(100% - 24px)', md: 'auto' },
+                                overflowX: 'auto',
+                                pb: { xs: 1, md: 0 },
+                                '&::-webkit-scrollbar': { display: 'none' }, // Hide scrollbar for clean look
+                                msOverflowStyle: 'none',
+                                scrollbarWidth: 'none'
+                            }}>
                                 {['1d', '5d', '1mo', '3mo', '6mo', '1y', 'ytd', 'max'].map((range) => (
                                     <Button
                                         key={range}
                                         size="small"
                                         onClick={() => setTimeRange(range)}
                                         sx={{
-                                            minWidth: 0,
+                                            minWidth: 'fit-content',
                                             px: 1.5,
+                                            whiteSpace: 'nowrap',
                                             color: timeRange === range ? theme.palette.primary.main : theme.palette.text.secondary,
                                             fontWeight: 700,
                                             bgcolor: timeRange === range ? `${theme.palette.primary.main}15` : 'transparent',
@@ -242,7 +255,7 @@ export default function StockPage() {
                                     <IconButton
                                         size="small"
                                         onClick={() => setConfigOpen(true)}
-                                        sx={{ color: theme.palette.text.secondary, ml: 1, '&:hover': { color: theme.palette.text.primary } }}
+                                        sx={{ color: theme.palette.text.secondary, ml: 1, '&:hover': { color: theme.palette.text.primary }, display: { xs: 'none', md: 'inline-flex' } }}
                                     >
                                         <TrendingUp size={16} />
                                     </IconButton>
@@ -277,9 +290,9 @@ export default function StockPage() {
                                                         }}
                                                         axisLine={false}
                                                         tickLine={false}
-                                                        tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
+                                                        tick={{ fill: theme.palette.text.secondary, fontSize: 10 }}
                                                         dy={10}
-                                                        minTickGap={30}
+                                                        minTickGap={useMediaQuery(theme.breakpoints.down('sm')) ? 50 : 30}
                                                     />
                                                     <YAxis
                                                         domain={['auto', 'auto']}
@@ -313,7 +326,7 @@ export default function StockPage() {
 
                         {/* Simulated Returns Card */}
                         <Box sx={{ mb: 4 }}>
-                            <BacktrackInline
+                            <SimulatedReturns
                                 symbol={symbol}
                                 startPrice={chartData[0]?.close || 0}
                                 currentPrice={data.market_data?.price || 0}

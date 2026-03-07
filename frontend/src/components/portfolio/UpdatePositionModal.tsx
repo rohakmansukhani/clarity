@@ -51,6 +51,8 @@ export default function UpdatePositionModal({ open, onClose, onSubmit, holding }
                     borderRadius: 4,
                     border: '1px solid',
                     borderColor: 'divider',
+                    minWidth: { xs: '90%', sm: 400 },
+                    maxHeight: '90vh',
                     p: 1,
                     backgroundImage: 'none',
                     boxShadow: theme.shadows[16]

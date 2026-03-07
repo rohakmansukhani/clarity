@@ -64,7 +64,8 @@ export default function SetAlertModal({ open, onClose, ticker, currentPrice, onA
                     border: '1px solid',
                     borderColor: 'divider',
                     borderRadius: 3,
-                    minWidth: 400,
+                    minWidth: { xs: '90%', sm: 400 },
+                    maxHeight: '90vh',
                     p: 1,
                     backgroundImage: 'none'
                 }

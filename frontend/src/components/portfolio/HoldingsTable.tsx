@@ -30,7 +30,7 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert, onUpdate }
     if (!portfolio || !portfolio.holdings) return null;
 
     return (
-        <TableContainer sx={{ bgcolor: 'transparent', boxShadow: 'none' }}>
+        <TableContainer sx={{ bgcolor: 'transparent', boxShadow: 'none', overflowX: 'auto' }}>
             <Table>
                 <TableHead>
                     <TableRow sx={{ '& th': { borderBottom: '1px solid', borderColor: 'divider', color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem', letterSpacing: '0.05em', py: 2 } }}>

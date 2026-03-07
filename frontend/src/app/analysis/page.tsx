@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, IconButton, Button, Avatar, Snackbar, Alert } from '@mui/material';
+import { Box, Typography, Paper, IconButton, Button, Avatar, Snackbar, Alert, useMediaQuery, useTheme } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Scale, ArrowLeft } from 'lucide-react';
-import { useTheme } from '@mui/material/styles';
+import { Plus, Scale, ArrowLeft, Laptop } from 'lucide-react';
 import { useColorMode } from '@/theme/ThemeContext';
 import Sidebar from '@/components/layout/Sidebar';
 import { useRouter } from 'next/navigation';
@@ -22,6 +21,10 @@ import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
 
 export default function AnalysisPage() {
     const router = useRouter();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const { mode } = useColorMode();
+
     const [search, setSearch] = useState('');
     const [exchangeFilter, setExchangeFilter] = useState('ALL');
     const [selectedStocks, setSelectedStocks] = useState<string[]>([]);
@@ -36,10 +39,75 @@ export default function AnalysisPage() {
     const [stockNames, setStockNames] = useState<Record<string, string>>({});
     const [chartData, setChartData] = useState<any[]>([]);
     const [chartPeriod, setChartPeriod] = useState('1y');
-    const theme = useTheme();
-    const { mode } = useColorMode();
 
     const MAX_SLOTS = 5;
+
+    // --- Mobile Block Screen ---
+    if (isMobile) {
+        return (
+            <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+                <Sidebar />
+                <Box sx={{
+                    flexGrow: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    p: 4,
+                    textAlign: 'center',
+                    ml: { md: '140px' }
+                }}>
+                    <Box sx={{
+                        p: 4,
+                        bgcolor: 'background.paper',
+                        borderRadius: 6,
+                        border: `1px solid ${theme.palette.divider}`,
+                        maxWidth: 400,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 3,
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+                    }}>
+                        <Box sx={{
+                            width: 80,
+                            height: 80,
+                            borderRadius: '50%',
+                            bgcolor: `${theme.palette.primary.main}15`,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            mb: 1
+                        }}>
+                            <Laptop size={40} color={theme.palette.primary.main} />
+                        </Box>
+                        <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
+                            Desktop Only
+                        </Typography>
+                        <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+                            The Comparison engine is a powerful tool designed for deep analysis and data visualization, which is best experienced on a laptop or desktop.
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            onClick={() => router.push('/dashboard')}
+                            sx={{
+                                mt: 2,
+                                bgcolor: 'text.primary',
+                                color: 'background.paper',
+                                borderRadius: 3,
+                                px: 4,
+                                py: 1.5,
+                                fontWeight: 600,
+                                '&:hover': { bgcolor: 'text.secondary' }
+                            }}
+                        >
+                            Back to Dashboard
+                        </Button>
+                    </Box>
+                </Box>
+            </Box>
+        );
+    }
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);

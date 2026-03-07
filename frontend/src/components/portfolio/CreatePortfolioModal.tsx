@@ -10,7 +10,8 @@ import {
     TextField,
     Box,
     Typography,
-    Chip
+    Chip,
+    useTheme
 } from '@mui/material';
 import { Wallet, TrendingUp } from 'lucide-react';
 
@@ -32,6 +33,7 @@ export default function CreatePortfolioModal({
     isLoading = false
 }: CreatePortfolioModalProps) {
     const [name, setName] = useState('');
+    const theme = useTheme();
 
     const handleSubmit = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -47,41 +49,43 @@ export default function CreatePortfolioModal({
             onClose={onClose}
             PaperProps={{
                 sx: {
-                    bgcolor: '#111',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
                     borderRadius: 3,
                     minWidth: { xs: '90%', sm: 400 },
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    boxShadow: theme.shadows[16],
+                    backgroundImage: 'none'
                 }
             }}
         >
             <form onSubmit={handleSubmit}>
-                <DialogTitle sx={{ color: '#fff', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Wallet size={20} color="#00E5FF" />
+                <DialogTitle sx={{ color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1.5, fontWeight: 700 }}>
+                    <Wallet size={20} color={theme.palette.primary.main} />
                     Create Portfolio
                 </DialogTitle>
 
                 <DialogContent>
-                    <Box sx={{ mb: 3 }}>
-                        <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+                    <Box sx={{ mb: 1 }}>
+                        <Box sx={{ display: 'flex', gap: 1.5, mb: 2, flexWrap: 'wrap' }}>
                             {totalBudget > 0 && (
                                 <Chip
-                                    icon={<Wallet size={14} color="#000" />}
+                                    icon={<Wallet size={14} color={theme.palette.primary.contrastText} />}
                                     label={`Budget: ₹${totalBudget.toLocaleString('en-IN')}`}
-                                    sx={{ bgcolor: '#00E5FF', color: '#000', fontWeight: 600 }}
+                                    sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 600, height: 28 }}
                                 />
                             )}
                             {allocations.length > 0 && (
                                 <Chip
                                     icon={<TrendingUp size={14} />}
                                     label={`${allocations.length} Stocks`}
-                                    sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: '#fff' }}
+                                    sx={{ bgcolor: 'action.hover', color: 'text.primary', fontWeight: 600, height: 28 }}
                                 />
                             )}
                         </Box>
 
-                        <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.6)', mb: 2 }}>
-                            Give your new portfolio a name to save it to your dashboard.
+                        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                            Give your new portfolio a name to save it to your dashboard and track your investments.
                         </Typography>
 
                         <TextField
@@ -93,11 +97,12 @@ export default function CreatePortfolioModal({
                             disabled={isLoading}
                             sx={{
                                 '& .MuiOutlinedInput-root': {
-                                    color: '#fff',
-                                    bgcolor: 'rgba(255,255,255,0.05)',
-                                    '& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
-                                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
-                                    '&.Mui-focused fieldset': { borderColor: '#00E5FF' }
+                                    color: 'text.primary',
+                                    bgcolor: 'background.default',
+                                    borderRadius: 2,
+                                    '& fieldset': { borderColor: 'divider' },
+                                    '&:hover fieldset': { borderColor: 'primary.main', opacity: 0.5 },
+                                    '&.Mui-focused fieldset': { borderColor: 'primary.main' }
                                 }
                             }}
                         />
@@ -107,7 +112,7 @@ export default function CreatePortfolioModal({
                 <DialogActions sx={{ p: 3, pt: 0 }}>
                     <Button
                         onClick={onClose}
-                        sx={{ color: 'rgba(255,255,255,0.6)', '&:hover': { color: '#fff' } }}
+                        sx={{ color: 'text.secondary', fontWeight: 600, '&:hover': { color: 'text.primary', bgcolor: 'transparent' } }}
                         disabled={isLoading}
                     >
                         Cancel
@@ -117,11 +122,14 @@ export default function CreatePortfolioModal({
                         variant="contained"
                         disabled={!name.trim() || isLoading}
                         sx={{
-                            bgcolor: '#00E5FF',
-                            color: '#000',
-                            fontWeight: 600,
-                            '&:hover': { bgcolor: '#00B2CC' },
-                            '&.Mui-disabled': { bgcolor: 'rgba(0, 229, 255, 0.2)' }
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                            fontWeight: 700,
+                            px: 3,
+                            py: 1,
+                            borderRadius: 2,
+                            '&:hover': { bgcolor: 'primary.dark' },
+                            '&.Mui-disabled': { bgcolor: 'action.disabledBackground' }
                         }}
                     >
                         {isLoading ? 'Creating...' : 'Create Portfolio'}
@@ -131,3 +139,4 @@ export default function CreatePortfolioModal({
         </Dialog>
     );
 }
+
