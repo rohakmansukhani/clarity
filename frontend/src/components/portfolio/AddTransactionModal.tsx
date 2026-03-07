@@ -77,7 +77,7 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                 if (isCancelled) return;
 
                 if (fetchedPrice > 0) {
-                    setPrice(fetchedPrice.toString());
+                    setPrice(fetchedPrice.toFixed(2));
                     setPriceError(''); // Explicitly clear error on success
                 } else {
                     if (mode === 'PRESENT') {
@@ -276,7 +276,7 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                         }}>
                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Investment</Typography>
                             <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                                ₹{(Number(price) * Number(shares)).toLocaleString()}
+                                ₹{(Number(price) * Number(shares)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </Typography>
                         </Box>
                     )}
