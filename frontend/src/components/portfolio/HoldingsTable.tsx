@@ -4,16 +4,19 @@ import React, { useState } from 'react';
 import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography, IconButton, Menu, MenuItem, ListItemIcon, Tooltip } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { MoreVertical, Trash2, Bell } from 'lucide-react';
+import { MoreVertical, Trash2, Bell, Edit2 } from 'lucide-react';
+import { useTheme } from '@mui/material/styles';
 
 interface HoldingsTableProps {
     portfolio: any;
     onDelete?: (holdingId: string) => void;
     onAlert?: (ticker: string, currentPrice: number) => void;
+    onUpdate?: (holding: any) => void;
 }
 
-export default function HoldingsTable({ portfolio, onDelete, onAlert }: HoldingsTableProps) {
+export default function HoldingsTable({ portfolio, onDelete, onAlert, onUpdate }: HoldingsTableProps) {
     const router = useRouter();
+    const theme = useTheme();
     const [anchorEl, setAnchorEl] = useState<{ [key: string]: HTMLElement | null }>({});
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, id: string) => {
@@ -144,13 +147,25 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert }: Holdings
                                         }}
                                     >
                                         <MenuItem
-                                            onClick={() => {
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleMenuClose(stock.id || stock.ticker);
+                                                if (onUpdate) onUpdate(stock);
+                                            }}
+                                            sx={{ color: 'text.primary', '&:hover': { bgcolor: 'action.hover' } }}
+                                        >
+                                            <ListItemIcon><Edit2 size={16} color={theme.palette.text.primary} /></ListItemIcon>
+                                            <Typography variant="body2">Update Position</Typography>
+                                        </MenuItem>
+                                        <MenuItem
+                                            onClick={(e) => {
+                                                e.stopPropagation();
                                                 handleMenuClose(stock.id || stock.ticker);
                                                 if (onDelete && stock.id) onDelete(stock.id);
                                             }}
                                             sx={{ color: 'error.main', '&:hover': { bgcolor: 'action.hover' } }}
                                         >
-                                            <ListItemIcon><Trash2 size={16} color="var(--mui-palette-error-main)" /></ListItemIcon>
+                                            <ListItemIcon><Trash2 size={16} color={theme.palette.error.main} /></ListItemIcon>
                                             <Typography variant="body2">Delete</Typography>
                                         </MenuItem>
                                     </Menu>

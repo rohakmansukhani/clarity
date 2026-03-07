@@ -17,6 +17,7 @@ import AddTransactionModal from '@/components/portfolio/AddTransactionModal';
 import { formatIndianCurrencyDynamic } from '@/utils/currency';
 import CreatePortfolioModal from '@/components/portfolio/CreatePortfolioModal';
 import SetAlertModal from '@/components/portfolio/SetAlertModal';
+import UpdatePositionModal from '@/components/portfolio/UpdatePositionModal';
 
 // --- Interfaces ---
 interface Holding {
@@ -63,6 +64,8 @@ export default function PortfolioPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
     const [alertTicker, setAlertTicker] = useState<{ ticker: string, price: number } | null>(null);
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+    const [selectedHolding, setSelectedHolding] = useState<any>(null);
 
     // Delete Confirmation
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -189,6 +192,19 @@ export default function PortfolioPage() {
             }
         } catch (e) {
             console.error("Delete holding failed", e);
+        }
+    };
+
+    const handleUpdateHolding = async (holdingId: string, shares: number, avgPrice: number) => {
+        try {
+            await portfolioService.updateHolding(holdingId, { shares, avg_price: avgPrice });
+            // Refresh
+            if (activeId) {
+                const perf = await portfolioService.getPortfolioPerformance(activeId);
+                setPortfolios(prev => prev.map(p => p.id === activeId ? { ...p, ...perf } : p));
+            }
+        } catch (e) {
+            console.error("Update holding failed", e);
         }
     };
 
@@ -538,6 +554,10 @@ export default function PortfolioPage() {
                                             portfolio={activePortfolio}
                                             onDelete={handleDeleteHolding}
                                             onAlert={handleAlertClick}
+                                            onUpdate={(holding) => {
+                                                setSelectedHolding(holding);
+                                                setIsUpdateModalOpen(true);
+                                            }}
                                         />
                                     </motion.div>
                                 ) : (
@@ -608,6 +628,13 @@ export default function PortfolioPage() {
                         }}
                     />
                 )}
+
+                <UpdatePositionModal
+                    open={isUpdateModalOpen}
+                    onClose={() => setIsUpdateModalOpen(false)}
+                    holding={selectedHolding}
+                    onSubmit={handleUpdateHolding}
+                />
 
                 <ConfirmDialog
                     open={deleteConfirmOpen}
