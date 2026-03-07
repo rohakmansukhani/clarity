@@ -8,7 +8,7 @@ import {
   Typography,
   ToggleButton,
   ToggleButtonGroup,
-  Grid2 as Grid,
+  Grid,
   Divider,
   Paper,
   Tooltip,
