@@ -37,13 +37,6 @@ COMMODITY_MAP = {
     "SUGAR": "SB=F",     # Sugar Futures
     "COFFEE": "KC=F",    # Coffee Futures
     
-    # Indian ETFs (NSE)
-    "GOLDBEES": "GOLDBEES.NS",    # Gold ETF
-    "NIFTYBEES": "NIFTYBEES.NS",  # Nifty 50 ETF
-    "JUNIORBEES": "JUNIORBEES.NS",# Nifty Next 50 ETF
-    "BANKBEES": "BANKBEES.NS",    # Bank Nifty ETF
-    "ITBEES": "ITBEES.NS",        # IT Sector ETF
-    
     # International Indices (for reference)
     "SPY": "SPY",        # S&P 500 ETF
     "QQQ": "QQQ",        # NASDAQ 100 ETF

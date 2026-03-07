@@ -30,6 +30,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.core.rate_limit import limiter
+from app.api.v1 import etfs
+from app.core.config import settings
 from app.core.logging_config import setup_logging
 
 # Call before creating FastAPI app
@@ -60,6 +62,9 @@ add_exception_handlers(app)
 
 # Register Main API Router (v1)
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Register new ETFs router
+app.include_router(etfs.router, prefix="/api/v1/etfs", tags=["ETFs"])
 
 # Global consensus engine instance (can also be dependent)
 # Force Reload

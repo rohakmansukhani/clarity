@@ -37,3 +37,6 @@ fake-useragent>=1.1.3
 beautifulsoup4>=4.12.0
 requests>=2.31.0
 
+bse>=0.4.0
+mftool>=2.8
+mftool>=2.8

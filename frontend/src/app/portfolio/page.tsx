@@ -289,23 +289,40 @@ export default function PortfolioPage() {
                                 <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 700, mb: 1 }}>My Portfolios</Typography>
                                 <Typography variant="body1" sx={{ color: 'text.secondary' }}>Select a portfolio to manage holdings and analyze performance.</Typography>
                             </Box>
-                            <Button
-                                variant="contained"
-                                startIcon={<Plus size={20} />}
-                                onClick={() => setIsCreateModalOpen(true)}
-                                sx={{
-                                    bgcolor: 'primary.main',
-                                    color: '#000',
-                                    fontWeight: 700,
-                                    py: 1.5,
-                                    px: 3,
-                                    borderRadius: 3,
-                                    textTransform: 'none',
-                                    '&:hover': { bgcolor: 'primary.dark' }
-                                }}
-                            >
-                                New Portfolio
-                            </Button>
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => router.push('/mutual-funds/holdings')}
+                                    sx={{
+                                        color: 'primary.main',
+                                        borderColor: 'primary.main',
+                                        fontWeight: 700,
+                                        py: 1.5,
+                                        px: 3,
+                                        borderRadius: 3,
+                                        textTransform: 'none',
+                                    }}
+                                >
+                                    Mutual Funds
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<Plus size={20} />}
+                                    onClick={() => setIsCreateModalOpen(true)}
+                                    sx={{
+                                        bgcolor: 'primary.main',
+                                        color: '#000',
+                                        fontWeight: 700,
+                                        py: 1.5,
+                                        px: 3,
+                                        borderRadius: 3,
+                                        textTransform: 'none',
+                                        '&:hover': { bgcolor: 'primary.dark' }
+                                    }}
+                                >
+                                    New Portfolio
+                                </Button>
+                            </Box>
                         </Box>
 
                         <Grid container spacing={3}>

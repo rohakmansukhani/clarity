@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, Request, Body
+from fastapi import APIRouter, HTTPException, Request, Body, Depends
+from app.api.deps import get_current_user, get_user_supabase
+from supabase import Client
 from app.services.ai_service import AIService
 from app.services.market_service import MarketService
 from app.core.rate_limit import limiter
@@ -79,15 +81,40 @@ class ChatRequest(BaseModel):
 
 @router.post("/chat")
 @limiter.limit("10/minute")
-async def chat_with_ai(request: Request, body: ChatRequest):
+async def chat_with_ai(
+    request: Request, 
+    body: ChatRequest,
+    user = Depends(get_current_user),
+    supabase: Client = Depends(get_user_supabase)
+):
     """
     Chat with Clarity AI.
     Accepts a query, optional context, and optional conversation history for context-aware responses.
-    Returns response text and optional suggest_switch for domain switching.
+    Automatically enriches context with User Portfolios and Mutual Fund Holdings.
     """
     try:
-        result = await ai_service.chat(body.query, body.context, body.conversation_history)
-        # result is now a dict with 'response' and 'suggest_switch'
+        # 1. Fetch User Data
+        context = body.context or {}
+        
+        try:
+            # Fetch Stock Holdings
+            portfolios_res = supabase.table("portfolios").select("*, holdings(*)").execute()
+            stock_portfolios = portfolios_res.data if portfolios_res else []
+            
+            # Fetch MF Holdings
+            mf_res = supabase.table("mf_holdings").select("*").execute()
+            mf_holdings = mf_res.data if mf_res else []
+            
+            # Inject into context
+            context['user_financials'] = {
+                "stock_portfolios": stock_portfolios,
+                "mutual_fund_holdings": mf_holdings
+            }
+        except Exception as db_err:
+            logger.error(f"Failed to fetch user context for AI: {db_err}")
+
+        # 2. Call AI Service
+        result = await ai_service.chat(body.query, context, body.conversation_history)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

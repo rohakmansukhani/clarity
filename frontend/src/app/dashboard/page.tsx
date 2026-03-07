@@ -6,6 +6,8 @@ import { Search, Bell, Settings, TrendingUp, ArrowUpRight, ArrowDownRight, Zap, 
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { marketService } from '@/services/marketService';
+import { portfolioService } from '@/services/portfolioService';
+import { mutualFundService } from '@/services/mutualFundService';
 
 import { useTheme } from '@mui/material/styles';
 import { useColorMode } from '@/theme/ThemeContext';
@@ -21,6 +23,8 @@ export default function DashboardPage() {
     const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'warning' | 'error' });
 
     const [user, setUser] = useState<any>(null);
+    const [netWorth, setNetWorth] = useState({ total: 0, stocks: 0, mf: 0 });
+    const [netWorthLoading, setNetWorthLoading] = useState(true);
 
     useEffect(() => {
         // 0. Load User
@@ -42,6 +46,35 @@ export default function DashboardPage() {
 
             // If no name found, display_name will be undefined/null -> falls back to 'Trader' in JSX
             setUser({ ...parsedUser, display_name: name });
+
+            // 0.5 Fetch Net Worth
+            const fetchNetWorth = async () => {
+                try {
+                    const portfolios = await portfolioService.listPortfolios();
+                    let stockTotal = 0;
+                    for (const p of portfolios) {
+                        try {
+                            const perf = await portfolioService.getPortfolioPerformance(p.id);
+                            stockTotal += perf.total_value;
+                        } catch (e) { }
+                    }
+
+                    let mfTotal = 0;
+                    try {
+                        const mfs = await mutualFundService.getHoldings();
+                        mfTotal = mfs.reduce((sum: number, h: any) => sum + (h.units * h.avg_nav), 0);
+                    } catch (e) { }
+
+                    setNetWorth({ total: stockTotal + mfTotal, stocks: stockTotal, mf: mfTotal });
+                } catch (error) {
+                    console.error("Failed to fetch net worth", error);
+                } finally {
+                    setNetWorthLoading(false);
+                }
+            };
+            fetchNetWorth();
+        } else {
+            setNetWorthLoading(false);
         }
 
         // 1. Time-based Greeting
@@ -183,6 +216,43 @@ export default function DashboardPage() {
             <Grid container spacing={{ xs: 3, md: 6 }}>
                 {/* Left Col: Main Stats (Portfolio) */}
                 <Grid size={{ xs: 12, md: 8 }}>
+                    {/* Net Worth Section */}
+                    <Box sx={{ mb: 6 }}>
+                        <Typography variant="h5" sx={{ color: theme.palette.text.primary, fontWeight: 700, mb: 3 }}>My Net Worth</Typography>
+                        {netWorthLoading ? (
+                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                <CircularProgress size={20} sx={{ color: theme.palette.text.secondary }} />
+                            </Box>
+                        ) : (
+                            <Grid container spacing={4}>
+                                <Grid size={{ xs: 12, sm: 4 }}>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL</Typography>
+                                        <Typography variant="h3" sx={{ fontWeight: 700, my: 0.5, fontSize: '2.5rem', color: theme.palette.text.primary }}>
+                                            ₹{netWorth.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 4 }}>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>STOCKS</Typography>
+                                        <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
+                                            ₹{netWorth.stocks.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 4 }}>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>MUTUAL FUNDS</Typography>
+                                        <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
+                                            ₹{netWorth.mf.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                        )}
+                    </Box>
+
                     <Box sx={{ mb: 6 }}>
                         <Typography variant="h5" sx={{ color: theme.palette.text.primary, fontWeight: 700, mb: 3 }}>Market Overview</Typography>
                         {loading ? (

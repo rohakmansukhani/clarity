@@ -26,8 +26,8 @@ export const marketService = {
 
 
     // Search for stocks
-    searchStocks: async (query: string) => {
-        const response = await api.get(`/stocks/search?q=${query}`);
+    searchStocks: async (query: string, exchange: string = 'ALL') => {
+        const response = await api.get(`/stocks/search?q=${query}&exchange=${exchange}`);
         return response.data;
     },
 

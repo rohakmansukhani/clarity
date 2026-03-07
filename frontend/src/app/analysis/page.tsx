@@ -23,6 +23,7 @@ import DisclaimerFooter from '@/components/layout/DisclaimerFooter';
 export default function AnalysisPage() {
     const router = useRouter();
     const [search, setSearch] = useState('');
+    const [exchangeFilter, setExchangeFilter] = useState('ALL');
     const [selectedStocks, setSelectedStocks] = useState<string[]>([]);
     const [isComparing, setIsComparing] = useState(false);
     const [showSearchOverlay, setShowSearchOverlay] = useState(false);
@@ -66,15 +67,16 @@ export default function AnalysisPage() {
         });
     }, [selectedStocks]);
 
-    const handleSearchChange = async (value: string) => {
+    const handleSearchChange = async (value: string, exchange: string = exchangeFilter) => {
         setSearch(value);
+        setExchangeFilter(exchange);
         if (value.length < 2) {
             setSearchResults([]);
             return;
         }
         setSearchLoading(true);
         try {
-            const results = await marketService.searchStocks(value);
+            const results = await marketService.searchStocks(value, exchange);
             setSearchResults(results || []);
         } catch (error) {
             console.error('Search failed:', error);
@@ -253,10 +255,12 @@ export default function AnalysisPage() {
                 {(selectedStocks.length < 2 || showSearchOverlay) && (
                     <StockSearchBar
                         search={search}
+                        exchangeFilter={exchangeFilter}
                         searchResults={searchResults}
                         searchLoading={searchLoading}
                         disabled={selectedStocks.length >= MAX_SLOTS}
-                        onSearchChange={handleSearchChange}
+                        onSearchChange={(val: string) => handleSearchChange(val, exchangeFilter)}
+                        onExchangeChange={(ex: string) => handleSearchChange(search, ex)}
                         onSelectStock={(symbol, name) => {
                             handleAddStock(symbol, name);
                             setShowSearchOverlay(false);

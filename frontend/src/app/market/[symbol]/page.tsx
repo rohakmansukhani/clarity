@@ -158,13 +158,21 @@ export default function StockPage() {
 
                 {/* Minimal Header */}
                 <Box sx={{ mb: 6 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, mb: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 1 }}>
                         <Typography variant="h1" sx={{ fontWeight: 700, fontSize: { xs: '3rem', md: '5rem' }, lineHeight: 0.9, letterSpacing: '-0.04em', color: theme.palette.text.primary }}>
                             {data.symbol}
                         </Typography>
-                        <Typography variant="h4" sx={{ color: theme.palette.text.secondary, fontWeight: 400 }}>
+                        <Typography variant="h4" sx={{ color: theme.palette.text.secondary, fontWeight: 400, mt: { xs: 0, md: 3 } }}>
                             {data.name || data.symbol}
                         </Typography>
+                        <Box sx={{ display: 'flex', gap: 1, mt: { xs: 0, md: 3 } }}>
+                            {data.type === 'ETF' && (
+                                <Chip label="ETF" size="small" sx={{ bgcolor: theme.palette.secondary.main, color: '#fff', fontWeight: 600 }} />
+                            )}
+                            {data.exchanges?.map((ex: string) => (
+                                <Chip key={ex} label={ex} size="small" variant="outlined" sx={{ color: theme.palette.text.secondary, borderColor: theme.palette.divider }} />
+                            ))}
+                        </Box>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                         <Typography variant="h2" sx={{ fontWeight: 600, fontSize: { xs: '2rem', md: '3rem' }, color: theme.palette.text.primary }}>

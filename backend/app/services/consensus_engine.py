@@ -6,6 +6,8 @@ from app.core.cache import cache
 from app.services.providers.nselib_service import NSELibProvider
 from app.services.providers.yahoo_service import YahooProvider
 from app.services.providers.google_finance import GoogleFinanceProvider
+from app.services.providers.bse_service import BSEProvider
+from app.core.symbol_registry import registry, Exchange
 from app.utils.market_hours import get_smart_cache_expiry
 
 logger = logging.getLogger(__name__)
@@ -22,14 +24,13 @@ class ConsensusEngine:
     3. GoogleFinance: Fallback for realtime
     """
     def __init__(self):
-        # Initialize providers
-        self.providers: List[BaseDataSource] = [
-            NSELibProvider(),
-            YahooProvider(),
-            GoogleFinanceProvider()
-        ]
+        # Initialize providers (map by name for easier selection)
+        self.nselib_provider = NSELibProvider()
+        self.yahoo_provider = YahooProvider()
+        self.google_provider = GoogleFinanceProvider()
+        self.bse_provider = BSEProvider()
     
-    async def get_consensus_price(self, symbol: str) -> Dict[str, Any]:
+    async def get_consensus_price(self, symbol: str, exchange: Exchange = None) -> Dict[str, Any]:
         """
         Fetches full details from all providers and determines consensus price.
         Returns the consensus price AND the details from the primary source.
@@ -42,19 +43,48 @@ class ConsensusEngine:
         # Use cache decorator dynamically
         @cache(expire=cache_expiry, key_prefix="consensus")
         async def _fetch_consensus(sym: str):
-            return await self._fetch_consensus_internal(sym)
+            return await self._fetch_consensus_internal(sym, exchange)
         
         return await _fetch_consensus(symbol)
     
-    async def _fetch_consensus_internal(self, symbol: str) -> Dict[str, Any]:
-        results = []
-        # Parallel fetch details instead of just price
-        tasks = [p.get_stock_details(symbol) for p in self.providers]
+    async def _fetch_consensus_internal(self, symbol: str, exchange_override: Exchange = None) -> Dict[str, Any]:
+        # Auto-detect exchange if not provided
+        target_exchange = exchange_override or registry.get_exchange(symbol) or Exchange.NSE
+        
+        info = registry.resolve(symbol)
+        
+        providers_to_use = []
+        
+        if target_exchange == Exchange.BSE or target_exchange == Exchange.BOTH:
+             if info and info.bse_scrip:
+                 providers_to_use.append((self.bse_provider, info.bse_scrip))
+             elif symbol.isdigit():
+                 providers_to_use.append((self.bse_provider, symbol))
+                 
+        if target_exchange == Exchange.NSE or target_exchange == Exchange.BOTH:
+             nse_sym = info.nse_symbol if info and info.nse_symbol else symbol
+             providers_to_use.append((self.nselib_provider, nse_sym))
+             # Add Yahoo/Google as well for NSE (fallback/consensus)
+             yahoo_sym = info.symbol if info else symbol
+             providers_to_use.append((self.yahoo_provider, yahoo_sym))
+             providers_to_use.append((self.google_provider, yahoo_sym))
+             
+        # Fallback if no providers matched (e.g., unrecognized symbol format and unmapped)
+        if not providers_to_use:
+             providers_to_use = [
+                  (self.nselib_provider, symbol),
+                  (self.yahoo_provider, symbol),
+                  (self.google_provider, symbol)
+             ]
+
+        # Parallel fetch details
+        tasks = [p.get_stock_details(sym) for p, sym in providers_to_use]
         details_list = await asyncio.gather(*tasks, return_exceptions=True)
         
         # Weights for each provider
         weights = {
             "NSE_Lib": 1.0,
+            "BSEIndia": 0.9,
             "YahooFinance": 0.8,
             "GoogleFinance": 0.6
         }
@@ -64,7 +94,7 @@ class ConsensusEngine:
         valid_details = [] # Tuple of (price, weight, details, provider_name)
         
         for i, res in enumerate(details_list):
-            provider_name = self.providers[i].source_name
+            provider_name = providers_to_use[i][0].source_name
             
             if isinstance(res, Exception):
                 logger.error(f"{provider_name} failed: {res}")
@@ -82,10 +112,12 @@ class ConsensusEngine:
                     price = float(p.replace(',', ''))
                 else:
                     price = float(p)
+            elif provider_name == "BSEIndia":
+                price = float(res.get('LTP', 0.0))
             elif provider_name == "YahooFinance":
-                price = res.get('currentPrice') or res.get('regularMarketPrice') or res.get('price', 0)
+                price = res.get('currentPrice') or res.get('regularMarketPrice') or res.get('price', 0.0)
             elif provider_name == "GoogleFinance":
-                price = res.get('price', 0)
+                price = res.get('price', 0.0)
                 
             if price > 0:
                 weight = weights.get(provider_name, 0.5)

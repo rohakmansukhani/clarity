@@ -1,17 +1,19 @@
-import { Paper, TextField, InputAdornment, CircularProgress, List, ListItem, ListItemButton, Box, Typography, useTheme } from '@mui/material';
+import { Paper, TextField, InputAdornment, CircularProgress, List, ListItem, ListItemButton, Box, Typography, useTheme, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface StockSearchBarProps {
     search: string;
+    exchangeFilter?: string;
     searchResults: any[];
     searchLoading: boolean;
     disabled: boolean;
     onSearchChange: (value: string) => void;
+    onExchangeChange?: (exchange: string) => void;
     onSelectStock: (symbol: string, name: string) => void;
 }
 
-export function StockSearchBar({ search, searchResults, searchLoading, disabled, onSearchChange, onSelectStock }: StockSearchBarProps) {
+export function StockSearchBar({ search, exchangeFilter = 'ALL', searchResults, searchLoading, disabled, onSearchChange, onExchangeChange, onSelectStock }: StockSearchBarProps) {
     const theme = useTheme();
 
     return (
@@ -52,6 +54,23 @@ export function StockSearchBar({ search, searchResults, searchLoading, disabled,
                         sx: { color: theme.palette.text.primary, fontSize: '1rem', fontWeight: 500, px: 2, py: 1.5 }
                     }}
                 />
+
+                {onExchangeChange && (
+                    <ToggleButtonGroup
+                        value={exchangeFilter}
+                        exclusive
+                        onChange={(e, newAlignment) => {
+                            if (newAlignment !== null) onExchangeChange(newAlignment);
+                        }}
+                        aria-label="exchange filter"
+                        size="small"
+                        sx={{ ml: 1, mr: 1, my: 1 }}
+                    >
+                        <ToggleButton value="ALL" sx={{ borderRadius: '12px 0 0 12px', fontSize: '0.75rem', px: 1.5, py: 0.5 }}>ALL</ToggleButton>
+                        <ToggleButton value="NSE" sx={{ fontSize: '0.75rem', px: 1.5, py: 0.5 }}>NSE</ToggleButton>
+                        <ToggleButton value="BSE" sx={{ borderRadius: '0 12px 12px 0', fontSize: '0.75rem', px: 1.5, py: 0.5 }}>BSE</ToggleButton>
+                    </ToggleButtonGroup>
+                )}
             </Paper>
 
             {/* Search Results Dropdown */}
@@ -86,11 +105,31 @@ export function StockSearchBar({ search, searchResults, searchLoading, disabled,
                                             py: 2,
                                             px: 3,
                                             borderBottom: `1px solid ${theme.palette.divider}`,
-                                            '&:hover': { bgcolor: `${theme.palette.primary.main}10` }
+                                            '&:hover': { bgcolor: `${theme.palette.primary.main}10` },
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center'
                                         }}
                                     >
                                         <Box>
-                                            <Typography sx={{ fontWeight: 700, color: theme.palette.text.primary }}>{item.symbol}</Typography>
+                                            <Typography sx={{ fontWeight: 700, color: theme.palette.text.primary, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                {item.symbol}
+                                                {item.type === 'ETF' && (
+                                                    <Box component="span" sx={{ fontSize: '0.65rem', px: 0.8, py: 0.2, bgcolor: theme.palette.secondary.main, color: theme.palette.secondary.contrastText, borderRadius: 1, fontWeight: 700 }}>
+                                                        ETF
+                                                    </Box>
+                                                )}
+                                                {item.exchanges?.includes('NSE') && (
+                                                    <Box component="span" sx={{ fontSize: '0.65rem', px: 0.8, py: 0.2, bgcolor: '#1976d2', color: '#fff', borderRadius: 1, fontWeight: 700 }}>
+                                                        NSE
+                                                    </Box>
+                                                )}
+                                                {item.exchanges?.includes('BSE') && (
+                                                    <Box component="span" sx={{ fontSize: '0.65rem', px: 0.8, py: 0.2, bgcolor: '#ed6c02', color: '#fff', borderRadius: 1, fontWeight: 700 }}>
+                                                        BSE
+                                                    </Box>
+                                                )}
+                                            </Typography>
                                             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>{item.name}</Typography>
                                         </Box>
                                     </ListItemButton>

@@ -107,9 +107,16 @@ class MarketService:
              change = 0.0
              p_change = 0.0
 
+        from app.core.symbol_registry import registry
+        info = registry.resolve(symbol)
+        exchanges = [e.value for e in info.exchanges] if info else []
+        inst_type = info.instrument_type.value if info else "STOCK"
+
         result = {
             "symbol": symbol,
-            "name": fund_data.get("name", symbol),  # Add company name
+            "name": fund_data.get("name", symbol) if fund_data.get("name") else (info.name if info else symbol),
+            "exchanges": exchanges,
+            "type": inst_type,
             "market_data": {
                 **price_data,
                 "change": change,
@@ -128,37 +135,117 @@ class MarketService:
         # Sanitize all numeric values to prevent NaN JSON errors
         return sanitize_dict(result)
 
-    @cache(expire=86400, key_prefix="stock_master_list_v2")
-    async def get_all_symbols(self) -> List[Dict[str, str]]:
+    @cache(expire=86400, key_prefix="stock_master_list_unified_v1")
+    async def get_all_symbols(self) -> List[Dict[str, Any]]:
         """
-        Fetches list of all NSE securities. Cached for 24 hours.
+        Fetches list of all unified NSE and BSE securities, resolving mapping.
+        Cached for 24 hours.
         """
+        from app.services.providers.bse_service import bse_provider
+        from app.core.symbol_registry import registry, InstrumentInfo, Exchange, InstrumentType
+        
         try:
-            # Blocking call
             loop = asyncio.get_event_loop()
             df = await loop.run_in_executor(None, capital_market.equity_list)
+            bse_list = await bse_provider.get_all_bse_symbols()
             
-            # DF columns: SYMBOL, NAME OF COMPANY, SERIES, DATE OF LISTING, FACE VALUE
+            # Create indexing for BSE
+            bse_dict = {}
+            for b_sec in bse_list:
+                # b_sec has -> scrip_code, name, scrip_id, isin
+                bse_dict[b_sec.get('scrip_id', '')] = b_sec
+                
             symbols = []
+            
+            # 1. Process NSE stocks (and see if they are in BSE via scrip_id == SYMBOL)
             if df is not None:
-                # Filter for EQ series only? Or all? -> EQ + BE
-                # For now take all, maybe top 2000?
-                # Let's map to simple list
                 for _, row in df.iterrows():
+                    sym = row['SYMBOL']
+                    name = row['NAME OF COMPANY']
+                    
+                    bse_match = bse_dict.get(sym)
+                    bse_scrip = bse_match.get('scrip_code') if bse_match else None
+                    isin = row.get(' ISIN', bse_match.get('isin') if bse_match else '') # NSE may not have ISIN here
+                    
+                    exchanges = [Exchange.NSE]
+                    if bse_scrip: exchanges.append(Exchange.BSE)
+                    
+                    info = InstrumentInfo(
+                        symbol=sym,
+                        nse_symbol=f"{sym}.NS",
+                        bse_scrip=bse_scrip,
+                        name=name,
+                        instrument_type=InstrumentType.STOCK,
+                        exchanges=exchanges,
+                        isin=isin
+                    )
+                    registry.register_instrument(info)
+                    
                     symbols.append({
-                        "symbol": row['SYMBOL'],
-                        "name": row['NAME OF COMPANY']
+                        "symbol": sym,
+                        "name": name,
+                        "exchanges": [e.value for e in exchanges],
+                        "type": "STOCK"
                     })
+                    
+                    # Remove from BSE dict so we can process leftovers
+                    if bse_match:
+                        del bse_dict[sym]
+
+            # 2. Add BSE only stocks
+            for b_id, b_sec in bse_dict.items():
+                if not b_id: continue
+                
+                info = InstrumentInfo(
+                    symbol=b_id,
+                    nse_symbol=None,
+                    bse_scrip=b_sec.get("scrip_code"),
+                    name=b_sec.get("name", b_id),
+                    instrument_type=InstrumentType.STOCK,
+                    exchanges=[Exchange.BSE],
+                    isin=b_sec.get("isin", "")
+                )
+                registry.register_instrument(info)
+                
+                symbols.append({
+                    "symbol": b_id,
+                    "name": info.name,
+                    "exchanges": [Exchange.BSE.value],
+                    "type": "STOCK",
+                    "bse_scrip": b_sec.get("scrip_code")
+                })
+                
+            # 3. Add ETFs (from our dynamic endpoint logic)
+            # Actually, the dynamic endpoint caches data. We can fetch it.
+            etfs = await self.get_all_etfs()
+            for etf in etfs:
+                sym = etf['symbol']
+                info = InstrumentInfo(
+                    symbol=sym,
+                    nse_symbol=sym + ".NS",
+                    bse_scrip=None,
+                    name=etf.get('name', sym),
+                    instrument_type=InstrumentType.ETF,
+                    exchanges=[Exchange.NSE],
+                    isin=""
+                )
+                registry.register_instrument(info)
+                symbols.append({
+                    "symbol": sym,
+                    "name": info.name,
+                    "exchanges": [Exchange.NSE.value],
+                    "type": "ETF"
+                })
+
             return symbols
         except Exception as e:
             logger.error(f"Error fetching stock list: {e}")
             return []
 
-    @cache(expire=86400, key_prefix="searchable_stocks")
+    @cache(expire=86400, key_prefix="searchable_stocks_unified")
     async def _get_searchable_stocks(self) -> List[Dict[str, Any]]:
         """
         Pre-process stocks for faster searching.
-        Returns list of dicts with 'symbol', 'name', 'search_sym', 'search_name'.
         """
         all_stocks = await self.get_all_symbols()
         processed = []
@@ -166,43 +253,46 @@ class MarketService:
             processed.append({
                 "symbol": s['symbol'],
                 "name": s['name'],
+                "exchanges": s.get('exchanges', []),
+                "type": s.get('type', 'STOCK'),
                 "search_sym": s['symbol'].upper(),
                 "search_name": s['name'].upper()
             })
         return processed
 
-    async def search_stocks(self, query: str) -> List[Dict[str, str]]:
+    async def search_stocks(self, query: str, exchange_filter: str = None) -> List[Dict[str, Any]]:
         """
-        Fuzzy search on cached stock list.
+        Fuzzy search on cached stock list with exchange filter.
         """
         stocks = await self._get_searchable_stocks()
         query = query.upper()
         
         matches = []
 
-        # Common Nickname / Search Mapping (Externalized)
         if query in NICKNAME_MAP:
             target_symbol = NICKNAME_MAP[query]
-            # Prioritize this match
             for s in stocks:
                 if s['symbol'] == target_symbol:
-                    s_copy = {"symbol": s["symbol"], "name": s["name"], "score": 1000}
+                    if exchange_filter and exchange_filter.upper() not in s['exchanges']:
+                        continue
+                    s_copy = {"symbol": s["symbol"], "name": s["name"], "exchanges": s.get("exchanges", []), "type": s.get("type", "STOCK"), "score": 1000}
                     matches.append(s_copy)
                     break 
         
-        # Limit results for performance
         count = 0
         limit = 10
         
         for s in stocks:
-            if len(matches) >= limit + 5: # Optimization: stop if we have enough candidates
+            if len(matches) >= limit + 5: 
                 break
                 
             sym = s['search_sym']
             name = s['search_name']
             
-            # Skip if already added
             if any(m['symbol'] == s['symbol'] for m in matches):
+                continue
+                
+            if exchange_filter and exchange_filter.upper() not in s['exchanges'] and exchange_filter.upper() != "ALL":
                 continue
             
             score = 0
@@ -216,11 +306,12 @@ class MarketService:
                 matches.append({
                     "symbol": s['symbol'],
                     "name": s['name'],
+                    "exchanges": s.get('exchanges', []),
+                    "type": s.get('type', 'STOCK'),
                     "score": score
                 })
                 count += 1
                 
-        # Sort by score desc, limit 10
         matches.sort(key=lambda x: x['score'], reverse=True)
         return matches[:limit]
 
@@ -672,6 +763,51 @@ class MarketService:
         except Exception as e:
             logger.error(f"Error getting technical summary for {symbol}: {e}")
             return {}
+
+
+    @cache(expire=3600, key_prefix="etfs_list")
+    async def get_all_etfs(self) -> List[Dict[str, Any]]:
+        """
+        Dynamically fetch the list of ETFs from NSE.
+        Returns ETFs with their metrics (NAV, 30d/365d changes, etc.)
+        """
+        from nselib.libutil import nse_urlfetch
+        
+        def _fetch():
+            try:
+                response = nse_urlfetch("https://www.nseindia.com/api/etf")
+                if response.status_code == 200:
+                    data = response.json()
+                    etf_list = data.get('data', [])
+                    
+                    results = []
+                    for etf in etf_list:
+                        sym = etf.get('symbol', '')
+                        if not sym: continue
+                        
+                        meta = etf.get('meta', {})
+                        name = meta.get('companyName', sym)
+                        
+                        results.append({
+                            "symbol": sym,
+                            "name": name,
+                            "underlying": etf.get('assets', 'Unknown'),
+                            "nav": etf.get('nav', 0.0),
+                            "ltP": etf.get('ltP', 0.0),
+                            "change": etf.get('chn', 0.0),
+                            "pChange": etf.get('per', 0.0),
+                            "volume": etf.get('qty', 0),
+                            "perChange30d": etf.get('perChange30d', 0.0),
+                            "perChange365d": etf.get('perChange365d', 0.0)
+                        })
+                    return results
+                return []
+            except Exception as e:
+                logger.error(f"Error fetching ETFs: {e}")
+                return []
+                
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _fetch)
 
 
 def get_market_service():

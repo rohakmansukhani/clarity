@@ -8,17 +8,18 @@ market_service = MarketService()
 
 @router.get("/search")
 @limiter.limit("100/minute")
-async def search_stocks(request: Request, q: str = Query(..., min_length=1)):
+async def search_stocks(request: Request, q: str = Query(..., min_length=1), exchange: str = Query("ALL")):
     """
     Search for stocks by symbol or company name.
     
     Args:
         q (str): Query string (e.g., 'RELIANCE', 'TATA').
+        exchange (str): Filter by exchange (ALL, NSE, BSE).
         
     Returns:
         List[Dict]: List of matching stocks with confidence score.
     """
-    results = await market_service.search_stocks(q)
+    results = await market_service.search_stocks(q, exchange_filter=exchange)
     return results
 
 

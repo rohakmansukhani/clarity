@@ -103,6 +103,12 @@ class AIService:
         from app.services.market_service import MarketService
         market_service = MarketService()
 
+        from app.services.mutual_fund.mf_service import MutualFundService
+        mf_service = MutualFundService()
+        
+        from app.services.calculators.sip_calculator import SIPCalculator
+        sip_calc = SIPCalculator()
+
         from datetime import datetime
         current_date = datetime.now().strftime("%B %d, %Y")
         
@@ -174,7 +180,10 @@ class AIService:
                     elif function_name == "get_comprehensive_analysis":
                         tool_output = await market_service.get_comprehensive_analysis(function_args.get("symbol"))
                     elif function_name == "search_stocks":
-                        tool_output = await market_service.search_stocks(function_args.get("query"))
+                        tool_output = await market_service.search_stocks(
+                            function_args.get("query"),
+                            function_args.get("exchange_filter")
+                        )
                     elif function_name == "get_market_status":
                         tool_output = await market_service.get_market_status()
                     elif function_name == "get_sector_recommendations":
@@ -187,7 +196,71 @@ class AIService:
                         tool_output = await ComparisonEngine().compare_stocks(function_args.get("symbols"))
                     elif function_name == "get_top_movers":
                         tool_output = await market_service.get_top_movers()
-                    
+                    elif function_name == "get_all_etfs":
+                        etfs = await market_service.get_all_etfs()
+                        # Apply filters if provided
+                        if function_args.get("underlying"):
+                            underlying_lower = function_args["underlying"].lower()
+                            etfs = [etf for etf in etfs if underlying_lower in etf.get('underlying', '').lower()]
+                        # Apply sorting if provided
+                        sort_by = function_args.get("sort_by", "symbol")
+                        if sort_by in ['symbol', 'nav', 'ltP', 'pChange', 'perChange30d', 'perChange365d']:
+                            reverse = sort_by != 'symbol'
+                            etfs.sort(key=lambda x: x.get(sort_by, 0), reverse=reverse)
+                        tool_output = etfs
+                    elif function_name == "get_etf_details":
+                        symbol = function_args.get("symbol")
+                        # Get comprehensive analysis
+                        analysis = await market_service.get_comprehensive_analysis(symbol)
+                        # Get ETF-specific metrics
+                        all_etfs = await market_service.get_all_etfs()
+                        etf_data = next((e for e in all_etfs if e['symbol'].upper() == symbol.upper()), None)
+                        if etf_data:
+                            analysis['etf_metrics'] = etf_data
+                            analysis['type'] = 'ETF'
+                        tool_output = analysis
+                    elif function_name == "compare_etfs":
+                        symbols = function_args.get("symbols", [])
+                        all_etfs = await market_service.get_all_etfs()
+                        results = []
+                        for sym in symbols[:5]:  # Max 5
+                            etf = next((e for e in all_etfs if e['symbol'].upper() == sym.upper()), None)
+                            if etf:
+                                results.append(etf)
+                        tool_output = results
+                    elif function_name == "search_mutual_funds":
+                        tool_output = await mf_service.search_funds(function_args.get("query"))
+                    elif function_name == "get_mf_details":
+                        tool_output = await mf_service.get_fund_details(function_args.get("scheme_code"))
+                    elif function_name == "get_mf_nav_history":
+                        details = await mf_service.get_fund_details(function_args.get("scheme_code"))
+                        tool_output = {"history": details.get("data", [])} if details else {}
+                    elif function_name == "calculate_sip_returns":
+                        if function_args.get("type") == "sip":
+                            tool_output = sip_calc.calculate_sip(
+                                function_args.get("amount", 0),
+                                function_args.get("return_pct", 0),
+                                function_args.get("tenure_years", 0)
+                            )
+                        else:
+                            tool_output = sip_calc.calculate_lumpsum(
+                                function_args.get("amount", 0),
+                                function_args.get("return_pct", 0),
+                                function_args.get("tenure_years", 0)
+                            )
+                    elif function_name == "compare_mutual_funds":
+                        codes = function_args.get("scheme_codes", [])
+                        results = []
+                        for code in codes[:5]:
+                            details = await mf_service.get_fund_details(code)
+                            if details:
+                                results.append({
+                                    "scheme_code": code, 
+                                    "details": details.get("meta", {}),
+                                    "latest_nav": details.get("data", [{"nav": "N/A"}])[0].get("nav")
+                                })
+                        tool_output = results
+
                     messages.append({
                         "tool_call_id": tool_call.id,
                         "role": "tool",

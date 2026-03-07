@@ -511,6 +511,44 @@ export default function DiscoveryHubPage() {
                                                     </Button>
                                                 ))}
                                             </Box>
+
+                                            {/* ETF Section */}
+                                            <Box sx={{ mt: 6, pt: 4, borderTop: '1px solid', borderColor: 'divider', textAlign: 'left' }}>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Lightbulb size={18} color={theme.palette.secondary.main} />
+                                                    Explore Exchange Traded Funds
+                                                </Typography>
+                                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                                    <Button
+                                                        variant="outlined"
+                                                        onClick={() => handleSend("What are the best Nifty 50 and benchmark tracking ETFs?")}
+                                                        sx={{ color: 'text.secondary', borderColor: 'divider', textTransform: 'none', justifyContent: 'flex-start', '&:hover': { borderColor: 'secondary.main', color: 'text.primary' } }}
+                                                    >
+                                                        Benchmark Trackers
+                                                    </Button>
+                                                    <Button
+                                                        variant="outlined"
+                                                        onClick={() => handleSend("Show me top performing gold and silver ETFs")}
+                                                        sx={{ color: 'text.secondary', borderColor: 'divider', textTransform: 'none', justifyContent: 'flex-start', '&:hover': { borderColor: 'secondary.main', color: 'text.primary' } }}
+                                                    >
+                                                        Precious Metals
+                                                    </Button>
+                                                    <Button
+                                                        variant="outlined"
+                                                        onClick={() => handleSend("Analyze bank and financial sector ETFs like BANKBEES")}
+                                                        sx={{ color: 'text.secondary', borderColor: 'divider', textTransform: 'none', justifyContent: 'flex-start', '&:hover': { borderColor: 'secondary.main', color: 'text.primary' } }}
+                                                    >
+                                                        Sector specific ETFs
+                                                    </Button>
+                                                    <Button
+                                                        variant="outlined"
+                                                        onClick={() => handleSend("Which Indian ETFs give the best dividend yield?")}
+                                                        sx={{ color: 'text.secondary', borderColor: 'divider', textTransform: 'none', justifyContent: 'flex-start', '&:hover': { borderColor: 'secondary.main', color: 'text.primary' } }}
+                                                    >
+                                                        High Dividend Yield
+                                                    </Button>
+                                                </Box>
+                                            </Box>
                                         </Box>
                                     </motion.div>
                                 </Box>
