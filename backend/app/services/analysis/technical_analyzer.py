@@ -65,6 +65,9 @@ class TechnicalAnalyzer:
                 logger.error(f"Trend Detection Error: {e}")
                 trend_data = {"status": "ERROR"}
 
+            # Returns (CAGR)
+            returns = self._calc_returns(df)
+
             # Overall Signal
             signal = self._generate_signal(ma_data, rsi, macd_data, bb_data, volume_data)
             
@@ -77,6 +80,7 @@ class TechnicalAnalyzer:
                 "support_resistance": sr_data,
                 "volume_analysis": volume_data,
                 "trend_analysis": trend_data,
+                "returns": returns,
                 "signal": signal
             }
             
@@ -305,3 +309,33 @@ class TechnicalAnalyzer:
             return 'SELL'
         else:
             return 'NEUTRAL'
+
+    def _calc_returns(self, df: pl.DataFrame) -> Dict[str, float]:
+        """Calculate 1Y and 3Y CAGR from historical data."""
+        returns = {"1Y": 0.0, "3Y": 0.0}
+        
+        if df.height < 2:
+            return returns
+            
+        try:
+            # Assumes data is chronological (oldest -> newest)
+            current_price = float(df.select(pl.col("close").last()).item())
+            
+            # Helper to find price N years ago
+            def get_cagr(years):
+                # Approximation: 252 trading days per year
+                days = int(years * 252)
+                if df.height > days:
+                    past_price = float(df.select(pl.col("close").slice(df.height - days - 1, 1)).item())
+                    if past_price > 0:
+                        cagr = (pow(current_price / past_price, 1/years) - 1) * 100
+                        return round(cagr, 2)
+                return 0.0
+
+            returns["1Y"] = get_cagr(1)
+            returns["3Y"] = get_cagr(3)
+            
+        except Exception as e:
+            logger.error(f"CAGR Calculation Error: {e}")
+            
+        return returns

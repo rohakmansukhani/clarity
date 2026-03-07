@@ -79,36 +79,37 @@ class MoneyControlProvider(BaseDataSource):
             # Build relevance keywords from ticker and company name
             keywords = self._build_keywords(ticker, company_name)
 
-            # Build search query based on ticker type and company name
-            if company_name and company_name.upper() != ticker and len(company_name) > 3:
                 # For ETFs, keep "ETF" in the query for better context
                 if keywords.get("is_etf"):
                     search_name = (company_name
                                    .replace(' Ltd.', '').replace(' Limited', '')
                                    .replace(' NSE', '').strip())
-                    # Add "stock market" to ensure financial context
-                    query = f'"{search_name}" stock market NSE India'
+                    # Simplified query for better RSS results
+                    query = f'"{search_name}" ETF news India'
                 # For generic/commodity tickers, be very specific
                 elif keywords.get("is_generic_ticker") or keywords.get("is_commodity"):
                     search_name = (company_name
                                    .replace(' Ltd.', '').replace(' Limited', '')
                                    .replace(' NSE', '').replace(' ETF', '').strip())
-                    # Add "stock price" to force financial context
-                    query = f'"{search_name}" stock price NSE India'
+                    # Force financial context
+                    query = f'"{search_name}" price news India'
                 else:
                     search_name = (company_name
                                    .replace(' Ltd.', '').replace(' Limited', '')
                                    .replace(' NSE', '').replace(' ETF', '').strip())
-                    query = f'"{search_name}" stock NSE India'
+                    # Broader query to catch diverse sources like India Today, etc.
+                    query = f'"{search_name}" stock news India'
             else:
                 # Quote the ticker to force exact match
                 if keywords.get("is_etf"):
-                    query = f'"{ticker}" ETF stock NSE India'
+                    query = f'"{ticker}" ETF news India'
                 elif keywords.get("is_generic_ticker") or keywords.get("is_commodity"):
-                    # For generic tickers, add "stock price" for financial context
-                    query = f'"{ticker}" stock price NSE India'
+                    query = f'"{ticker}" price news India'
+                elif ticker == "RELIANCE":
+                    # Special case for Reliance to include RIL
+                    query = '(RELIANCE OR RIL) stock news India'
                 else:
-                    query = f'"{ticker}" NSE stock India'
+                    query = f'"{ticker}" stock news India'
 
             loop = asyncio.get_event_loop()
             raw_news = await loop.run_in_executor(None, self._fetch_rss, query)
@@ -212,11 +213,14 @@ class MoneyControlProvider(BaseDataSource):
             # Regular stocks: accept weak/medium/strong context (relaxed filtering)
             has_financial_context = has_strong_context or has_medium_context or has_weak_context
 
-        # 1. Exact ticker match with WORD BOUNDARIES (prevents "goldcase" matching "gold" + "case")
-        # Use regex word boundary \b to ensure complete word match
+        # 1. Exact ticker match with WORD BOUNDARIES
         ticker_pattern = r'\b' + re.escape(rules["ticker"]) + r'\b'
         if re.search(ticker_pattern, title_lower):
             # If ticker found, it MUST have financial context
+            return has_financial_context
+
+        # Special Case: Alternates (e.g., RIL for RELIANCE)
+        if rules["ticker"] == "reliance" and "ril" in title_lower:
             return has_financial_context
 
         # 2. Strong company name match (all important words must be present)
@@ -315,8 +319,8 @@ class MoneyControlProvider(BaseDataSource):
             resp = requests.get(self.base_url, params=params, timeout=5)
             soup = BeautifulSoup(resp.content, "xml")
 
-            # Fetch more items so we have room for filtering
-            items = soup.find_all("item", limit=20)
+            # Fetch more items (40) so we have room for filtering and better recency
+            items = soup.find_all("item", limit=40)
             news = []
             for item in items:
                 # Extract description/summary from RSS

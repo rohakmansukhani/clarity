@@ -766,8 +766,8 @@ class MarketService:
         Lightweight technical summary (RSI, Trend) for Watchlist/Market Page.
         """
         try:
-            # Fetch minimal history (e.g. 3mo is enough for RSI)
-            history = await self.get_history(symbol, period="3mo") 
+            # Fetch enough history for 3Y CAGR calculation
+            history = await self.get_history(symbol, period="5y") 
             if not history:
                 return {}
                 

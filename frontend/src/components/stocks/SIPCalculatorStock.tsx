@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Card,
@@ -8,11 +8,14 @@ import {
   Typography,
   ToggleButton,
   ToggleButtonGroup,
-  Grid,
+  Grid2 as Grid,
   Divider,
   Paper,
+  Tooltip,
+  InputAdornment,
+  useTheme,
 } from '@mui/material';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Info } from 'lucide-react';
 
 interface SIPCalculatorStockProps {
   currentPrice: number;
@@ -34,9 +37,15 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
 }) => {
   const [investmentType, setInvestmentType] = useState<'sip' | 'lumpsum'>('sip');
   const [amount, setAmount] = useState<string>('');
-  const [returnRate, setReturnRate] = useState<string>(defaultReturnRate.toString());
+  const [returnRate, setReturnRate] = useState<string>(defaultReturnRate.toFixed(2));
   const [tenure, setTenure] = useState<string>('');
   const [result, setResult] = useState<CalculationResult | null>(null);
+  const theme = useTheme();
+
+  // Sync returnRate if defaultReturnRate changes
+  useEffect(() => {
+    setReturnRate(defaultReturnRate.toFixed(2));
+  }, [defaultReturnRate]);
 
   const formatCurrency = (value: number): string => {
     return new Intl.NumberFormat('en-IN', {
@@ -201,17 +210,40 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
             </Grid>
 
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="Expected Annual Return Rate (%)"
-                type="number"
-                value={returnRate}
-                onChange={(e) => setReturnRate(e.target.value)}
-                variant="outlined"
-                InputProps={{
-                  inputProps: { min: 0, max: 100, step: 0.1 },
-                }}
-              />
+              <Tooltip
+                title={defaultReturnRate > 0
+                  ? `Calculated from this stock's actual 3-year CAGR based on historical price data.`
+                  : "Using a default 12% p.a. estimate. No sufficient history available for auto-calculation."}
+                placement="top"
+                arrow
+              >
+                <TextField
+                  fullWidth
+                  label="Expected Annual Return Rate (%)"
+                  type="number"
+                  value={returnRate}
+                  onChange={(e) => setReturnRate(e.target.value)}
+                  placeholder="e.g. 12"
+                  InputProps={{
+                    endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                    readOnly: true,
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                      cursor: 'default',
+                    }
+                  }}
+                />
+              </Tooltip>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, px: 1 }}>
+                <Info size={11} color={theme.palette.text.disabled} />
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.68rem' }}>
+                  {defaultReturnRate > 0
+                    ? `Based on actual 3Y CAGR`
+                    : 'Default estimate — no data available'}
+                </Typography>
+              </Box>
             </Grid>
 
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -265,7 +297,7 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
                     elevation={0}
                     sx={{
                       p: 2,
-                      backgroundColor: '#f5f5f5',
+                      backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : '#f5f5f5',
                       borderRadius: 2,
                     }}
                   >
@@ -287,7 +319,7 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
                     elevation={0}
                     sx={{
                       p: 2,
-                      backgroundColor: '#e8f5e9',
+                      backgroundColor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.1)' : '#e8f5e9',
                       borderRadius: 2,
                     }}
                   >
@@ -309,7 +341,7 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
                     elevation={0}
                     sx={{
                       p: 2,
-                      backgroundColor: '#e3f2fd',
+                      backgroundColor: theme.palette.mode === 'dark' ? 'rgba(25, 118, 210, 0.1)' : '#e3f2fd',
                       borderRadius: 2,
                     }}
                   >
@@ -331,7 +363,7 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
                     elevation={0}
                     sx={{
                       p: 2,
-                      backgroundColor: '#fff3e0',
+                      backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.1)' : '#fff3e0',
                       borderRadius: 2,
                     }}
                   >
@@ -353,9 +385,9 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
                 sx={{
                   mt: 3,
                   p: 2,
-                  backgroundColor: '#fafafa',
+                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : '#fafafa',
                   borderRadius: 2,
-                  border: '1px solid #e0e0e0',
+                  border: `1px solid ${theme.palette.divider}`,
                 }}
               >
                 <Typography variant="body2" color="text.secondary">
