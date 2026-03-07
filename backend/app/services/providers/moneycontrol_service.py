@@ -190,10 +190,14 @@ class MoneyControlProvider(BaseDataSource):
             'nav', 'aum', 'portfolio', 'mutual fund', 'index fund'
         ]
 
-        # WEAK indicators (too generic, need additional context)
+        # WEAK indicators (business/financial context but generic)
         weak_financial_keywords = [
             'market', 'price', 'buy', 'sell', 'gain', 'loss',
-            'profit', 'revenue', 'earnings', 'quarter', 'crore', 'lakh'
+            'profit', 'revenue', 'earnings', 'quarter', 'crore', 'lakh',
+            'bank', 'banking', 'lender', 'loan', 'deposit', 'credit',
+            'insurance', 'premium', 'policy', 'claim', 'underwriting',
+            'company', 'business', 'corporate', 'financial', 'fiscal',
+            'quarterly', 'annual', 'growth', 'performance', 'results'
         ]
 
         # Calculate financial context strength
@@ -205,8 +209,8 @@ class MoneyControlProvider(BaseDataSource):
         if rules.get("is_generic_ticker") or rules.get("is_commodity"):
             has_financial_context = has_strong_context
         else:
-            # Regular stocks: medium or strong context is fine
-            has_financial_context = has_strong_context or has_medium_context
+            # Regular stocks: accept weak/medium/strong context (relaxed filtering)
+            has_financial_context = has_strong_context or has_medium_context or has_weak_context
 
         # 1. Exact ticker match with WORD BOUNDARIES (prevents "goldcase" matching "gold" + "case")
         # Use regex word boundary \b to ensure complete word match

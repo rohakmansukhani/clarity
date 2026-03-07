@@ -358,7 +358,9 @@ export default function StockPage() {
                                             arrow
                                             placement="top"
                                         >
-                                            <Info size={14} color={theme.palette.text.secondary} style={{ cursor: 'help' }} />
+                                            <Box component="span" sx={{ color: theme.palette.text.secondary, display: 'inline-flex', cursor: 'help' }}>
+                                                <Info size={14} />
+                                            </Box>
                                         </Tooltip>
                                     </Box>
                                 }
@@ -874,6 +876,7 @@ export default function StockPage() {
                     <SIPCalculatorStock
                         currentPrice={data.market_data?.price || 0}
                         symbol={symbol}
+                        defaultReturnRate={data.technical_analysis?.returns?.['3Y'] || 12}
                     />
                 </Box>
 
