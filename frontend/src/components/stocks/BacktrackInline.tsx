@@ -186,7 +186,7 @@ const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, c
                                     fontWeight: 800,
                                     fontSize: '1.5rem',
                                     lineHeight: 1,
-                                    width: `${Math.max(60, amount.toString().length * 14)}px`,
+                                    width: `${Math.max(64, amount.toString().length * 20 + 8)}px`,
                                     outline: 'none',
                                     padding: 0,
                                     MozAppearance: 'textfield',
