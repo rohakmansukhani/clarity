@@ -55,15 +55,16 @@ class MoneyControlProvider(BaseDataSource):
             logger.error(f"News Error: {e}")
             return []
 
-    def _build_keywords(self, ticker: str, company_name: Optional[str]) -> List[str]:
-        """Build a set of keywords that a relevant article title should contain."""
-        keywords = [ticker.lower()]
+        # Return both the ticker and the full meaningful search name
+        result = {"ticker": ticker.lower(), "company_words": []}
         if company_name:
-            # Add each meaningful word from company name (length > 3 to skip 'and', 'the', etc.)
+            # Extract meaningful words
+            words = []
             for word in company_name.lower().split():
-                if len(word) > 3 and word not in {'limited', 'india', 'stock', 'fund', 'house', 'asset'}:
-                    keywords.append(word)
-        return keywords
+                if len(word) > 2 and word not in {'limited', 'india', 'stock', 'fund', 'house', 'asset', 'etf', 'ltd'}:
+                    words.append(word)
+            result["company_words"] = words
+        return result
 
     def _is_recent(self, pub_date_str: str) -> bool:
         """Return True if the article was published within NEWS_RECENCY_DAYS days."""
@@ -75,12 +76,25 @@ class MoneyControlProvider(BaseDataSource):
             # If we can't parse the date, include the article conservatively
             return True
 
-    def _is_relevant(self, title: str, keywords: List[str]) -> bool:
-        """Return True if the article title contains at least one of the keywords."""
+    def _is_relevant(self, title: str, rules: Dict[str, Any]) -> bool:
+        """Return True if the article title strictly matches the ticker or company name."""
         title_lower = title.lower()
-        return any(kw in title_lower for kw in keywords)
+        
+        # 1. Exact ticker match (e.g., 'goldcase' or 'hdfcbank')
+        if rules["ticker"] in title_lower:
+            return True
+            
+        # 2. Strong company name match (all important words must be present)
+        # e.g. for "Zerodha Gold ETF", "zerodha" AND "gold" must be in the title
+        words = rules["company_words"]
+        if words:
+            # If all meaningful words from the company name are found in the title
+            if all(word in title_lower for word in words):
+                return True
+                
+        return False
 
-    def _filter_news(self, news: List[Dict[str, str]], keywords: List[str]) -> List[Dict[str, str]]:
+    def _filter_news(self, news: List[Dict[str, str]], rules: Dict[str, Any]) -> List[Dict[str, str]]:
         """Keep only articles that are recent AND relevant to the stock/ETF."""
         filtered = []
         for item in news:
