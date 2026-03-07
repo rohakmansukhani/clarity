@@ -8,11 +8,13 @@ from app.core.rate_limit import limiter
 from app.utils.formatters import format_inr, format_percent
 
 from app.services.market_service import MarketService
+from app.services.mutual_fund.mf_service import MutualFundService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 market_service = MarketService()
+mf_service = MutualFundService()
 
 class PortfolioCreate(BaseModel):
     name: str
@@ -379,6 +381,113 @@ def delete_portfolio(
         return {"message": "Portfolio deleted"}
     except Exception as e:
         logger.error(f"Error deleting portfolio: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/net-worth")
+@limiter.limit("20/minute")
+async def get_net_worth(
+    request: Request,
+    user = Depends(get_current_user),
+    supabase: Client = Depends(get_user_supabase)
+):
+    """
+    Consolidated endpoint for dashboard net worth metrics.
+    Aggregates Stocks and Mutual Funds.
+    """
+    try:
+        # 1. Fetch all stock holdings across all portfolios
+        holdings_res = supabase.table("holdings").select("*").execute()
+        stock_holdings = holdings_res.data
+        
+        # 2. Fetch all mutual fund holdings
+        mf_holdings_res = supabase.table("mf_holdings").select("*").execute()
+        mf_holdings = mf_holdings_res.data
+        
+        # 3. Calculate Stock Value
+        total_stock_value = 0.0
+        total_stock_invested = 0.0
+        
+        if stock_holdings:
+            # Aggregate by ticker for batch price fetching
+            ticker_map = {}
+            for h in stock_holdings:
+                ticker = h['ticker']
+                shares = float(h['shares'])
+                avg_price = float(h['avg_price'])
+                if ticker not in ticker_map:
+                    ticker_map[ticker] = {"shares": 0.0, "invested": 0.0}
+                ticker_map[ticker]["shares"] += shares
+                ticker_map[ticker]["invested"] += (shares * avg_price)
+            
+            # Concurrently fetch prices
+            import asyncio
+            async def get_price(ticker):
+                try:
+                    price_info = await market_service.get_aggregated_details(ticker)
+                    return ticker, price_info.get('market_data', {}).get('price', 0.0)
+                except:
+                    return ticker, 0.0
+            
+            price_tasks = [get_price(t) for t in ticker_map.keys()]
+            prices = dict(await asyncio.gather(*price_tasks))
+            
+            for ticker, data in ticker_map.items():
+                curr_price = prices.get(ticker, 0.0)
+                total_stock_value += (data["shares"] * curr_price)
+                total_stock_invested += data["invested"]
+
+        # 4. Calculate Mutual Fund Value
+        total_mf_value = 0.0
+        total_mf_invested = 0.0
+        
+        if mf_holdings:
+            import asyncio
+            # Concurrently fetch NAVs
+            async def get_nav(scheme_code):
+                try:
+                    nav_data = await mf_service.get_latest_nav(scheme_code)
+                    nav_list = nav_data.get('data', [])
+                    curr_nav = float(nav_list[0].get('nav', 0.0)) if nav_list else 0.0
+                    return scheme_code, curr_nav
+                except:
+                    return scheme_code, 0.0
+            
+            nav_tasks = [get_nav(h['scheme_code']) for h in mf_holdings]
+            navs = dict(await asyncio.gather(*nav_tasks))
+            
+            for h in mf_holdings:
+                code = h['scheme_code']
+                units = float(h['units'])
+                avg_nav = float(h['avg_nav'] or 0.0)
+                curr_nav = navs.get(code, 0.0)
+                
+                total_mf_value += (units * curr_nav)
+                total_mf_invested += (units * avg_nav)
+
+        total_value = total_stock_value + total_mf_value
+        total_invested = total_stock_invested + total_mf_invested
+        total_gain = total_value - total_invested
+        total_gain_pct = (total_gain / total_invested * 100) if total_invested > 0 else 0.0
+        
+        return {
+            "total_value": round(total_value, 2),
+            "total_invested": round(total_invested, 2),
+            "total_gain": round(total_gain, 2),
+            "total_gain_pct": round(total_gain_pct, 2),
+            "stocks": {
+                "value": round(total_stock_value, 2),
+                "invested": round(total_stock_invested, 2),
+                "gain": round(total_stock_value - total_stock_invested, 2)
+            },
+            "mfs": {
+                "value": round(total_mf_value, 2),
+                "invested": round(total_mf_invested, 2),
+                "gain": round(total_mf_value - total_mf_invested, 2)
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error calculating net worth: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- Holdings Management ---

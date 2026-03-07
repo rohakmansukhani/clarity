@@ -6,12 +6,13 @@ import { useColorMode } from '@/theme/ThemeContext';
 
 interface NAVChartProps {
     data: { date: string; nav: string }[];
+    period: string;
+    setPeriod: (period: string) => void;
 }
 
-export default function NAVChart({ data }: NAVChartProps) {
+export default function NAVChart({ data, period, setPeriod }: NAVChartProps) {
     const theme = useTheme();
     const { mode } = useColorMode();
-    const [period, setPeriod] = useState<string>('1Y');
 
     const formattedData = useMemo(() => {
         if (!data || data.length === 0) return [];

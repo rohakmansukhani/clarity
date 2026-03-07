@@ -41,7 +41,14 @@ export default function DashboardPage() {
     const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'warning' | 'error' });
 
     const [user, setUser] = useState<User | null>(null);
-    const [netWorth, setNetWorth] = useState({ total: 0, stocks: 0, mf: 0 });
+    const [netWorth, setNetWorth] = useState({
+        total: 0,
+        stocks: 0,
+        mf: 0,
+        invested: 0,
+        gain: 0,
+        gainPct: 0
+    });
     const [netWorthLoading, setNetWorthLoading] = useState(true);
 
     useEffect(() => {
@@ -68,22 +75,15 @@ export default function DashboardPage() {
             // 0.5 Fetch Net Worth
             const fetchNetWorth = async () => {
                 try {
-                    const portfolios = await portfolioService.listPortfolios();
-                    let stockTotal = 0;
-                    for (const p of portfolios) {
-                        try {
-                            const perf = await portfolioService.getPortfolioPerformance(p.id);
-                            stockTotal += perf.total_value;
-                        } catch (e) { }
-                    }
-
-                    let mfTotal = 0;
-                    try {
-                        const mfs = await mutualFundService.getHoldings();
-                        mfTotal = mfs.reduce((sum: number, h: MutualFundHolding) => sum + (h.units * h.avg_nav), 0);
-                    } catch (e) { }
-
-                    setNetWorth({ total: stockTotal + mfTotal, stocks: stockTotal, mf: mfTotal });
+                    const data = await portfolioService.getNetWorth();
+                    setNetWorth({
+                        total: data.total_value,
+                        stocks: data.stocks.value,
+                        mf: data.mfs.value,
+                        invested: data.total_invested,
+                        gain: data.total_gain,
+                        gainPct: data.total_gain_pct
+                    });
                 } catch (error) {
                     console.error("Failed to fetch net worth", error);
                 } finally {
@@ -243,15 +243,34 @@ export default function DashboardPage() {
                             </Box>
                         ) : (
                             <Grid container spacing={4}>
-                                <Grid size={{ xs: 12, sm: 4 }}>
+                                <Grid size={{ xs: 12, sm: 2.4 }}>
                                     <Box>
-                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL</Typography>
-                                        <Typography variant="h3" sx={{ fontWeight: 700, my: 0.5, fontSize: '2.5rem', color: theme.palette.text.primary }}>
+                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL VALUE</Typography>
+                                        <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5, color: theme.palette.text.primary }}>
                                             ₹{netWorth.total.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                         </Typography>
                                     </Box>
                                 </Grid>
-                                <Grid size={{ xs: 12, sm: 4 }}>
+                                <Grid size={{ xs: 12, sm: 2.4 }}>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>INVESTED</Typography>
+                                        <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
+                                            ₹{netWorth.invested.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 2.4 }}>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL P&L</Typography>
+                                        <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5, color: netWorth.gain >= 0 ? theme.palette.success.main : theme.palette.error.main }}>
+                                            ₹{netWorth.gain.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                            <Typography component="span" variant="caption" sx={{ ml: 0.5, fontWeight: 600 }}>
+                                                ({netWorth.gainPct >= 0 ? '+' : ''}{netWorth.gainPct.toFixed(2)}%)
+                                            </Typography>
+                                        </Typography>
+                                    </Box>
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 2.4 }}>
                                     <Box>
                                         <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>STOCKS</Typography>
                                         <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
@@ -259,7 +278,7 @@ export default function DashboardPage() {
                                         </Typography>
                                     </Box>
                                 </Grid>
-                                <Grid size={{ xs: 12, sm: 4 }}>
+                                <Grid size={{ xs: 12, sm: 2.4 }}>
                                     <Box>
                                         <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>MUTUAL FUNDS</Typography>
                                         <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>

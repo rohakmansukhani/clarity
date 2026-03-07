@@ -1,4 +1,5 @@
 import pandas as pd
+import logging
 from app.utils.formatters import safe_float
 
 logger = logging.getLogger(__name__)

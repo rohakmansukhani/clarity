@@ -12,6 +12,7 @@ import CreatePortfolioModal from '@/components/portfolio/CreatePortfolioModal';
 import AddToWatchlistModal from '@/components/watchlist/AddToWatchlistModal';
 import Sidebar from '@/components/layout/Sidebar';
 import SIPCalculatorStock from '@/components/stocks/SIPCalculatorStock';
+import BacktrackInline from '@/components/stocks/BacktrackInline';
 
 export default function StockPage() {
     const params = useParams();
@@ -309,6 +310,14 @@ export default function StockPage() {
                                 )}
                             </Box>
                         </Box>
+
+                        {/* Backtrack Inline Integration */}
+                        <BacktrackInline
+                            symbol={symbol}
+                            startPrice={chartData[0]?.close || 0}
+                            currentPrice={data.market_data?.price || 0}
+                            timeRange={timeRange}
+                        />
 
                         {/* AI Verdict Section */}
                         <Box sx={{ p: 4, borderRadius: 4, background: mode === 'dark' ? 'linear-gradient(180deg, rgba(0, 229, 255, 0.05) 0%, rgba(0,0,0,0) 100%)' : 'linear-gradient(180deg, rgba(0, 150, 255, 0.03) 0%, rgba(255,255,255,0) 100%)', border: `1px solid ${theme.palette.divider}` }}>
@@ -739,101 +748,101 @@ export default function StockPage() {
                                 // 'recent' is the default order from backend, no need to sort
 
                                 return filteredNews.length > 0 ? filteredNews.map((item: any, index: number) => {
-                                // Determine sentiment color and icon
-                                const sentiment = item.sentiment || 'NEUTRAL';
-                                const sentimentConfig = {
-                                    POSITIVE: { color: '#10B981', bgColor: '#10B98115', icon: '↑', label: 'Positive' },
-                                    NEGATIVE: { color: '#EF4444', bgColor: '#EF444415', icon: '↓', label: 'Negative' },
-                                    NEUTRAL: { color: theme.palette.text.secondary, bgColor: `${theme.palette.text.secondary}10`, icon: '•', label: 'Neutral' }
-                                };
-                                const config = sentimentConfig[sentiment as keyof typeof sentimentConfig] || sentimentConfig.NEUTRAL;
+                                    // Determine sentiment color and icon
+                                    const sentiment = item.sentiment || 'NEUTRAL';
+                                    const sentimentConfig = {
+                                        POSITIVE: { color: '#10B981', bgColor: '#10B98115', icon: '↑', label: 'Positive' },
+                                        NEGATIVE: { color: '#EF4444', bgColor: '#EF444415', icon: '↓', label: 'Negative' },
+                                        NEUTRAL: { color: theme.palette.text.secondary, bgColor: `${theme.palette.text.secondary}10`, icon: '•', label: 'Neutral' }
+                                    };
+                                    const config = sentimentConfig[sentiment as keyof typeof sentimentConfig] || sentimentConfig.NEUTRAL;
 
-                                return (
-                                <Grid size={{ xs: 12, md: 4 }} key={index}>
-                                    <Box
-                                        onClick={() => item.link && window.open(item.link, '_blank')}
-                                        sx={{
-                                            cursor: 'pointer',
-                                            bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
-                                            border: `1px solid ${theme.palette.divider}`,
-                                            borderLeft: `4px solid ${config.color}`,
-                                            borderRadius: 3,
-                                            height: '100%',
-                                            transition: 'border-color 0.25s, background 0.25s, transform 0.2s',
-                                            '&:hover': {
-                                                borderColor: `${config.color}60`,
-                                                borderLeftColor: config.color,
-                                                bgcolor: config.bgColor,
-                                                transform: 'translateY(-2px)',
-                                            },
-                                            '&:hover .news-title': { color: theme.palette.primary.main }
-                                        }}>
-                                        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-                                            {/* Header: Logo + Source + Time + Sentiment Badge */}
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                                <Box sx={{
-                                                    width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', bgcolor: '#fff',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    border: `1px solid ${theme.palette.divider}`
+                                    return (
+                                        <Grid size={{ xs: 12, md: 4 }} key={index}>
+                                            <Box
+                                                onClick={() => item.link && window.open(item.link, '_blank')}
+                                                sx={{
+                                                    cursor: 'pointer',
+                                                    bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
+                                                    border: `1px solid ${theme.palette.divider}`,
+                                                    borderLeft: `4px solid ${config.color}`,
+                                                    borderRadius: 3,
+                                                    height: '100%',
+                                                    transition: 'border-color 0.25s, background 0.25s, transform 0.2s',
+                                                    '&:hover': {
+                                                        borderColor: `${config.color}60`,
+                                                        borderLeftColor: config.color,
+                                                        bgcolor: config.bgColor,
+                                                        transform: 'translateY(-2px)',
+                                                    },
+                                                    '&:hover .news-title': { color: theme.palette.primary.main }
                                                 }}>
-                                                    <img
-                                                        src={`https://www.google.com/s2/favicons?domain=${item.link || item.source}&sz=64`}
-                                                        alt={item.source}
-                                                        style={{ width: '20px', height: '20px', objectFit: 'contain' }}
-                                                        onError={(e: any) => { e.target.style.display = 'none'; }}
-                                                    />
-                                                </Box>
-                                                <Box sx={{ flex: 1 }}>
-                                                    <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 700, display: 'block', lineHeight: 1 }}>{item.source || 'Market News'}</Typography>
-                                                    <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.7rem' }}>{item.time || 'Today'}</Typography>
-                                                </Box>
-                                                {/* Sentiment Badge */}
-                                                <Box sx={{
-                                                    px: 1.5, py: 0.5, borderRadius: 2,
-                                                    bgcolor: config.bgColor,
-                                                    border: `1px solid ${config.color}40`,
-                                                    display: 'flex', alignItems: 'center', gap: 0.5
-                                                }}>
-                                                    <Typography sx={{ fontSize: '0.7rem', color: config.color, fontWeight: 700 }}>
-                                                        {config.icon}
+                                                <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                                                    {/* Header: Logo + Source + Time + Sentiment Badge */}
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                                        <Box sx={{
+                                                            width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', bgcolor: '#fff',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            border: `1px solid ${theme.palette.divider}`
+                                                        }}>
+                                                            <img
+                                                                src={`https://www.google.com/s2/favicons?domain=${item.link || item.source}&sz=64`}
+                                                                alt={item.source}
+                                                                style={{ width: '20px', height: '20px', objectFit: 'contain' }}
+                                                                onError={(e: any) => { e.target.style.display = 'none'; }}
+                                                            />
+                                                        </Box>
+                                                        <Box sx={{ flex: 1 }}>
+                                                            <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 700, display: 'block', lineHeight: 1 }}>{item.source || 'Market News'}</Typography>
+                                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.7rem' }}>{item.time || 'Today'}</Typography>
+                                                        </Box>
+                                                        {/* Sentiment Badge */}
+                                                        <Box sx={{
+                                                            px: 1.5, py: 0.5, borderRadius: 2,
+                                                            bgcolor: config.bgColor,
+                                                            border: `1px solid ${config.color}40`,
+                                                            display: 'flex', alignItems: 'center', gap: 0.5
+                                                        }}>
+                                                            <Typography sx={{ fontSize: '0.7rem', color: config.color, fontWeight: 700 }}>
+                                                                {config.icon}
+                                                            </Typography>
+                                                            <Typography variant="caption" sx={{ color: config.color, fontWeight: 600, fontSize: '0.65rem', textTransform: 'uppercase' }}>
+                                                                {config.label}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+
+                                                    {/* Title */}
+                                                    <Typography
+                                                        className="news-title"
+                                                        variant="h6"
+                                                        sx={{
+                                                            fontWeight: 700, lineHeight: 1.3, mb: 1, color: theme.palette.text.primary,
+                                                            transition: 'color 0.2s',
+                                                            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                                                        }}
+                                                    >
+                                                        {item.title}
                                                     </Typography>
-                                                    <Typography variant="caption" sx={{ color: config.color, fontWeight: 600, fontSize: '0.65rem', textTransform: 'uppercase' }}>
-                                                        {config.label}
-                                                    </Typography>
+
+                                                    {/* Description */}
+                                                    {item.description && (
+                                                        <Typography variant="body2" sx={{
+                                                            color: theme.palette.text.secondary,
+                                                            lineHeight: 1.5,
+                                                            mt: 1,
+                                                            display: '-webkit-box',
+                                                            WebkitLineClamp: 3,
+                                                            WebkitBoxOrient: 'vertical',
+                                                            overflow: 'hidden'
+                                                        }}>
+                                                            {item.description}
+                                                        </Typography>
+                                                    )}
                                                 </Box>
                                             </Box>
-
-                                            {/* Title */}
-                                            <Typography
-                                                className="news-title"
-                                                variant="h6"
-                                                sx={{
-                                                    fontWeight: 700, lineHeight: 1.3, mb: 1, color: theme.palette.text.primary,
-                                                    transition: 'color 0.2s',
-                                                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                                                }}
-                                            >
-                                                {item.title}
-                                            </Typography>
-
-                                            {/* Description */}
-                                            {item.description && (
-                                                <Typography variant="body2" sx={{
-                                                    color: theme.palette.text.secondary,
-                                                    lineHeight: 1.5,
-                                                    mt: 1,
-                                                    display: '-webkit-box',
-                                                    WebkitLineClamp: 3,
-                                                    WebkitBoxOrient: 'vertical',
-                                                    overflow: 'hidden'
-                                                }}>
-                                                    {item.description}
-                                                </Typography>
-                                            )}
-                                        </Box>
-                                    </Box>
-                                </Grid>
-                                );
+                                        </Grid>
+                                    );
                                 }) : (
                                     <Grid size={{ xs: 12 }}>
                                         <Box sx={{

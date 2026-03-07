@@ -109,6 +109,19 @@ export const portfolioService = {
         return response.data;
     },
 
+    // --- Net Worth ---
+    getNetWorth: async (): Promise<{
+        total_value: number;
+        total_invested: number;
+        total_gain: number;
+        total_gain_pct: number;
+        stocks: { value: number; invested: number; gain: number };
+        mfs: { value: number; invested: number; gain: number };
+    }> => {
+        const response = await api.get('/portfolios/net-worth');
+        return response.data;
+    },
+
     // --- Alerts ---
 
     getAlerts: async () => {

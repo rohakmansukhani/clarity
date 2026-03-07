@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Any, Optional
 from app.utils.formatters import safe_float
 

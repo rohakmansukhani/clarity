@@ -14,7 +14,6 @@ const MENU_ITEMS = [
     { label: 'Portfolio', icon: PieChart, path: '/portfolio' },
     { label: 'Buy List', icon: Eye, path: '/watchlist' },
     { label: 'Comparison', icon: BarChart2, path: '/analysis' },
-    { label: 'Backtrack', icon: RotateCcw, path: '/backtrack' },
     { label: 'Mutual Funds', icon: Landmark, path: '/mutual-funds' },
     { label: 'Advisor', icon: MessageSquare, path: '/advisor' },
 
