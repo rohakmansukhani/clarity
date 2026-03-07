@@ -23,7 +23,6 @@ export default function MutualFundDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [period, setPeriod] = useState<string>('1Y');
-    const [activeTab, setActiveTab] = useState(0);
 
     // Toast State
     const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
