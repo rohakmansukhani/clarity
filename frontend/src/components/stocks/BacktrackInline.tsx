@@ -134,7 +134,7 @@ const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, c
                             textTransform: 'uppercase',
                         }}
                     >
-                        Backtrack · {formatRange(timeRange)}
+                        Simulated returns · {formatRange(timeRange)}
                     </Typography>
                 </Box>
 
@@ -173,9 +173,12 @@ const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, c
                                 ₹
                             </Typography>
                             <input
-                                type="number"
+                                type="text"
                                 value={amount}
-                                onChange={(e) => setAmount(Math.max(1, Number(e.target.value)))}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, '');
+                                    setAmount(val ? Number(val) : 0);
+                                }}
                                 style={{
                                     background: 'none',
                                     border: 'none',
@@ -186,6 +189,7 @@ const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, c
                                     width: `${Math.max(60, amount.toString().length * 14)}px`,
                                     outline: 'none',
                                     padding: 0,
+                                    MozAppearance: 'textfield',
                                 }}
                             />
                         </Box>

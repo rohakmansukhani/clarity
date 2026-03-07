@@ -355,6 +355,15 @@ export default function CalculatorPage() {
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
+                        sx={{
+                            '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
+                                '-webkit-appearance': 'none',
+                                margin: 0,
+                            },
+                            '& input[type=number]': {
+                                MozAppearance: 'textfield',
+                            },
+                        }}
                     />
 
                     <Box>
@@ -374,12 +383,21 @@ export default function CalculatorPage() {
                                     endAdornment: <InputAdornment position="end">%</InputAdornment>,
                                     readOnly: !!cagrInfo,
                                 }}
-                                sx={cagrInfo ? {
-                                    '& .MuiOutlinedInput-root': {
-                                        bgcolor: isDark ? 'rgba(16,185,129,0.05)' : 'rgba(16,185,129,0.04)',
-                                        '& fieldset': { borderColor: 'rgba(16,185,129,0.4) !important' },
-                                    }
-                                } : {}}
+                                sx={{
+                                    ...(cagrInfo ? {
+                                        '& .MuiOutlinedInput-root': {
+                                            bgcolor: isDark ? 'rgba(16,185,129,0.05)' : 'rgba(16,185,129,0.04)',
+                                            '& fieldset': { borderColor: 'rgba(16,185,129,0.4) !important' },
+                                        }
+                                    } : {}),
+                                    '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
+                                        '-webkit-appearance': 'none',
+                                        margin: 0,
+                                    },
+                                    '& input[type=number]': {
+                                        MozAppearance: 'textfield',
+                                    },
+                                }}
                             />
                         </Tooltip>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, px: 1 }}>
@@ -399,6 +417,15 @@ export default function CalculatorPage() {
                         value={tenure}
                         onChange={(e) => setTenure(e.target.value)}
                         InputProps={{ endAdornment: <InputAdornment position="end">Years</InputAdornment> }}
+                        sx={{
+                            '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
+                                '-webkit-appearance': 'none',
+                                margin: 0,
+                            },
+                            '& input[type=number]': {
+                                MozAppearance: 'textfield',
+                            },
+                        }}
                     />
 
                     <Button

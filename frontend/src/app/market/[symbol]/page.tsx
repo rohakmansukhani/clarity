@@ -311,56 +311,26 @@ export default function StockPage() {
                             </Box>
                         </Box>
 
-                        {/* Tabbed Panel: Overview | Backtrack */}
-                        <Box sx={{ mb: 6 }}>
-                            {/* Tab Headers */}
-                            <Box sx={{ display: 'flex', gap: 1, mb: 3, borderBottom: `1px solid ${theme.palette.divider}`, pb: 0 }}>
-                                {['Overview', 'Backtrack'].map((label, idx) => (
-                                    <Button
-                                        key={label}
-                                        onClick={() => setActiveTab(idx)}
-                                        disableRipple
-                                        sx={{
-                                            pb: 1.5,
-                                            px: 0.5,
-                                            mr: 2,
-                                            fontWeight: activeTab === idx ? 700 : 500,
-                                            fontSize: '0.95rem',
-                                            color: activeTab === idx ? theme.palette.text.primary : theme.palette.text.secondary,
-                                            borderRadius: 0,
-                                            borderBottom: activeTab === idx ? `2px solid ${theme.palette.primary.main}` : '2px solid transparent',
-                                            bgcolor: 'transparent',
-                                            '&:hover': { bgcolor: 'transparent', color: theme.palette.text.primary },
-                                            transition: 'all 0.2s',
-                                        }}
-                                    >
-                                        {label}
-                                    </Button>
-                                ))}
+                        {/* Simulated Returns Card */}
+                        <Box sx={{ mb: 4 }}>
+                            <BacktrackInline
+                                symbol={symbol}
+                                startPrice={chartData[0]?.close || 0}
+                                currentPrice={data.market_data?.price || 0}
+                                timeRange={timeRange}
+                            />
+                        </Box>
+
+                        {/* AI Verdict Card */}
+                        <Box sx={{ p: 4, borderRadius: 4, background: mode === 'dark' ? 'linear-gradient(180deg, rgba(0, 229, 255, 0.05) 0%, rgba(0,0,0,0) 100%)' : 'linear-gradient(180deg, rgba(0, 150, 255, 0.03) 0%, rgba(255,255,255,0) 100%)', border: `1px solid ${theme.palette.divider}`, mb: 6 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                                <Brain size={28} color={theme.palette.primary.main} />
+                                <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>The Clarity Verdict</Typography>
+                                <Chip label={data.scores?.recommendation?.action || "AI ANALYZING"} sx={{ bgcolor: theme.palette.success.main, color: mode === 'dark' ? '#000' : '#fff', fontWeight: 700, borderRadius: 1 }} />
                             </Box>
-
-                            {/* Tab Content */}
-                            {activeTab === 0 && (
-                                <Box sx={{ p: 4, borderRadius: 4, background: mode === 'dark' ? 'linear-gradient(180deg, rgba(0, 229, 255, 0.05) 0%, rgba(0,0,0,0) 100%)' : 'linear-gradient(180deg, rgba(0, 150, 255, 0.03) 0%, rgba(255,255,255,0) 100%)', border: `1px solid ${theme.palette.divider}` }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                                        <Brain size={28} color={theme.palette.primary.main} />
-                                        <Typography variant="h5" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>The Clarity Verdict</Typography>
-                                        <Chip label={data.scores?.recommendation?.action || "AI ANALYZING"} sx={{ bgcolor: theme.palette.success.main, color: mode === 'dark' ? '#000' : '#fff', fontWeight: 700, borderRadius: 1 }} />
-                                    </Box>
-                                    <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontSize: '1.1rem', lineHeight: 1.6, maxWidth: '90%' }}>
-                                        {data.scores?.recommendation?.reasoning || aiSummary || "Generating real-time analysis..."}
-                                    </Typography>
-                                </Box>
-                            )}
-
-                            {activeTab === 1 && (
-                                <BacktrackInline
-                                    symbol={symbol}
-                                    startPrice={chartData[0]?.close || 0}
-                                    currentPrice={data.market_data?.price || 0}
-                                    timeRange={timeRange}
-                                />
-                            )}
+                            <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontSize: '1.1rem', lineHeight: 1.6, maxWidth: '90%' }}>
+                                {data.scores?.recommendation?.reasoning || aiSummary || "Generating real-time analysis..."}
+                            </Typography>
                         </Box>
                     </Grid>
 

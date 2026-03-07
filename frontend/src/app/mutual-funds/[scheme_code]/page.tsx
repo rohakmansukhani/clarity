@@ -247,59 +247,9 @@ export default function MutualFundDetailsPage() {
                             </Box>
                         </Box>
 
-                        {/* Tabbed Panel: Fund Info | Backtrack */}
-                        <Box sx={{ mb: 6 }}>
-                            {/* Tab Headers */}
-                            <Box sx={{ display: 'flex', gap: 1, mb: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
-                                {['Fund Info', 'Backtrack'].map((label, idx) => (
-                                    <Button
-                                        key={label}
-                                        onClick={() => setActiveTab(idx)}
-                                        disableRipple
-                                        sx={{
-                                            pb: 1.5,
-                                            px: 0.5,
-                                            mr: 2,
-                                            fontWeight: activeTab === idx ? 700 : 500,
-                                            fontSize: '0.95rem',
-                                            color: activeTab === idx ? theme.palette.text.primary : theme.palette.text.secondary,
-                                            borderRadius: 0,
-                                            borderBottom: activeTab === idx ? `2px solid ${theme.palette.primary.main}` : '2px solid transparent',
-                                            bgcolor: 'transparent',
-                                            '&:hover': { bgcolor: 'transparent', color: theme.palette.text.primary },
-                                            transition: 'all 0.2s',
-                                        }}
-                                    >
-                                        {label}
-                                    </Button>
-                                ))}
-                            </Box>
-
-                            {/* Tab Content */}
-                            {activeTab === 0 && (
-                                <Box sx={{
-                                    p: 3, borderRadius: 3,
-                                    border: `1px solid ${theme.palette.divider}`,
-                                    bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)',
-                                    display: 'flex', flexDirection: 'column', gap: 1.5
-                                }}>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fund Details</Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                        <strong style={{ color: theme.palette.text.primary }}>Category:</strong> {details.meta.scheme_category || 'N/A'}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                        <strong style={{ color: theme.palette.text.primary }}>Type:</strong> {details.meta.scheme_type || 'N/A'}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                        <strong style={{ color: theme.palette.text.primary }}>Fund House:</strong> {details.meta.fund_house || 'N/A'}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                        <strong style={{ color: theme.palette.text.primary }}>Scheme Code:</strong> {details.meta.scheme_code}
-                                    </Typography>
-                                </Box>
-                            )}
-
-                            {activeTab === 1 && (() => {
+                        {/* Simulated Returns Card */}
+                        <Box sx={{ mb: 4 }}>
+                            {(() => {
                                 if (!details.data || details.data.length === 0) return null;
                                 const reversed = [...details.data].reverse();
                                 const now = new Date();
@@ -327,6 +277,29 @@ export default function MutualFundDetailsPage() {
                                     />
                                 );
                             })()}
+                        </Box>
+
+                        {/* Fund Info Section */}
+                        <Box sx={{
+                            p: 3, borderRadius: 3,
+                            border: `1px solid ${theme.palette.divider}`,
+                            bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)',
+                            display: 'flex', flexDirection: 'column', gap: 1.5,
+                            mb: 6
+                        }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fund Details</Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                <strong style={{ color: theme.palette.text.primary }}>Category:</strong> {details.meta.scheme_category || 'N/A'}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                <strong style={{ color: theme.palette.text.primary }}>Type:</strong> {details.meta.scheme_type || 'N/A'}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                <strong style={{ color: theme.palette.text.primary }}>Fund House:</strong> {details.meta.fund_house || 'N/A'}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                <strong style={{ color: theme.palette.text.primary }}>Scheme Code:</strong> {details.meta.scheme_code}
+                            </Typography>
                         </Box>
                     </Grid>
 
