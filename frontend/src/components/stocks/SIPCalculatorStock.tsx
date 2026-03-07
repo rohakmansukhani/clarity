@@ -120,7 +120,7 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
   const handleCalculate = () => {
     const calculationResult =
       investmentType === 'sip' ? calculateSIP() : calculateLumpsum();
-    
+
     if (calculationResult) {
       setResult(calculationResult);
     } else {
@@ -180,7 +180,7 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
           </ToggleButtonGroup>
 
           <Grid container spacing={2}>
-            <Grid item xs={12}>
+            <Grid size={12}>
               <TextField
                 fullWidth
                 label={
@@ -198,7 +198,7 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Expected Annual Return Rate (%)"
@@ -212,7 +212,7 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Investment Tenure (Years)"
@@ -258,7 +258,7 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
               </Typography>
 
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Paper
                     elevation={0}
                     sx={{
@@ -280,7 +280,7 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
                   </Paper>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Paper
                     elevation={0}
                     sx={{
@@ -302,7 +302,7 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
                   </Paper>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Paper
                     elevation={0}
                     sx={{
@@ -324,7 +324,7 @@ const SIPCalculatorStock: React.FC<SIPCalculatorStockProps> = ({
                   </Paper>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Paper
                     elevation={0}
                     sx={{
