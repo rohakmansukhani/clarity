@@ -67,13 +67,26 @@ class NewsAnalyzer:
             return {"error": str(e)}
     
     def _classify_sentiment(self, title: str) -> str:
-        """Simple keyword-based sentiment classification."""
-        positive_keywords = ['surges', 'gains', 'profit', 'growth', 'beats', 'strong', 'record', 'boost', 'rise', 'up']
-        negative_keywords = ['falls', 'drops', 'loss', 'decline', 'weak', 'miss', 'cut', 'down', 'concern', 'crisis']
-        
-        pos_count = sum(1 for word in positive_keywords if word in title)
-        neg_count = sum(1 for word in negative_keywords if word in title)
-        
+        """Enhanced keyword-based sentiment classification."""
+        # Expanded keyword lists for better accuracy
+        positive_keywords = [
+            'surges', 'gains', 'profit', 'growth', 'beats', 'strong', 'record', 'boost', 'rise', 'up',
+            'rally', 'soars', 'jumps', 'climbs', 'advances', 'outperforms', 'bullish', 'positive',
+            'buys', 'upgrade', 'success', 'win', 'breakthrough', 'expands', 'recovery', 'improves',
+            'higher', 'increased', 'milestone', 'achievement', 'launches', 'announces', 'approves'
+        ]
+        negative_keywords = [
+            'falls', 'drops', 'loss', 'decline', 'weak', 'miss', 'cut', 'down', 'concern', 'crisis',
+            'plunges', 'tumbles', 'slumps', 'crashes', 'bearish', 'negative', 'sells', 'downgrade',
+            'failure', 'loses', 'challenges', 'struggles', 'lower', 'decreased', 'layoffs', 'closures',
+            'delays', 'cancels', 'disputes', 'probe', 'investigation', 'fraud', 'scam', 'lawsuit'
+        ]
+
+        title_lower = title.lower()
+        pos_count = sum(1 for word in positive_keywords if word in title_lower)
+        neg_count = sum(1 for word in negative_keywords if word in title_lower)
+
+        # Stronger classification with tie-breaking
         if pos_count > neg_count:
             return 'POSITIVE'
         elif neg_count > pos_count:
@@ -91,3 +104,19 @@ class NewsAnalyzer:
             return f"{count} recent concerns reported"
         else:
             return f"{count} recent news items, mixed sentiment"
+
+    def analyze_news_items(self, news_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Add sentiment classification to each news item.
+        Returns the news items with sentiment field added.
+        """
+        analyzed_items = []
+        for item in news_items:
+            title = item.get('title', '')
+            sentiment = self._classify_sentiment(title)
+
+            # Add sentiment to the item
+            item_with_sentiment = {**item, 'sentiment': sentiment}
+            analyzed_items.append(item_with_sentiment)
+
+        return analyzed_items

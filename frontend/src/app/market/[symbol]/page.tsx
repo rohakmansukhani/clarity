@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Box, Typography, Grid, Chip, CircularProgress, Button, Tab, Tabs, Tooltip, Menu, MenuItem, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, useTheme } from '@mui/material';
 import { useColorMode } from '@/theme/ThemeContext';
-import { ArrowUpRight, ArrowDownRight, Zap, TrendingUp, Activity, Newspaper, Brain, Info, ArrowLeft } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Zap, TrendingUp, Activity, Newspaper, Brain, Info, ArrowLeft, Clock } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { marketService } from '@/services/marketService';
@@ -29,6 +29,10 @@ export default function StockPage() {
     const [aiSummary, setAiSummary] = useState<string>('');
     const [news, setNews] = useState<any[]>([]);
     const [technicalData, setTechnicalData] = useState<any>(null);
+
+    // News filters
+    const [newsFilter, setNewsFilter] = useState<'ALL' | 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL'>('ALL');
+    const [newsSortBy, setNewsSortBy] = useState<'recent' | 'sentiment'>('recent');
 
     // UI State
     const [timeRange, setTimeRange] = useState('1mo');
@@ -526,10 +530,223 @@ export default function StockPage() {
                 {/* --- NEWS SECTION --- */}
                 {news.length > 0 ? (
                     <Box sx={{ mt: 8 }}>
-                        <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 4, letterSpacing: '-0.02em' }}>Latest News</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+                            <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary, letterSpacing: '-0.02em' }}>Latest News</Typography>
+
+                            {/* Filter & Sort Controls */}
+                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                {/* Sentiment Filter */}
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                    {['ALL', 'POSITIVE', 'NEUTRAL', 'NEGATIVE'].map((filter) => (
+                                        <Button
+                                            key={filter}
+                                            size="small"
+                                            onClick={() => setNewsFilter(filter as any)}
+                                            sx={{
+                                                minWidth: 0,
+                                                px: 2,
+                                                py: 0.75,
+                                                fontSize: '0.75rem',
+                                                color: newsFilter === filter ? theme.palette.primary.main : theme.palette.text.secondary,
+                                                fontWeight: newsFilter === filter ? 700 : 600,
+                                                bgcolor: newsFilter === filter ? `${theme.palette.primary.main}15` : 'transparent',
+                                                border: `1px solid ${newsFilter === filter ? theme.palette.primary.main : theme.palette.divider}`,
+                                                borderRadius: 2,
+                                                '&:hover': {
+                                                    color: theme.palette.text.primary,
+                                                    bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'
+                                                }
+                                            }}
+                                        >
+                                            {filter}
+                                        </Button>
+                                    ))}
+                                </Box>
+
+                                {/* Sort By */}
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Button
+                                        size="small"
+                                        onClick={() => setNewsSortBy('recent')}
+                                        startIcon={<Clock size={14} />}
+                                        sx={{
+                                            minWidth: 0,
+                                            px: 2,
+                                            py: 0.75,
+                                            fontSize: '0.75rem',
+                                            color: newsSortBy === 'recent' ? theme.palette.primary.main : theme.palette.text.secondary,
+                                            fontWeight: newsSortBy === 'recent' ? 700 : 600,
+                                            bgcolor: newsSortBy === 'recent' ? `${theme.palette.primary.main}15` : 'transparent',
+                                            border: `1px solid ${newsSortBy === 'recent' ? theme.palette.primary.main : theme.palette.divider}`,
+                                            borderRadius: 2,
+                                            '&:hover': {
+                                                color: theme.palette.text.primary,
+                                                bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'
+                                            }
+                                        }}
+                                    >
+                                        Recent
+                                    </Button>
+                                    <Button
+                                        size="small"
+                                        onClick={() => setNewsSortBy('sentiment')}
+                                        startIcon={<TrendingUp size={14} />}
+                                        sx={{
+                                            minWidth: 0,
+                                            px: 2,
+                                            py: 0.75,
+                                            fontSize: '0.75rem',
+                                            color: newsSortBy === 'sentiment' ? theme.palette.primary.main : theme.palette.text.secondary,
+                                            fontWeight: newsSortBy === 'sentiment' ? 700 : 600,
+                                            bgcolor: newsSortBy === 'sentiment' ? `${theme.palette.primary.main}15` : 'transparent',
+                                            border: `1px solid ${newsSortBy === 'sentiment' ? theme.palette.primary.main : theme.palette.divider}`,
+                                            borderRadius: 2,
+                                            '&:hover': {
+                                                color: theme.palette.text.primary,
+                                                bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'
+                                            }
+                                        }}
+                                    >
+                                        Sentiment
+                                    </Button>
+                                </Box>
+                            </Box>
+                        </Box>
+
+                        {/* News Sentiment Summary */}
+                        {(() => {
+                            const sentimentCounts = news.reduce((acc: any, item: any) => {
+                                const sentiment = item.sentiment || 'NEUTRAL';
+                                acc[sentiment] = (acc[sentiment] || 0) + 1;
+                                return acc;
+                            }, {});
+
+                            const totalNews = news.length;
+                            const positiveCount = sentimentCounts.POSITIVE || 0;
+                            const negativeCount = sentimentCounts.NEGATIVE || 0;
+                            const neutralCount = sentimentCounts.NEUTRAL || 0;
+
+                            const overallSentiment = positiveCount > negativeCount ? 'POSITIVE' : (negativeCount > positiveCount ? 'NEGATIVE' : 'NEUTRAL');
+                            const sentimentScore = Math.round(((positiveCount - negativeCount) / totalNews * 100));
+
+                            const sentimentConfig = {
+                                POSITIVE: { color: '#10B981', bgColor: '#10B98110', label: 'Bullish', icon: '📈' },
+                                NEGATIVE: { color: '#EF4444', bgColor: '#EF444410', label: 'Bearish', icon: '📉' },
+                                NEUTRAL: { color: theme.palette.text.secondary, bgColor: `${theme.palette.text.secondary}10`, label: 'Mixed', icon: '➡️' }
+                            };
+
+                            const config = sentimentConfig[overallSentiment as keyof typeof sentimentConfig];
+
+                            return (
+                                <Box sx={{
+                                    mb: 4,
+                                    p: 3,
+                                    borderRadius: 3,
+                                    border: `1px solid ${config.color}30`,
+                                    bgcolor: config.bgColor,
+                                    backdropFilter: 'blur(10px)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: 3,
+                                    flexWrap: 'wrap'
+                                }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                        <Box sx={{
+                                            width: 48,
+                                            height: 48,
+                                            borderRadius: 2,
+                                            bgcolor: `${config.color}20`,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '1.5rem'
+                                        }}>
+                                            {config.icon}
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 0.5 }}>
+                                                News Sentiment: {config.label}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
+                                                {totalNews} article{totalNews > 1 ? 's' : ''} analyzed
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                                        <Box sx={{ textAlign: 'center' }}>
+                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', mb: 0.5 }}>
+                                                Positive
+                                            </Typography>
+                                            <Typography variant="h6" sx={{ fontWeight: 700, color: '#10B981' }}>
+                                                {positiveCount}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: 'center' }}>
+                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', mb: 0.5 }}>
+                                                Neutral
+                                            </Typography>
+                                            <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.secondary }}>
+                                                {neutralCount}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ textAlign: 'center' }}>
+                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', mb: 0.5 }}>
+                                                Negative
+                                            </Typography>
+                                            <Typography variant="h6" sx={{ fontWeight: 700, color: '#EF4444' }}>
+                                                {negativeCount}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{
+                                            px: 3,
+                                            py: 1.5,
+                                            borderRadius: 2,
+                                            bgcolor: `${config.color}20`,
+                                            border: `1px solid ${config.color}40`
+                                        }}>
+                                            <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: 'block', textAlign: 'center' }}>
+                                                Score
+                                            </Typography>
+                                            <Typography variant="h5" sx={{ fontWeight: 700, color: config.color }}>
+                                                {sentimentScore > 0 ? '+' : ''}{sentimentScore}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                            );
+                        })()}
 
                         <Grid container spacing={4}>
-                            {news.map((item: any, index: number) => (
+                            {(() => {
+                                // Filter news by sentiment
+                                let filteredNews = newsFilter === 'ALL'
+                                    ? news
+                                    : news.filter((item: any) => (item.sentiment || 'NEUTRAL') === newsFilter);
+
+                                // Sort news
+                                if (newsSortBy === 'sentiment') {
+                                    // Sort by sentiment: POSITIVE > NEUTRAL > NEGATIVE
+                                    const sentimentOrder = { POSITIVE: 0, NEUTRAL: 1, NEGATIVE: 2 };
+                                    filteredNews = [...filteredNews].sort((a: any, b: any) => {
+                                        const aSentiment = a.sentiment || 'NEUTRAL';
+                                        const bSentiment = b.sentiment || 'NEUTRAL';
+                                        return sentimentOrder[aSentiment as keyof typeof sentimentOrder] - sentimentOrder[bSentiment as keyof typeof sentimentOrder];
+                                    });
+                                }
+                                // 'recent' is the default order from backend, no need to sort
+
+                                return filteredNews.length > 0 ? filteredNews.map((item: any, index: number) => {
+                                // Determine sentiment color and icon
+                                const sentiment = item.sentiment || 'NEUTRAL';
+                                const sentimentConfig = {
+                                    POSITIVE: { color: '#10B981', bgColor: '#10B98115', icon: '↑', label: 'Positive' },
+                                    NEGATIVE: { color: '#EF4444', bgColor: '#EF444415', icon: '↓', label: 'Negative' },
+                                    NEUTRAL: { color: theme.palette.text.secondary, bgColor: `${theme.palette.text.secondary}10`, icon: '•', label: 'Neutral' }
+                                };
+                                const config = sentimentConfig[sentiment as keyof typeof sentimentConfig] || sentimentConfig.NEUTRAL;
+
+                                return (
                                 <Grid size={{ xs: 12, md: 4 }} key={index}>
                                     <Box
                                         onClick={() => item.link && window.open(item.link, '_blank')}
@@ -537,18 +754,20 @@ export default function StockPage() {
                                             cursor: 'pointer',
                                             bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
                                             border: `1px solid ${theme.palette.divider}`,
+                                            borderLeft: `4px solid ${config.color}`,
                                             borderRadius: 3,
                                             height: '100%',
                                             transition: 'border-color 0.25s, background 0.25s, transform 0.2s',
                                             '&:hover': {
-                                                borderColor: `${theme.palette.primary.main}60`,
-                                                bgcolor: `${theme.palette.primary.main}08`,
+                                                borderColor: `${config.color}60`,
+                                                borderLeftColor: config.color,
+                                                bgcolor: config.bgColor,
                                                 transform: 'translateY(-2px)',
                                             },
                                             '&:hover .news-title': { color: theme.palette.primary.main }
                                         }}>
                                         <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-                                            {/* Header: Logo + Source + Time */}
+                                            {/* Header: Logo + Source + Time + Sentiment Badge */}
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                                                 <Box sx={{
                                                     width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', bgcolor: '#fff',
@@ -562,9 +781,23 @@ export default function StockPage() {
                                                         onError={(e: any) => { e.target.style.display = 'none'; }}
                                                     />
                                                 </Box>
-                                                <Box>
+                                                <Box sx={{ flex: 1 }}>
                                                     <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 700, display: 'block', lineHeight: 1 }}>{item.source || 'Market News'}</Typography>
                                                     <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.7rem' }}>{item.time || 'Today'}</Typography>
+                                                </Box>
+                                                {/* Sentiment Badge */}
+                                                <Box sx={{
+                                                    px: 1.5, py: 0.5, borderRadius: 2,
+                                                    bgcolor: config.bgColor,
+                                                    border: `1px solid ${config.color}40`,
+                                                    display: 'flex', alignItems: 'center', gap: 0.5
+                                                }}>
+                                                    <Typography sx={{ fontSize: '0.7rem', color: config.color, fontWeight: 700 }}>
+                                                        {config.icon}
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ color: config.color, fontWeight: 600, fontSize: '0.65rem', textTransform: 'uppercase' }}>
+                                                        {config.label}
+                                                    </Typography>
                                                 </Box>
                                             </Box>
 
@@ -581,14 +814,38 @@ export default function StockPage() {
                                                 {item.title}
                                             </Typography>
 
-                                            {/* Summary */}
-                                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                                {item.summary || item.description}
-                                            </Typography>
+                                            {/* Description */}
+                                            {item.description && (
+                                                <Typography variant="body2" sx={{
+                                                    color: theme.palette.text.secondary,
+                                                    lineHeight: 1.5,
+                                                    mt: 1,
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 3,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden'
+                                                }}>
+                                                    {item.description}
+                                                </Typography>
+                                            )}
                                         </Box>
                                     </Box>
                                 </Grid>
-                            ))}
+                                );
+                                }) : (
+                                    <Grid size={{ xs: 12 }}>
+                                        <Box sx={{
+                                            p: 4, borderRadius: 3, textAlign: 'center',
+                                            border: `1px dashed ${theme.palette.divider}`,
+                                            bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'
+                                        }}>
+                                            <Typography variant="body1" sx={{ color: theme.palette.text.secondary }}>
+                                                No {newsFilter !== 'ALL' ? newsFilter.toLowerCase() : ''} news found
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                );
+                            })()}
                         </Grid>
                     </Box>
                 ) : (
