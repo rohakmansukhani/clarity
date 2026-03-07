@@ -165,7 +165,7 @@ export default function MutualFundDetailsPage() {
 
                     {/* SIP Calculator */}
                     <Grid size={{ xs: 12, md: 4 }}>
-                        <SIPCalculator />
+                        <SIPCalculator navData={details.data || []} />
                     </Grid>
                 </Grid>
 

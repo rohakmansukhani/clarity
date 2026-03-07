@@ -117,6 +117,16 @@ class MarketService:
         exchanges = [e.value for e in info.exchanges] if info else []
         inst_type = info.instrument_type.value if info else "STOCK"
 
+        # For ETFs/Commodities, fundamentals are skipped, but Yahoo returns stats in rich_details
+        if not fund_data and is_commodity:
+            fund_data = {
+                "market_cap": rich_details.get('market_cap') or rich_details.get('marketCap'),
+                "pe_ratio": rich_details.get('pe_ratio') or rich_details.get('trailingPE'),
+                "high_52w": rich_details.get('high_52w') or rich_details.get('fiftyTwoWeekHigh'),
+                "low_52w": rich_details.get('low_52w') or rich_details.get('fiftyTwoWeekLow'),
+                "name": info.name if info else symbol
+            }
+
         result = {
             "symbol": symbol,
             "name": fund_data.get("name", symbol) if fund_data.get("name") else (info.name if info else symbol),

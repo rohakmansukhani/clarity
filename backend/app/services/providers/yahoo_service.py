@@ -51,7 +51,7 @@ class YahooProvider(BaseDataSource):
             try:
                 info = yf.Ticker(ticker_symbol).info
                 # Check if we got valid data
-                if not info or 'currentPrice' not in info:
+                if not info or ('currentPrice' not in info and 'regularMarketPrice' not in info):
                     return None
                 return info
             except Exception as e:
