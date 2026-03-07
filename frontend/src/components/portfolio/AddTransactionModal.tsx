@@ -38,23 +38,33 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
 
     // Auto-fetch price logic
     useEffect(() => {
+        let isCancelled = false;
+
         const fetchPrice = async () => {
             if (!ticker || ticker.length < 2) {
-                if (mode === 'PRESENT') setPrice('');
-                setPriceError('');
+                if (!isCancelled) {
+                    if (mode === 'PRESENT') setPrice('');
+                    setPriceError('');
+                }
                 return;
             }
 
-            setFetchingPrice(true);
-            setPriceError('');
+            if (!isCancelled) {
+                setFetchingPrice(true);
+                setPriceError('');
+            }
 
             try {
                 let fetchedPrice = 0;
                 if (mode === 'PRESENT') {
                     const data = await marketService.getStockDetails(ticker.toUpperCase());
+                    if (isCancelled) return;
+
                     fetchedPrice = data.market_data?.price || data.price || data.current_price || 0;
                 } else if (mode === 'HISTORICAL' && date) {
                     const dateStr = date.toISOString().split('T')[0];
+                    if (isCancelled) return;
+
                     try {
                         if (marketService.getPriceAtDate) {
                             fetchedPrice = await marketService.getPriceAtDate(ticker.toUpperCase(), dateStr);
@@ -64,8 +74,11 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                     }
                 }
 
+                if (isCancelled) return;
+
                 if (fetchedPrice > 0) {
                     setPrice(fetchedPrice.toString());
+                    setPriceError(''); // Explicitly clear error on success
                 } else {
                     if (mode === 'PRESENT') {
                         setPrice('');
@@ -75,17 +88,24 @@ export default function AddTransactionModal({ open, onClose, onSubmit, initialTi
                     }
                 }
             } catch (error) {
+                if (isCancelled) return;
                 console.error('Failed to fetch price:', error);
                 if (mode === 'PRESENT') {
                     setPriceError('Stock not found');
+                    setPrice(''); // Clear price on error
                 }
             } finally {
-                setFetchingPrice(false);
+                if (!isCancelled) {
+                    setFetchingPrice(false);
+                }
             }
         };
 
         const timer = setTimeout(fetchPrice, 500);
-        return () => clearTimeout(timer);
+        return () => {
+            isCancelled = true;
+            clearTimeout(timer);
+        };
     }, [ticker, mode, date]);
 
     const handleSubmit = () => {
