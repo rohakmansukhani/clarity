@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 import NAVChart from '@/components/mutual-funds/NAVChart';
-import BacktrackInline from '@/components/stocks/BacktrackInline';
+import SimulatedReturns from '@/components/stocks/SimulatedReturns';
 import { mutualFundService, MutualFundDetails } from '@/services/mutualFundService';
 import { useColorMode } from '@/theme/ThemeContext';
 import { parse } from 'date-fns';
@@ -268,7 +268,7 @@ export default function MutualFundDetailsPage() {
                                 const startPrice = filtered.length > 0 ? parseFloat(filtered[0].nav) : 0;
                                 const currentPrice = parseFloat(details.data[0].nav);
                                 return (
-                                    <BacktrackInline
+                                    <SimulatedReturns
                                         symbol={details.meta.scheme_name}
                                         startPrice={startPrice}
                                         currentPrice={currentPrice}
