@@ -117,9 +117,8 @@ export default function MutualFundDetailsPage() {
                 pb: 10,
                 pt: 6,
                 px: { xs: 2, md: 6 },
-                bgcolor: theme.palette.background.default,
-                minHeight: '100vh',
-                color: theme.palette.text.primary
+                color: theme.palette.text.primary,
+                minWidth: 0
             }}>
                 {/* Back Button */}
                 <Button
@@ -232,7 +231,8 @@ export default function MutualFundDetailsPage() {
                             borderRadius: 4,
                             p: { xs: 2, md: 3 },
                             border: `1px solid ${theme.palette.divider}`,
-                            mb: 6
+                            mb: 6,
+                            minWidth: 0
                         }}>
                             <Typography
                                 variant="h6"

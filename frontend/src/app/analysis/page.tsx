@@ -24,6 +24,11 @@ export default function AnalysisPage() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const { mode } = useColorMode();
+    const [hasMounted, setHasMounted] = useState(false);
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     const [search, setSearch] = useState('');
     const [exchangeFilter, setExchangeFilter] = useState('ALL');
@@ -43,7 +48,7 @@ export default function AnalysisPage() {
     const MAX_SLOTS = 5;
 
     // --- Mobile Block Screen ---
-    if (isMobile) {
+    if (hasMounted && isMobile) {
         return (
             <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
                 <Sidebar />

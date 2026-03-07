@@ -25,9 +25,14 @@ export default function Sidebar() {
     const theme = useTheme();
     const { mode, toggleColorMode } = useColorMode();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const [hasMounted, setHasMounted] = useState(false);
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     const { isSidebarOpen, toggleSidebar, closeSidebar } = useUIStore();
-    const isOpen = isSidebarOpen;
+    const isOpen = hasMounted ? isSidebarOpen : true; // Default to open on server/initial client for desktop
 
     // Auto-collapse on mobile, open on desktop
     useEffect(() => {
@@ -59,7 +64,7 @@ export default function Sidebar() {
             </AnimatePresence>
 
             {/* Floating Toggle Button (Only visible when closed) */}
-            {!isOpen && (
+            {hasMounted && !isOpen && (
                 <IconButton
                     onClick={toggleSidebar}
                     sx={{

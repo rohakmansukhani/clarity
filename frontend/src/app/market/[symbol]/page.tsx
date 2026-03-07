@@ -146,7 +146,7 @@ export default function StockPage() {
     return (
         <Box sx={{ display: 'flex', bgcolor: theme.palette.background.default, minHeight: '100vh', color: theme.palette.text.primary }}>
             <Sidebar />
-            <Box sx={{ flexGrow: 1, maxWidth: 1600, mx: 'auto', pb: 10, pt: 6, pr: { xs: 2, md: 6 }, pl: { xs: 2, md: '140px' } }}>
+            <Box sx={{ flexGrow: 1, maxWidth: 1600, mx: 'auto', pb: 10, pt: 6, pr: { xs: 2, md: 6 }, pl: { xs: 2, md: '140px' }, minWidth: 0 }}>
                 {/* Back Button */}
                 <Button
                     startIcon={<ArrowLeft size={20} />}
@@ -196,7 +196,7 @@ export default function StockPage() {
                     {/* Left Column: Chart & Analysis */}
                     <Grid size={{ xs: 12, md: 8 }}>
                         {/* Chart Container */}
-                        <Box sx={{ height: { xs: 280, md: 450 }, bgcolor: theme.palette.background.paper, borderRadius: 4, p: { xs: 1.5, md: 3 }, border: `1px solid ${theme.palette.divider}`, mb: 6, position: 'relative' }}>
+                        <Box sx={{ height: { xs: 280, md: 450 }, bgcolor: theme.palette.background.paper, borderRadius: 4, p: { xs: 1.5, md: 3 }, border: `1px solid ${theme.palette.divider}`, mb: 6, position: 'relative', minWidth: 0 }}>
                             {/* Loading Overlay */}
                             {chartLoading && (
                                 <Box sx={{
@@ -292,7 +292,7 @@ export default function StockPage() {
                                                         tickLine={false}
                                                         tick={{ fill: theme.palette.text.secondary, fontSize: 10 }}
                                                         dy={10}
-                                                        minTickGap={useMediaQuery(theme.breakpoints.down('sm')) ? 50 : 30}
+                                                        minTickGap={30} // Fixed gap to avoid hydration mismatch
                                                     />
                                                     <YAxis
                                                         domain={['auto', 'auto']}
