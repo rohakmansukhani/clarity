@@ -34,25 +34,37 @@ class TechnicalAnalyzer:
             
             # Moving Averages
             ma_data = self._calc_moving_averages(df, current_price)
-            
+
             # RSI
             rsi = self._calc_rsi(df)
-            
+
             # MACD
             macd_data = self._calc_macd(df)
-            
+
             # Bollinger Bands
             bb_data = self._calc_bollinger_bands(df)
-            
+
             # Support and Resistance
-            sr_data = self._calc_support_resistance(df)
-            
+            try:
+                sr_data = self._calc_support_resistance(df)
+            except Exception as e:
+                logger.error(f"Support/Resistance Calc Error: {e}")
+                sr_data = {"support": [], "resistance": []}
+
             # Volume Analysis
-            volume_data = self._analyze_volume(df)
-            
+            try:
+                volume_data = self._analyze_volume(df)
+            except Exception as e:
+                logger.error(f"Volume Analysis Error: {e}")
+                volume_data = {"signal": "NEUTRAL"}
+
             # Trend Detection (EMA Crosses)
-            trend_data = self._detect_trends(df)
-            
+            try:
+                trend_data = self._detect_trends(df)
+            except Exception as e:
+                logger.error(f"Trend Detection Error: {e}")
+                trend_data = {"status": "ERROR"}
+
             # Overall Signal
             signal = self._generate_signal(ma_data, rsi, macd_data, bb_data, volume_data)
             
@@ -224,10 +236,11 @@ class TechnicalAnalyzer:
         """Detect Golden Cross / Death Cross and trend persistence."""
         if df.height < 200:
             return {"status": "INSUFFICIENT_DATA", "days_available": df.height}
-            
-        ma50 = df.select(pl.col("close").rolling_mean(window_size=50).to_series())
-        ma200 = df.select(pl.col("close").rolling_mean(window_size=200).to_series())
-        
+
+        # Select returns DataFrame, convert to Series
+        ma50 = df.select(pl.col("close").rolling_mean(window_size=50)).to_series()
+        ma200 = df.select(pl.col("close").rolling_mean(window_size=200)).to_series()
+
         curr_ma50 = ma50[-1]
         curr_ma200 = ma200[-1]
         prev_ma50 = ma50[-2]
