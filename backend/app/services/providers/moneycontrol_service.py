@@ -78,7 +78,8 @@ class MoneyControlProvider(BaseDataSource):
 
             # Build relevance keywords from ticker and company name
             keywords = self._build_keywords(ticker, company_name)
-
+            # Build search query based on ticker type and company name
+            if company_name and company_name.upper() != ticker and len(company_name) > 3:
                 # For ETFs, keep "ETF" in the query for better context
                 if keywords.get("is_etf"):
                     search_name = (company_name
