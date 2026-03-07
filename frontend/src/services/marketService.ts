@@ -7,7 +7,32 @@ export interface StockDetails {
     change: number;
     changePercent: number;
     logo?: string;
-    fundamentals?: any;
+    fundamentals?: Record<string, unknown>;
+}
+
+export interface MarketStatus {
+    index: string;
+    current: number;
+    change: number;
+    percent_change: number;
+    last_updated: string;
+    current_formatted?: string;
+    change_formatted?: string;
+    percent_change_formatted?: string;
+}
+
+export interface StockMover {
+    symbol: string;
+    price: number;
+    change: number;
+    percent_change: number;
+    is_up: boolean;
+}
+
+export interface AIChatContext {
+    type: string;
+    symbol?: string;
+    [key: string]: unknown;
 }
 
 export const marketService = {
@@ -66,7 +91,7 @@ export const marketService = {
     },
 
     // Generic Chat with AI Advisor
-    chatWithAI: async (query: string, context?: any, conversationHistory?: Array<{ role: string; content: string }>) => {
+    chatWithAI: async (query: string, context?: AIChatContext, conversationHistory?: Array<{ role: string; content: string }>) => {
         const response = await api.post('/ai/chat', {
             query,
             conversation_history: conversationHistory,
@@ -107,7 +132,7 @@ export const marketService = {
         return response.data;
     },
 
-    createSession: async (title: string, initialMessages: any[] = [], type: 'advisor' | 'discovery_hub' = 'advisor') => {
+    createSession: async (title: string, initialMessages: Record<string, unknown>[] = [], type: 'advisor' | 'discovery_hub' = 'advisor') => {
         const response = await api.post('/history/sessions', {
             title,
             initial_messages: initialMessages,
@@ -116,7 +141,7 @@ export const marketService = {
         return response.data;
     },
 
-    addMessageToSession: async (sessionId: string, role: string, content: string, metadata?: any) => {
+    addMessageToSession: async (sessionId: string, role: string, content: string, metadata?: Record<string, unknown>) => {
         const response = await api.post(`/history/sessions/${sessionId}/messages`, { role, content, metadata });
         return response.data;
     },

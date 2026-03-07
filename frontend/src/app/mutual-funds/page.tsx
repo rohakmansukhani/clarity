@@ -19,15 +19,12 @@ export default function MutualFundsHome() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             sx={{
-                minHeight: '100vh',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
-                pt: 10,
-                px: 2,
+                mt: { xs: 4, md: 8 },
                 position: 'relative',
-                bgcolor: 'background.default'
             }}
         >
             <Box sx={{ width: '100%', maxWidth: 680 }}>

@@ -160,7 +160,7 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
 
                     <Box>
                         <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.08em', display: 'block', mb: 1 }}>
-                            INVESTMENT THESIS (THE "WHY")
+                            INVESTMENT THESIS (THE &quot;WHY&quot;)
                         </Typography>
                         <TextField
                             label="Why are you watching this?"

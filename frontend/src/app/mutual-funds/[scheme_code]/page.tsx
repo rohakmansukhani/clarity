@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Grid, Paper, Chip, CircularProgress, useTheme } from '@mui/material';
+import { Box, Typography, Grid, Paper, Chip, CircularProgress, IconButton, useTheme } from '@mui/material';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { ArrowLeft, TrendingUp, Building2, Tag } from 'lucide-react';
 
-import MFSearchBar from '@/components/mutual-funds/MFSearchBar';
 import NAVChart from '@/components/mutual-funds/NAVChart';
 import SIPCalculator from '@/components/mutual-funds/SIPCalculator';
 import { mutualFundService, MutualFundDetails } from '@/services/mutualFundService';
@@ -42,19 +42,19 @@ export default function MutualFundDetailsPage() {
 
     if (loading) {
         return (
-            <Box sx={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <CircularProgress />
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+                <CircularProgress sx={{ color: theme.palette.primary.main }} />
             </Box>
         );
     }
 
     if (error || !details) {
         return (
-            <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', p: 4, pt: 12 }}>
-                <MFSearchBar onSelect={(item) => router.push(`/mutual-funds/${item.schemeCode}`)} variant="header" />
-                <Typography color="error" variant="h6" sx={{ mt: 4 }}>
-                    {error || "Fund not found."}
-                </Typography>
+            <Box sx={{ p: 4 }}>
+                <IconButton onClick={() => router.back()} sx={{ mb: 3, color: 'text.secondary' }}>
+                    <ArrowLeft size={20} />
+                </IconButton>
+                <Typography color="error" variant="h6">{error || 'Fund not found.'}</Typography>
             </Box>
         );
     }
@@ -63,67 +63,113 @@ export default function MutualFundDetailsPage() {
     const asOfDate = details.data?.length > 0 ? details.data[0].date : '';
 
     return (
-        <Box sx={{ minHeight: '100vh', pb: 8 }}>
-            {/* Header Search Area */}
-            <Box sx={{
-                position: 'sticky', top: 0, zIndex: 40,
-                bgcolor: 'background.default',
-                borderBottom: `1px solid ${theme.palette.divider}`,
-                pb: 2, pt: { xs: 8, md: 3 }, px: { xs: 2, md: 4 }
-            }}>
-                <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
-                    <MFSearchBar
-                        onSelect={(item) => router.push(`/mutual-funds/${item.schemeCode}`)}
-                        variant="header"
-                    />
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+            <Box sx={{ maxWidth: 1400, mx: 'auto', pb: 8 }}>
+
+                {/* Back Button */}
+                <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <IconButton
+                        onClick={() => router.back()}
+                        sx={{
+                            color: 'text.secondary',
+                            border: `1px solid ${theme.palette.divider}`,
+                            borderRadius: 2,
+                            '&:hover': { color: 'text.primary', borderColor: theme.palette.text.secondary }
+                        }}
+                    >
+                        <ArrowLeft size={18} />
+                    </IconButton>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>Mutual Funds</Typography>
                 </Box>
-            </Box>
 
-            <Box sx={{ maxWidth: 1200, mx: 'auto', p: { xs: 2, md: 4 }, mt: 2 }}>
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-                    {/* Header Info */}
-                    <Box sx={{ mb: 4 }}>
-                        <Typography variant="h3" fontWeight={700} sx={{ mb: 1, letterSpacing: '-0.02em', color: theme.palette.text.primary }}>
-                            {details.meta.scheme_name}
-                        </Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-                            <Chip label={details.meta.scheme_category || "N/A"} size="small" sx={{ bgcolor: theme.palette.primary.main, color: '#fff', fontWeight: 600 }} />
-                            <Chip label={details.meta.fund_house || "N/A"} size="small" variant="outlined" sx={{ borderColor: theme.palette.divider }} />
-                            <Chip label={details.meta.scheme_type || "N/A"} size="small" variant="outlined" sx={{ borderColor: theme.palette.divider }} />
-                        </Box>
+                {/* Hero Header */}
+                <Box sx={{ mb: 5 }}>
+                    <Typography variant="h3" fontWeight={800} sx={{
+                        mb: 2, letterSpacing: '-0.03em',
+                        background: mode === 'dark'
+                            ? 'linear-gradient(to right, #fff, #888)'
+                            : 'linear-gradient(to right, #0F172A, #64748B)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                    }}>
+                        {details.meta.scheme_name}
+                    </Typography>
 
-                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
-                            <Typography variant="h2" fontWeight={700} sx={{ color: theme.palette.text.primary }}>
-                                ₹{currentNav}
-                            </Typography>
-                            {asOfDate && (
-                                <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
-                                    NAV as of {asOfDate}
-                                </Typography>
-                            )}
-                        </Box>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 4 }}>
+                        <Chip
+                            icon={<Tag size={12} />}
+                            label={details.meta.scheme_category || 'N/A'}
+                            size="small"
+                            sx={{
+                                bgcolor: `${theme.palette.primary.main}22`,
+                                color: theme.palette.primary.main,
+                                fontWeight: 700,
+                                border: `1px solid ${theme.palette.primary.main}44`
+                            }}
+                        />
+                        <Chip
+                            icon={<Building2 size={12} />}
+                            label={details.meta.fund_house || 'N/A'}
+                            size="small"
+                            variant="outlined"
+                            sx={{ borderColor: theme.palette.divider, color: 'text.secondary' }}
+                        />
+                        <Chip
+                            icon={<TrendingUp size={12} />}
+                            label={details.meta.scheme_type || 'N/A'}
+                            size="small"
+                            variant="outlined"
+                            sx={{ borderColor: theme.palette.divider, color: 'text.secondary' }}
+                        />
                     </Box>
 
-                    {/* Content Grid */}
-                    <Grid container spacing={4}>
-                        <Grid size={{ xs: 12, md: 8 }}>
-                            <Paper sx={{
-                                p: 3,
-                                borderRadius: 4,
-                                bgcolor: 'background.paper',
+                    {/* NAV Price */}
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2, flexWrap: 'wrap' }}>
+                        <Typography
+                            variant="h2"
+                            fontWeight={800}
+                            sx={{ letterSpacing: '-0.04em', color: theme.palette.text.primary }}
+                        >
+                            ₹{currentNav}
+                        </Typography>
+                        {asOfDate && (
+                            <Box sx={{
+                                px: 2, py: 0.5, borderRadius: 2,
+                                bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
                                 border: `1px solid ${theme.palette.divider}`
                             }}>
-                                <Typography variant="h6" fontWeight={600} sx={{ mb: 3 }}>NAV History</Typography>
-                                <NAVChart data={details.data || []} />
-                            </Paper>
-                        </Grid>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                    NAV as of {asOfDate}
+                                </Typography>
+                            </Box>
+                        )}
+                    </Box>
+                </Box>
 
-                        <Grid size={{ xs: 12, md: 4 }}>
-                            <SIPCalculator />
-                        </Grid>
+                {/* Main Content Grid */}
+                <Grid container spacing={4}>
+                    {/* Chart */}
+                    <Grid size={{ xs: 12, md: 8 }}>
+                        <Paper elevation={0} sx={{
+                            p: 3, borderRadius: 4,
+                            bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : theme.palette.background.paper,
+                            border: `1px solid ${theme.palette.divider}`,
+                            backgroundImage: 'none',
+                        }}>
+                            <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: 'text.primary' }}>
+                                NAV History
+                            </Typography>
+                            <NAVChart data={details.data || []} />
+                        </Paper>
                     </Grid>
-                </motion.div>
+
+                    {/* SIP Calculator */}
+                    <Grid size={{ xs: 12, md: 4 }}>
+                        <SIPCalculator />
+                    </Grid>
+                </Grid>
+
             </Box>
-        </Box>
+        </motion.div>
     );
 }

@@ -5,6 +5,7 @@ import { Box, Typography, Paper, List, ListItemButton, IconButton, Menu, MenuIte
 import { motion, AnimatePresence } from 'framer-motion';
 import { History, MoreVertical, Pin, Trash2, Plus } from 'lucide-react';
 
+
 interface HistorySession {
     id: string;
     title: string;
@@ -24,7 +25,13 @@ interface DiscoveryHistoryProps {
     onDeleteSession: (sessionId: string) => void;
 }
 
-function HistoryItem({ session, isActive, onClick, onPin, onDelete }: any) {
+function HistoryItem({ session, isActive, onClick, onPin, onDelete }: {
+    session: HistorySession;
+    isActive: boolean;
+    onClick: () => void;
+    onPin: (id: string, pinned: boolean) => void;
+    onDelete: (id: string) => void;
+}) {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
 
@@ -115,7 +122,7 @@ function HistoryItem({ session, isActive, onClick, onPin, onDelete }: any) {
             <Menu
                 anchorEl={anchorEl}
                 open={open}
-                onClose={(e: any) => handleClose(e)}
+                onClose={() => handleClose()}
                 PaperProps={{
                     sx: {
                         bgcolor: '#111',

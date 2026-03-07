@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Typography, TextField, IconButton, CircularProgress, Paper, Drawer, List, ListItem, ListItemText, ListItemButton, Divider, Menu, MenuItem } from '@mui/material';
+import { Box, Typography, TextField, IconButton, CircularProgress, Paper, List, ListItemButton, Menu, MenuItem } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useColorMode } from '@/theme/ThemeContext';
-import { Send, Paperclip, Bot, User, Sparkles, Zap, TrendingUp, History, Plus, MoreVertical, Pin, Trash2, ArrowLeft, Lightbulb } from 'lucide-react';
+import { Send, Paperclip, Sparkles, Zap, TrendingUp, History, Plus, MoreVertical, Pin, Trash2, ArrowLeft, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/layout/Sidebar';
 import ClarityLogo from '@/components/ui/ClarityLogo';
@@ -12,7 +12,6 @@ import { useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import { marketService } from '@/services/marketService';
 import { useUIStore } from '@/lib/ui-store';
-import SwitchAIButton from '@/components/common/SwitchAIButton';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
 
 // --- Interfaces ---
@@ -22,20 +21,15 @@ interface Message {
     content: string;
     timestamp: Date;
     isThinking?: boolean;
-    suggest_switch?: {
-        to: 'advisor' | 'discovery_hub';
-        reason: string;
-        original_query?: string;
-    };
 }
 
 const SUGGESTED_PROMPTS = [
     { icon: TrendingUp, text: "Analyze Reliance Industries" },
     { icon: Zap, text: "What moved the Nifty 50 today?" },
     { icon: Sparkles, text: "Explain 'Beta' in investing" },
-    { icon: Lightbulb, text: "Tell me about aluminium sector" },
-    { icon: TrendingUp, text: "EV battery sector trends" },
-    { icon: Zap, text: "Pharma sector opportunities" },
+    { icon: Lightbulb, text: "Tell me about the aluminium sector" },
+    { icon: TrendingUp, text: "Which EV battery stocks look good?" },
+    { icon: Zap, text: "I want to invest ₹1L in pharma — show me picks" },
 ];
 
 
@@ -44,7 +38,21 @@ function MsgGap(role: string) {
 }
 
 
-function HistoryItem({ session, isActive, onClick, onPin, onDelete }: any) {
+interface ChatSession {
+    id: string;
+    title: string;
+    created_at: string;
+    updated_at: string;
+    is_pinned: boolean;
+}
+
+function HistoryItem({ session, isActive, onClick, onPin, onDelete }: {
+    session: ChatSession;
+    isActive: boolean;
+    onClick: () => void;
+    onPin: (id: string, pinned: boolean) => void;
+    onDelete: (id: string) => void;
+}) {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
 
@@ -131,7 +139,7 @@ function HistoryItem({ session, isActive, onClick, onPin, onDelete }: any) {
             <Menu
                 anchorEl={anchorEl}
                 open={open}
-                onClose={(e: any) => handleClose(e)}
+                onClose={() => handleClose()}
                 PaperProps={{
                     sx: {
                         bgcolor: 'background.paper',
@@ -168,7 +176,7 @@ export default function AdvisorClient() {
 
     // History State
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-    const [sessions, setSessions] = useState<any[]>([]);
+    const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
@@ -237,6 +245,7 @@ export default function AdvisorClient() {
 
             resetQuickChat();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [quickChatMessages]); // Hydrate dependency
 
     const loadSessions = async () => {
@@ -258,7 +267,7 @@ export default function AdvisorClient() {
             setMessages([]); // Clear current
 
             const msgs = await marketService.getSessionMessages(sessionId);
-            const formattedMsgs: Message[] = msgs.map((m: any) => ({
+            const formattedMsgs: Message[] = msgs.map((m: { id: string; role: 'user' | 'assistant'; content: string; created_at: string }) => ({
                 id: m.id,
                 role: m.role,
                 content: m.content,
@@ -284,6 +293,7 @@ export default function AdvisorClient() {
             hasAutoQueried.current = true;
             handleSend(initialQuery);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialQuery]);
 
     const handleSend = async (text: string = input) => {
@@ -330,7 +340,6 @@ export default function AdvisorClient() {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
                 content: responseData.response,
-                suggest_switch: responseData.suggest_switch,
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, newAiMsg]);
@@ -571,7 +580,7 @@ export default function AdvisorClient() {
                                         How can I help you?
                                     </Typography>
                                     <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 400, mx: 'auto' }}>
-                                        Ask about market trends, specific stocks, sectors, or financial concepts.
+                                        Ask about stocks, sectors, ETFs, mutual funds, or any financial concept.
                                     </Typography>
                                 </div>
 
@@ -639,17 +648,12 @@ export default function AdvisorClient() {
                                             <ReactMarkdown>{msg.content}</ReactMarkdown>
                                         </div>
 
-                                        {/* Show Switch Button if suggested */}
-                                        {msg.suggest_switch && (
-                                            <Box sx={{ mt: 2 }}>
-                                                <SwitchAIButton
-                                                    target={msg.suggest_switch.to}
-                                                    originalQuery={msg.suggest_switch.original_query || ''}
-                                                    reason={msg.suggest_switch.reason}
-                                                />
-                                            </Box>
-                                        )}
                                     </Box>
+                                    {msg.role === 'assistant' && (
+                                        <Typography variant="caption" sx={{ display: 'block', mt: 0.5, px: 1, color: 'text.disabled', fontSize: '0.65rem', opacity: 0.7 }}>
+                                            ⚠️ Not financial advice. Always consult a registered advisor.
+                                        </Typography>
+                                    )}
                                 </Paper>
                             </motion.div>
                         ))}
@@ -693,7 +697,7 @@ export default function AdvisorClient() {
                         </IconButton>
                         <TextField
                             sx={{ flex: 1, px: 1, '& fieldset': { border: 'none' }, input: { color: 'text.primary', fontSize: '1rem', fontWeight: 500 } }}
-                            placeholder="Ask Clarity AI..."
+                            placeholder="Ask about stocks, sectors, ETFs, mutual funds..."
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}

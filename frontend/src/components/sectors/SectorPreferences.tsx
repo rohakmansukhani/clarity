@@ -14,7 +14,7 @@ interface SectorPreferencesProps {
 }
 
 // Sector-specific sub-categories
-const SECTOR_CATEGORIES: Record<string, Array<{ label: string; icon: any }>> = {
+const SECTOR_CATEGORIES: Record<string, Array<{ label: string; icon: React.ElementType }>> = {
     'NIFTY IT': [
         { label: 'IT Services', icon: Code },
         { label: 'Software Products', icon: Cpu },

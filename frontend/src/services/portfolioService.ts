@@ -16,6 +16,20 @@ export interface HoldingCreate {
     purchase_date?: string;
 }
 
+export interface Holding {
+    id: string;
+    ticker: string;
+    shares: number;
+    avg_price: number;
+    current_price: number;
+    current_value: number;
+    invested_value: number;
+    gain: number;
+    gain_pct: number;
+    day_change_pct?: number;
+    exchange: string;
+}
+
 export interface PortfolioPerformance {
     portfolio_id: string;
     total_value: number;
@@ -26,7 +40,7 @@ export interface PortfolioPerformance {
     total_gain_formatted: string;
     return_pct: number;
     return_pct_formatted: string;
-    holdings: any[];
+    holdings: Holding[];
 }
 
 export const portfolioService = {

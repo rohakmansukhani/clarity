@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
-import { ThemeProvider, createTheme, Theme } from '@mui/material/styles';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { getThemeConfig } from './theme';
 
 type ColorMode = 'light' | 'dark';
@@ -20,17 +20,16 @@ export const useColorMode = () => useContext(ColorModeContext);
 
 export const ColorModeProvider = ({ children }: { children: React.ReactNode }) => {
     // Check local storage or system preference for initial mode
-    const [mode, setMode] = useState<ColorMode>('dark');
-
-    useEffect(() => {
-        const savedMode = localStorage.getItem('clarity-theme-mode') as ColorMode;
-        if (savedMode) {
-            setMode(savedMode);
-        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-            // Uncomment if you want to follow system preference by default
-            // setMode('light');
+    const [mode, setMode] = useState<ColorMode>(() => {
+        if (typeof window !== 'undefined') {
+            const savedMode = localStorage.getItem('clarity-theme-mode') as ColorMode;
+            if (savedMode) return savedMode;
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                return 'light';
+            }
         }
-    }, []);
+        return 'dark';
+    });
 
     const toggleColorMode = () => {
         setMode((prevMode) => {

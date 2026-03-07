@@ -2,27 +2,45 @@
 
 import { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Paper, IconButton, TextField, InputAdornment, Button, Tooltip, CircularProgress, Autocomplete, Snackbar, Alert } from '@mui/material';
-import { Search, Bell, Settings, TrendingUp, ArrowUpRight, ArrowDownRight, PieChart } from 'lucide-react';
+import { Search, Bell, Settings, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { marketService } from '@/services/marketService';
 import { portfolioService } from '@/services/portfolioService';
-import { mutualFundService } from '@/services/mutualFundService';
+import { mutualFundService, MutualFundHolding } from '@/services/mutualFundService';
 
 import { useTheme } from '@mui/material/styles';
 import { useColorMode } from '@/theme/ThemeContext';
+interface UserMetadata {
+    full_name?: string;
+    display_name?: string;
+}
+
+interface User {
+    id: string;
+    email?: string;
+    full_name?: string;
+    user_metadata?: UserMetadata;
+    display_name?: string;
+}
+
+interface SearchOption {
+    symbol: string;
+    name: string;
+}
+
 export default function DashboardPage() {
     const router = useRouter();
     const theme = useTheme();
     const { mode } = useColorMode();
     const [greeting, setGreeting] = useState('Good Evening');
-    const [marketStatus, setMarketStatus] = useState<any[]>([]);
-    const [topMovers, setTopMovers] = useState<any[]>([]);
+    const [marketStatus, setMarketStatus] = useState<import('@/services/marketService').MarketStatus[]>([]);
+    const [topMovers, setTopMovers] = useState<import('@/services/marketService').StockMover[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchOptions, setSearchOptions] = useState<any[]>([]); // Search Suggestions State
+    const [searchOptions, setSearchOptions] = useState<SearchOption[]>([]); // Search Suggestions State
     const [toast, setToast] = useState({ open: false, message: '', severity: 'info' as 'info' | 'success' | 'warning' | 'error' });
 
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<User | null>(null);
     const [netWorth, setNetWorth] = useState({ total: 0, stocks: 0, mf: 0 });
     const [netWorthLoading, setNetWorthLoading] = useState(true);
 
@@ -62,7 +80,7 @@ export default function DashboardPage() {
                     let mfTotal = 0;
                     try {
                         const mfs = await mutualFundService.getHoldings();
-                        mfTotal = mfs.reduce((sum: number, h: any) => sum + (h.units * h.avg_nav), 0);
+                        mfTotal = mfs.reduce((sum: number, h: MutualFundHolding) => sum + (h.units * h.avg_nav), 0);
                     } catch (e) { }
 
                     setNetWorth({ total: stockTotal + mfTotal, stocks: stockTotal, mf: mfTotal });
@@ -151,7 +169,7 @@ export default function DashboardPage() {
                         freeSolo
                         id="dashboard-search-autocomplete"
                         options={searchOptions}
-                        getOptionLabel={(option: any) => typeof option === 'string' ? option : `${option.symbol} - ${option.name}`}
+                        getOptionLabel={(option: SearchOption | string) => typeof option === 'string' ? option : `${option.symbol} - ${option.name}`}
                         filterOptions={(x) => x} // Disable built-in filter, we use backend search
                         sx={{ width: '100%' }}
                         onInputChange={async (event, newInputValue) => {
@@ -166,7 +184,7 @@ export default function DashboardPage() {
                                 setSearchOptions([]);
                             }
                         }}
-                        onChange={(event, value: any) => {
+                        onChange={(event, value: SearchOption | string | null) => {
                             if (value) {
                                 const symbol = typeof value === 'string' ? value : value.symbol;
                                 router.push(`/market/${symbol}`);
@@ -194,7 +212,7 @@ export default function DashboardPage() {
                                 }}
                             />
                         )}
-                        renderOption={(props, option: any) => {
+                        renderOption={(props, option: SearchOption) => {
                             const { key, ...otherProps } = props;
                             return (
                                 <li key={key} {...otherProps} style={{ backgroundColor: theme.palette.background.paper, color: theme.palette.text.primary, borderBottom: `1px solid ${theme.palette.divider}` }}>
@@ -317,7 +335,7 @@ export default function DashboardPage() {
                                     symbol={stock.symbol}
                                     price={stock.price}
                                     change={stock.change}
-                                    isUp={stock.isUp}
+                                    is_up={stock.is_up}
                                     onClick={() => router.push(`/market/${stock.symbol}`)}
                                 />
                             )) : (
@@ -366,7 +384,7 @@ function MarketRow({ name, value, change, isUp }: any) {
     );
 }
 
-function MoverRow({ symbol, price, change, isUp, onClick }: any) {
+function MoverRow({ symbol, price, change, is_up, onClick }: { symbol: string; price: number; change: number | string; is_up: boolean; onClick: () => void }) {
     const theme = useTheme();
     const { mode } = useColorMode();
     return (
@@ -398,8 +416,8 @@ function MoverRow({ symbol, price, change, isUp, onClick }: any) {
             <Box sx={{ textAlign: 'right' }}>
                 <Typography variant="body2" sx={{ fontWeight: 600, color: theme.palette.text.primary }}>₹{price}</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-                    {isUp ? <ArrowUpRight size={14} color={theme.palette.success.main} /> : <ArrowDownRight size={14} color={theme.palette.error.main} />}
-                    <Typography variant="caption" sx={{ color: isUp ? theme.palette.success.main : theme.palette.error.main, fontWeight: 700 }}>{change}</Typography>
+                    {is_up ? <ArrowUpRight size={14} color={theme.palette.success.main} /> : <ArrowDownRight size={14} color={theme.palette.error.main} />}
+                    <Typography variant="caption" sx={{ color: is_up ? theme.palette.success.main : theme.palette.error.main, fontWeight: 700 }}>{change}</Typography>
                 </Box>
             </Box>
         </Box>

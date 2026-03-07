@@ -82,9 +82,14 @@ class MarketService:
         # For commodities/ETFs, use Yahoo symbol directly; for stocks, use NSE symbol
         price_symbol = yahoo_symbol if is_commodity else symbol
         
+        # Get company name early for better news search (use registry if available)
+        from app.core.symbol_registry import registry as _registry
+        _info = _registry.resolve(symbol)
+        company_name = _info.name if _info else None
+        
         task_price = self.consensus.get_consensus_price(price_symbol)
         task_fundamentals = self.screener.get_stock_details(symbol) if not is_commodity else asyncio.sleep(0)
-        task_news = self.news_provider.get_stock_details(symbol) # Returns {'news': []}
+        task_news = self.news_provider.get_stock_details(symbol, company_name)  # Pass name for accurate news
         
         results = await asyncio.gather(task_price, task_fundamentals, task_news, return_exceptions=True)
         

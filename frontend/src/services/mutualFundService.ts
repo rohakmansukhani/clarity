@@ -39,6 +39,15 @@ export interface SIPCalculationResponse {
     }[];
 }
 
+export interface MutualFundHolding {
+    id: string;
+    scheme_code: string;
+    scheme_name: string;
+    units: number;
+    avg_nav: number;
+    current_nav?: number;
+}
+
 class MutualFundService {
     async searchFunds(query: string): Promise<MutualFundSearchResult[]> {
         const response = await api.get('/mutual-funds/search', { params: { q: query } });
@@ -61,12 +70,12 @@ class MutualFundService {
     }
 
     // Holdings Endpoints
-    async getHoldings() {
+    async getHoldings(): Promise<MutualFundHolding[]> {
         const response = await api.get('/mutual-funds/holdings');
         return response.data;
     }
 
-    async addHolding(holding: { scheme_code: string; scheme_name: string; units: number; avg_nav: number }) {
+    async addHolding(holding: Omit<MutualFundHolding, 'id'>) {
         const response = await api.post('/mutual-funds/holdings', holding);
         return response.data;
     }

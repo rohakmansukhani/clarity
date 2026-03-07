@@ -22,9 +22,6 @@ interface DiscoveryChatProps {
     messages: Message[];
     input: string;
     loading: boolean;
-    onInputChange: (value: string) => void;
-    onSend: () => void;
-    onKeyPress: (e: React.KeyboardEvent) => void;
     onCreatePortfolio: () => void;
 }
 
@@ -34,7 +31,27 @@ export default function DiscoveryChat({
     loading
 }: DiscoveryChatProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [userInitial, setUserInitial] = React.useState('R'); // Default fallback
+    const [userInitial, setUserInitial] = React.useState(() => {
+        if (typeof window !== 'undefined') {
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                try {
+                    const parsedUser = JSON.parse(storedUser);
+                    const name = parsedUser.user_metadata?.full_name ||
+                        parsedUser.user_metadata?.display_name ||
+                        parsedUser.full_name ||
+                        parsedUser.email;
+
+                    if (name) {
+                        return name.charAt(0).toUpperCase();
+                    }
+                } catch (e) {
+                    console.error("Failed to parse user for avatar", e);
+                }
+            }
+        }
+        return 'R';
+    });
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -43,26 +60,6 @@ export default function DiscoveryChat({
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
-
-    // Load User Initial from LocalStorage (Matches Dashboard Logic)
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            try {
-                const parsedUser = JSON.parse(storedUser);
-                const name = parsedUser.user_metadata?.full_name ||
-                    parsedUser.user_metadata?.display_name ||
-                    parsedUser.full_name ||
-                    parsedUser.email;
-
-                if (name) {
-                    setUserInitial(name.charAt(0).toUpperCase());
-                }
-            } catch (e) {
-                console.error("Failed to parse user for avatar", e);
-            }
-        }
-    }, []);
 
     return (
         <Box sx={{

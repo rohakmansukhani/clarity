@@ -522,77 +522,91 @@ export default function StockPage() {
                     </Grid>
                 </Grid>
 
-                {/* --- NEW SECTION: News & Clarity Summary --- */}
-                <Box sx={{ mt: 8 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 4, letterSpacing: '-0.02em' }}>Latest News</Typography>
+                {/* --- NEWS SECTION --- */}
+                {news.length > 0 ? (
+                    <Box sx={{ mt: 8 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 4, letterSpacing: '-0.02em' }}>Latest News</Typography>
 
-
-
-                    {/* 2. News Grid */}
-                    <Grid container spacing={4}>
-                        {news.map((item: any, index: number) => (
-                            <Grid size={{ xs: 12, md: 4 }} key={index}>
-                                <Box
-                                    onClick={() => item.link && window.open(item.link, '_blank')}
-                                    sx={{
-                                        cursor: 'pointer',
-                                        bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
-                                        border: `1px solid ${theme.palette.divider}`,
-                                        borderRadius: 3,
-                                        height: '100%',
-                                        transition: 'border-color 0.25s, background 0.25s, transform 0.2s',
-                                        '&:hover': {
-                                            borderColor: `${theme.palette.primary.main}60`,
-                                            bgcolor: `${theme.palette.primary.main}08`,
-                                            transform: 'translateY(-2px)',
-                                        },
-                                        '&:hover .news-title': { color: theme.palette.primary.main }
-                                    }}>
-                                    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-                                        {/* Header: Logo + Source + Time */}
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                            {/* Logo */}
-                                            <Box sx={{
-                                                width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', bgcolor: '#fff',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                border: `1px solid ${theme.palette.divider}`
-                                            }}>
-                                                <img
-                                                    src={`https://www.google.com/s2/favicons?domain=${item.link || item.source}&sz=64`}
-                                                    alt={item.source}
-                                                    style={{ width: '20px', height: '20px', objectFit: 'contain' }}
-                                                    onError={(e: any) => { e.target.style.display = 'none'; }}
-                                                />
+                        <Grid container spacing={4}>
+                            {news.map((item: any, index: number) => (
+                                <Grid size={{ xs: 12, md: 4 }} key={index}>
+                                    <Box
+                                        onClick={() => item.link && window.open(item.link, '_blank')}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
+                                            border: `1px solid ${theme.palette.divider}`,
+                                            borderRadius: 3,
+                                            height: '100%',
+                                            transition: 'border-color 0.25s, background 0.25s, transform 0.2s',
+                                            '&:hover': {
+                                                borderColor: `${theme.palette.primary.main}60`,
+                                                bgcolor: `${theme.palette.primary.main}08`,
+                                                transform: 'translateY(-2px)',
+                                            },
+                                            '&:hover .news-title': { color: theme.palette.primary.main }
+                                        }}>
+                                        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                                            {/* Header: Logo + Source + Time */}
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                                                <Box sx={{
+                                                    width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', bgcolor: '#fff',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    border: `1px solid ${theme.palette.divider}`
+                                                }}>
+                                                    <img
+                                                        src={`https://www.google.com/s2/favicons?domain=${item.link || item.source}&sz=64`}
+                                                        alt={item.source}
+                                                        style={{ width: '20px', height: '20px', objectFit: 'contain' }}
+                                                        onError={(e: any) => { e.target.style.display = 'none'; }}
+                                                    />
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 700, display: 'block', lineHeight: 1 }}>{item.source || 'Market News'}</Typography>
+                                                    <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.7rem' }}>{item.time || 'Today'}</Typography>
+                                                </Box>
                                             </Box>
-                                            <Box>
-                                                <Typography variant="caption" sx={{ color: theme.palette.primary.main, fontWeight: 700, display: 'block', lineHeight: 1 }}>{item.source || 'Market News'}</Typography>
-                                                <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '0.7rem' }}>{item.time || 'Today'}</Typography>
-                                            </Box>
+
+                                            {/* Title */}
+                                            <Typography
+                                                className="news-title"
+                                                variant="h6"
+                                                sx={{
+                                                    fontWeight: 700, lineHeight: 1.3, mb: 1, color: theme.palette.text.primary,
+                                                    transition: 'color 0.2s',
+                                                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                                                }}
+                                            >
+                                                {item.title}
+                                            </Typography>
+
+                                            {/* Summary */}
+                                            <Typography variant="body2" sx={{ color: theme.palette.text.secondary, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                {item.summary || item.description}
+                                            </Typography>
                                         </Box>
-
-                                        {/* Title */}
-                                        <Typography
-                                            className="news-title"
-                                            variant="h6"
-                                            sx={{
-                                                fontWeight: 700, lineHeight: 1.3, mb: 1, color: theme.palette.text.primary,
-                                                transition: 'color 0.2s',
-                                                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                                            }}
-                                        >
-                                            {item.title}
-                                        </Typography>
-
-                                        {/* Summary */}
-                                        <Typography variant="body2" sx={{ color: theme.palette.text.secondary, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                            {item.summary || item.description}
-                                        </Typography>
                                     </Box>
-                                </Box>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Box>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    </Box>
+                ) : (
+                    <Box sx={{ mt: 8 }}>
+                        <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 3, letterSpacing: '-0.02em' }}>Latest News</Typography>
+                        <Box sx={{
+                            p: 4, borderRadius: 3, textAlign: 'center',
+                            border: `1px dashed ${theme.palette.divider}`,
+                            bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'
+                        }}>
+                            <Typography variant="body1" sx={{ color: theme.palette.text.secondary, mb: 0.5 }}>
+                                No recent news found in the past 3 months
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: theme.palette.text.disabled }}>
+                                This could be a low-coverage or niche instrument. Check financial portals directly for updates.
+                            </Typography>
+                        </Box>
+                    </Box>
+                )}
 
                 {/* Configuration Modal */}
                 <Dialog
