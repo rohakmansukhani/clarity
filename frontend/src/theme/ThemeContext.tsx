@@ -19,17 +19,19 @@ const ColorModeContext = createContext<ColorModeContextType>({
 export const useColorMode = () => useContext(ColorModeContext);
 
 export const ColorModeProvider = ({ children }: { children: React.ReactNode }) => {
-    // Check local storage or system preference for initial mode
-    const [mode, setMode] = useState<ColorMode>(() => {
-        if (typeof window !== 'undefined') {
-            const savedMode = localStorage.getItem('clarity-theme-mode') as ColorMode;
-            if (savedMode) return savedMode;
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-                return 'light';
-            }
+    // Always initialize with 'dark' for server-side consistency
+    const [mode, setMode] = useState<ColorMode>('dark');
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        const savedMode = localStorage.getItem('clarity-theme-mode') as ColorMode;
+        if (savedMode) {
+            setMode(savedMode);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            setMode('light');
         }
-        return 'dark';
-    });
+    }, []);
 
     const toggleColorMode = () => {
         setMode((prevMode) => {
@@ -52,6 +54,19 @@ export const ColorModeProvider = ({ children }: { children: React.ReactNode }) =
     }, [mode]);
 
     const theme = useMemo(() => createTheme(getThemeConfig(mode)), [mode]);
+
+    // Prevent flash of incorrect theme or hydration mismatch
+    if (!mounted) {
+        return (
+            <ColorModeContext.Provider value={{ mode: 'dark', toggleColorMode: () => { } }}>
+                <ThemeProvider theme={theme}>
+                    <div style={{ visibility: 'hidden' }}>
+                        {children}
+                    </div>
+                </ThemeProvider>
+            </ColorModeContext.Provider>
+        );
+    }
 
     return (
         <ColorModeContext.Provider value={{ mode, toggleColorMode }}>

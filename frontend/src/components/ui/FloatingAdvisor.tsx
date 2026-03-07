@@ -21,6 +21,11 @@ export default function FloatingAdvisor() {
     const [isGreetingVisible, setIsGreetingVisible] = useState(false);
     const [input, setInput] = useState('');
     const [isThinking, setIsThinking] = useState(false);
+    const [hasMounted, setHasMounted] = useState(false);
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     // Auto-hide greeting after 7 seconds
     useEffect(() => {
@@ -82,7 +87,7 @@ export default function FloatingAdvisor() {
 
     // Feature: Hide on mobile
     // Feature: Hide on /advisor and /sectors pages
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const isMobile = hasMounted ? window.innerWidth < 768 : false;
     const isAdvisorPage = pathname?.startsWith('/advisor');
     const isSectorsPage = pathname?.startsWith('/sectors');
     const isAuthPage = pathname === '/login' || pathname === '/signup';

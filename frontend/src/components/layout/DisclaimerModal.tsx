@@ -9,8 +9,10 @@ export default function DisclaimerModal() {
     const [open, setOpen] = useState(false);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const [hasMounted, setHasMounted] = useState(false);
 
     useEffect(() => {
+        setHasMounted(true);
         const hasAcknowledged = sessionStorage.getItem('clarity_disclaimer_acknowledged');
         if (!hasAcknowledged) {
             setOpen(true);
@@ -26,8 +28,8 @@ export default function DisclaimerModal() {
 
     return (
         <Dialog
-            open={open}
-            fullScreen={isMobile}
+            open={hasMounted ? open : false} // Hydration safe: initial is false
+            fullScreen={hasMounted ? isMobile : false} // Hydration safe
             maxWidth="md"
             fullWidth
             PaperProps={{
