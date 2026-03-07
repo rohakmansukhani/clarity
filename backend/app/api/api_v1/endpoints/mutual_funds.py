@@ -21,20 +21,18 @@ class LumpsumRequest(BaseModel):
     return_pct: float
     tenure_years: int
 
+class MFHoldingCreate(BaseModel):
+    scheme_code: str
+    scheme_name: str
+    units: float
+    avg_nav: float
+
 @router.get("/search")
 async def search_mutual_funds(q: str):
     """Search for mutual funds by scheme name"""
     if not q or len(q) < 3:
         return []
     return await mf_service.search_funds(q)
-
-@router.get("/{scheme_code}")
-async def get_mutual_fund_details(scheme_code: str):
-    """Get scheme details and NAV history"""
-    details = await mf_service.get_fund_details(scheme_code)
-    if not details:
-        raise HTTPException(status_code=404, detail="Scheme not found")
-    return details
 
 @router.post("/calculator/sip")
 async def calculate_sip(req: SIPRequest):
@@ -45,12 +43,6 @@ async def calculate_sip(req: SIPRequest):
 async def calculate_lumpsum(req: LumpsumRequest):
     """Calculate lumpsum returns"""
     return sip_calc.calculate_lumpsum(req.amount, req.return_pct, req.tenure_years)
-
-class MFHoldingCreate(BaseModel):
-    scheme_code: str
-    scheme_name: str
-    units: float
-    avg_nav: float
 
 @router.get("/holdings")
 async def get_holdings(
@@ -119,3 +111,11 @@ async def delete_holding(
         return {"message": "Holding deleted"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{scheme_code}")
+async def get_mutual_fund_details(scheme_code: str):
+    """Get scheme details and NAV history"""
+    details = await mf_service.get_fund_details(scheme_code)
+    if not details:
+        raise HTTPException(status_code=404, detail="Scheme not found")
+    return details

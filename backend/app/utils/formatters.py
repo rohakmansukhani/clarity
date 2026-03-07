@@ -63,3 +63,16 @@ def format_percent(value: float, decimals: int = 2) -> str:
     """Format percentage with + or - sign."""
     sign = "+" if value >= 0 else ""
     return f"{sign}{value:.{decimals}f}%"
+
+
+def safe_float(value: Any, default: Optional[float] = 0.0) -> Optional[float]:
+    """
+    Safely convert value to float, handling empty strings and None.
+    Returns default if conversion fails.
+    """
+    if value is None or value == '':
+        return default
+    try:
+        return float(str(value).replace(',', '').strip())
+    except (ValueError, TypeError):
+        return default

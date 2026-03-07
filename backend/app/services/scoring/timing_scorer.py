@@ -1,6 +1,5 @@
-import logging
-import numpy as np
 import pandas as pd
+from app.utils.formatters import safe_float
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +94,7 @@ class TimingScoreEngine:
         score = 15 # Start neutral
         metrics = {}
         
-        pe = float(fundamentals.get("trailingPE", 0))
+        pe = safe_float(fundamentals.get("trailingPE"), 0)
         metrics["pe"] = round(pe, 2)
         
         # Simple heuristic since we lack sector PE currently
@@ -103,7 +102,7 @@ class TimingScoreEngine:
         if 0 < pe < 20: score += 10
         elif pe > 50: score -= 5
         
-        pb = float(fundamentals.get("priceToBook", 0))
+        pb = safe_float(fundamentals.get("priceToBook"), 0)
         metrics["pb"] = round(pb, 2)
         if 0 < pb < 3: score += 5
         

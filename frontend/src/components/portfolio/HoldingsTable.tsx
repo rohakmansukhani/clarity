@@ -161,7 +161,7 @@ export default function HoldingsTable({ portfolio, onDelete, onAlert, onUpdate }
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleMenuClose(stock.id || stock.ticker);
-                                                if (onDelete && stock.id) onDelete(stock.id);
+                                                if (onDelete) onDelete(stock.id);
                                             }}
                                             sx={{ color: 'error.main', '&:hover': { bgcolor: 'action.hover' } }}
                                         >

@@ -367,7 +367,7 @@ export default function PortfolioPage() {
                                                     <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(0, 229, 255, 0.1)', color: 'primary.main' }}>
                                                         <Folder size={24} />
                                                     </Box>
-                                                    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>{p.name}</Typography>
+                                                    <Typography variant="h6" sx={{ color: mode === 'dark' ? '#fff' : '#000', fontWeight: 600 }}>{p.name}</Typography>
                                                 </Box>
                                                 <IconButton
                                                     size="small"
@@ -473,7 +473,7 @@ export default function PortfolioPage() {
                                             </Box>
                                         ) : (
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-1px', color: 'text.primary' }}>
+                                                <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-1px', color: mode === 'dark' ? '#fff' : '#000' }}>
                                                     {activePortfolio.name}
                                                 </Typography>
                                                 <IconButton

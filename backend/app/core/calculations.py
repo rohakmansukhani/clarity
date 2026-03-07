@@ -58,7 +58,13 @@ SYMBOL_MAP = {
     "BHARTIARTL": "BHARTIARTL",
     "ITC": "ITC",
     "BAJFINANCE": "BAJFINANCE",
-    "KOTAKBANK": "KOTAKBANK"
+    "KOTAKBANK": "KOTAKBANK",
+    "TATA": "TATASTEEL",
+    "ADANI": "ADANIENT",
+    "BAJAJ": "BAJFINANCE",
+    "HDFC": "HDFCBANK",
+    "SBI": "SBIN",
+    "ICICI": "ICICIBANK"
 }
 
 # Fuzzy Search Nicknames

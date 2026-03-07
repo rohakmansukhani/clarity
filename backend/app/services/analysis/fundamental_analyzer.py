@@ -1,5 +1,5 @@
-import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+from app.utils.formatters import safe_float
 
 logger = logging.getLogger(__name__)
 
@@ -14,16 +14,16 @@ class FundamentalAnalyzer:
         """
         try:
             # Extract key metrics
-            pe = float(fundamentals.get('trailingPE', 0))
-            pb = float(fundamentals.get('priceToBook', 0))
-            de = float(fundamentals.get('debtToEquity', 0)) / 100
-            roe = float(fundamentals.get('returnOnEquity', 0)) * 100
-            profit_margin = float(fundamentals.get('profitMargin', 0)) * 100
-            revenue_growth = float(fundamentals.get('revenueGrowth', 0)) * 100
+            pe = safe_float(fundamentals.get('trailingPE'), 0)
+            pb = safe_float(fundamentals.get('priceToBook'), 0)
+            de = safe_float(fundamentals.get('debtToEquity'), 0) / 100
+            roe = safe_float(fundamentals.get('returnOnEquity'), 0) * 100
+            profit_margin = safe_float(fundamentals.get('profitMargin'), 0) * 100
+            revenue_growth = safe_float(fundamentals.get('revenueGrowth', 0)) * 100
             
             # Liquidity
-            current_ratio = float(fundamentals.get('currentRatio', 0))
-            quick_ratio = float(fundamentals.get('quickRatio', 0))
+            current_ratio = safe_float(fundamentals.get('currentRatio'), 0)
+            quick_ratio = safe_float(fundamentals.get('quickRatio'), 0)
             
             # Health Score (0-100)
             health_score = self._calc_health_score(pe, pb, de, roe, profit_margin, current_ratio)
@@ -43,15 +43,15 @@ class FundamentalAnalyzer:
                 "financial_health": financial_health,
                 "growth_potential": growth_potential,
                 "key_metrics": {
-                    "pe_ratio": round(pe, 2),
-                    "forward_pe": round(float(fundamentals.get('forwardPE', 0)), 2),
-                    "pb_ratio": round(pb, 2),
-                    "debt_equity": round(de, 2),
-                    "roe": f"{roe:.2f}%",
-                    "profit_margin": f"{profit_margin:.2f}%",
-                    "revenue_growth": f"{revenue_growth:.2f}%",
-                    "current_ratio": round(current_ratio, 2),
-                    "quick_ratio": round(quick_ratio, 2)
+                    "pe_ratio": round(pe, 2) if pe > 0 else None,
+                    "forward_pe": round(safe_float(fundamentals.get('forwardPE'), 0), 2) or None,
+                    "pb_ratio": round(pb, 2) if pb > 0 else None,
+                    "debt_equity": round(de, 2) if de > 0 else None,
+                    "roe": f"{roe:.2f}%" if roe != 0 else None,
+                    "profit_margin": f"{profit_margin:.2f}%" if profit_margin != 0 else None,
+                    "revenue_growth": f"{revenue_growth:.2f}%" if revenue_growth != 0 else None,
+                    "current_ratio": round(current_ratio, 2) if current_ratio > 0 else None,
+                    "quick_ratio": round(quick_ratio, 2) if quick_ratio > 0 else None
                 }
             }
             
@@ -105,7 +105,8 @@ class FundamentalAnalyzer:
         """Assess valuation level with forward PE context if available."""
         is_undervalued = pe < 15 and pb < 2
         
-        if forward_pe and float(forward_pe) < pe:
+        fwd_pe_val = safe_float(forward_pe, None)
+        if fwd_pe_val is not None and fwd_pe_val < pe:
             earnings_outlook = "Earnings expected to improve"
         else:
             earnings_outlook = "Neutral earnings outlook"

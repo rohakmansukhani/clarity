@@ -251,6 +251,7 @@ async def get_portfolio_performance(
             gain_pct = (gain / invested_val * 100) if invested_val > 0 else 0.0
             
             return {
+                "id": h.get("id"),
                 "ticker": symbol,
                 "shares": shares,
                 "avg_price": avg_price,
