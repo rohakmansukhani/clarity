@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Box, Typography, TextField, InputAdornment, useTheme } from '@mui/material';
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Box, Typography, useTheme } from '@mui/material';
+import { TrendingUp, TrendingDown, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface BacktrackInlineProps {
@@ -12,9 +12,48 @@ interface BacktrackInlineProps {
     timeRange: string;
 }
 
+// Animated counter hook
+function useAnimatedNumber(target: number, duration = 600) {
+    const [display, setDisplay] = useState(target);
+    const raf = useRef<number | null>(null);
+    const startRef = useRef<number | null>(null);
+    const fromRef = useRef(target);
+
+    useEffect(() => {
+        const from = fromRef.current;
+        const to = target;
+        if (Math.abs(to - from) < 0.01) {
+            setDisplay(to);
+            return;
+        }
+        startRef.current = null;
+        const animate = (timestamp: number) => {
+            if (!startRef.current) startRef.current = timestamp;
+            const elapsed = timestamp - startRef.current;
+            const progress = Math.min(elapsed / duration, 1);
+            // ease out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setDisplay(from + (to - from) * eased);
+            if (progress < 1) {
+                raf.current = requestAnimationFrame(animate);
+            } else {
+                fromRef.current = to;
+            }
+        };
+        raf.current = requestAnimationFrame(animate);
+        return () => {
+            if (raf.current) cancelAnimationFrame(raf.current);
+            fromRef.current = target;
+        };
+    }, [target, duration]);
+
+    return display;
+}
+
 const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, currentPrice, timeRange }) => {
     const theme = useTheme();
-    const [amount, setAmount] = useState<number>(1000);
+    const [amount, setAmount] = useState<number>(10000);
+    const isDark = theme.palette.mode === 'dark';
 
     if (!startPrice || !currentPrice || startPrice <= 0) return null;
 
@@ -23,6 +62,10 @@ const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, c
     const pnl = finalValue - amount;
     const pnlPercent = (pnl / amount) * 100;
     const isPositive = pnl >= 0;
+
+    const positiveColor = '#10B981';
+    const negativeColor = '#EF4444';
+    const accentColor = isPositive ? positiveColor : negativeColor;
 
     const formatRange = (range: string) => {
         const r = range.toLowerCase();
@@ -34,77 +77,192 @@ const BacktrackInline: React.FC<BacktrackInlineProps> = ({ symbol, startPrice, c
         if (r === '1y') return '1 year ago';
         if (r === '3y') return '3 years ago';
         if (r === '5y') return '5 years ago';
-        if (r === 'ytd') return 'since start of year';
+        if (r === 'ytd') return 'since Jan 1';
         if (r === 'max' || r === 'all') return 'at listing';
         return range.toUpperCase();
+    };
+
+    const AnimatedValue: React.FC<{ value: number }> = ({ value }) => {
+        const animated = useAnimatedNumber(value);
+        return <>{animated.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</>;
+    };
+
+    const AnimatedPnl: React.FC<{ value: number }> = ({ value }) => {
+        const animated = useAnimatedNumber(Math.abs(value));
+        return <>{animated.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</>;
+    };
+
+    const AnimatedPercent: React.FC<{ value: number }> = ({ value }) => {
+        const animated = useAnimatedNumber(value);
+        return <>{animated.toFixed(2)}</>;
     };
 
     return (
         <Box
             component={motion.div}
-            initial={{ opacity: 0, y: -10 }}
+            key={`${timeRange}-${startPrice}`}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
             sx={{
                 mb: 3,
-                px: 3,
-                py: 2,
-                borderRadius: 3,
-                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)',
-                border: `1px solid ${theme.palette.divider}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: 2
+                borderRadius: 4,
+                overflow: 'hidden',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'}`,
+                bgcolor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.015)',
+                position: 'relative',
             }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-                <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
-                    If you had invested
-                </Typography>
+            {/* Accent bar at top */}
+            <Box sx={{
+                height: 3,
+                background: isPositive
+                    ? 'linear-gradient(90deg, #10B981, #34D399)'
+                    : 'linear-gradient(90deg, #EF4444, #F87171)',
+            }} />
 
-                <Box sx={{ display: 'flex', alignItems: 'center', borderBottom: `1px dashed ${theme.palette.primary.main}`, pb: 0.2 }}>
-                    <Typography sx={{ color: theme.palette.primary.main, fontWeight: 700, mr: 0.5 }}>₹</Typography>
-                    <input
-                        type="number"
-                        value={amount}
-                        onChange={(e) => setAmount(Number(e.target.value))}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: theme.palette.primary.main,
-                            fontWeight: 700,
-                            fontSize: '1rem',
-                            width: `${Math.max(40, amount.toString().length * 10)}px`,
-                            outline: 'none',
-                            padding: 0
+            <Box sx={{ px: 3, pt: 2.5, pb: 3 }}>
+                {/* Header row */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2.5 }}>
+                    <Clock size={13} color={theme.palette.text.disabled} />
+                    <Typography
+                        variant="caption"
+                        sx={{
+                            color: theme.palette.text.disabled,
+                            fontWeight: 600,
+                            letterSpacing: '0.08em',
+                            textTransform: 'uppercase',
                         }}
-                    />
+                    >
+                        Backtrack · {formatRange(timeRange)}
+                    </Typography>
                 </Box>
 
-                <Typography variant="body1" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
-                    {formatRange(timeRange)}, it would be worth
-                </Typography>
+                {/* Main content row */}
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 2,
+                }}>
+                    {/* Left: sentence */}
+                    <Box>
+                        <Typography
+                            variant="body2"
+                            sx={{ color: theme.palette.text.secondary, mb: 0.75, fontWeight: 500 }}
+                        >
+                            If you invested
+                        </Typography>
 
-                <Typography variant="h6" sx={{ color: theme.palette.text.primary, fontWeight: 800 }}>
-                    ₹{finalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </Typography>
-            </Box>
+                        {/* Editable amount */}
+                        <Box sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            borderBottom: `2px solid ${theme.palette.primary.main}`,
+                            pb: 0.25,
+                            mb: 1.5,
+                        }}>
+                            <Typography sx={{
+                                fontWeight: 800,
+                                fontSize: '1.5rem',
+                                color: theme.palette.primary.main,
+                                lineHeight: 1,
+                            }}>
+                                ₹
+                            </Typography>
+                            <input
+                                type="number"
+                                value={amount}
+                                onChange={(e) => setAmount(Math.max(1, Number(e.target.value)))}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: theme.palette.primary.main,
+                                    fontWeight: 800,
+                                    fontSize: '1.5rem',
+                                    lineHeight: 1,
+                                    width: `${Math.max(60, amount.toString().length * 14)}px`,
+                                    outline: 'none',
+                                    padding: 0,
+                                }}
+                            />
+                        </Box>
 
-            <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                px: 2,
-                py: 0.75,
-                borderRadius: 2,
-                bgcolor: isPositive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                color: isPositive ? '#10B981' : '#EF4444'
-            }}>
-                {isPositive ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                    {isPositive ? '+' : ''}₹{Math.abs(pnl).toLocaleString(undefined, { maximumFractionDigits: 0 })} ({pnlPercent.toFixed(2)}%)
-                </Typography>
+                        <Typography
+                            variant="body2"
+                            sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
+                        >
+                            would now be worth
+                        </Typography>
+                        <Typography
+                            component={motion.p}
+                            key={finalValue}
+                            initial={{ opacity: 0.3 }}
+                            animate={{ opacity: 1 }}
+                            sx={{
+                                fontWeight: 800,
+                                fontSize: '2rem',
+                                color: theme.palette.text.primary,
+                                lineHeight: 1.1,
+                                mt: 0.5,
+                                letterSpacing: '-0.02em',
+                            }}
+                        >
+                            ₹<AnimatedValue value={finalValue} />
+                        </Typography>
+                    </Box>
+
+                    {/* Right: P&L badge */}
+                    <Box
+                        component={motion.div}
+                        key={`pnl-${isPositive}`}
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            px: 3,
+                            py: 2,
+                            borderRadius: 3,
+                            bgcolor: isPositive ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                            border: `1px solid ${isPositive ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                            minWidth: 120,
+                            gap: 0.5,
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
+                            {isPositive
+                                ? <TrendingUp size={18} color={positiveColor} />
+                                : <TrendingDown size={18} color={negativeColor} />
+                            }
+                            <Typography sx={{ fontWeight: 800, fontSize: '1.1rem', color: accentColor }}>
+                                {isPositive ? '+' : '-'}₹<AnimatedPnl value={pnl} />
+                            </Typography>
+                        </Box>
+                        <Typography sx={{
+                            fontWeight: 700,
+                            fontSize: '0.85rem',
+                            color: accentColor,
+                            opacity: 0.85,
+                        }}>
+                            <AnimatePresence mode="wait">
+                                <motion.span
+                                    key={pnlPercent.toFixed(1)}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                >
+                                    {isPositive ? '+' : ''}<AnimatedPercent value={pnlPercent} />%
+                                </motion.span>
+                            </AnimatePresence>
+                        </Typography>
+                    </Box>
+                </Box>
             </Box>
         </Box>
     );

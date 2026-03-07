@@ -7,7 +7,6 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 import NAVChart from '@/components/mutual-funds/NAVChart';
-import SIPCalculator from '@/components/mutual-funds/SIPCalculator';
 import BacktrackInline from '@/components/stocks/BacktrackInline';
 import { mutualFundService, MutualFundDetails } from '@/services/mutualFundService';
 import { useColorMode } from '@/theme/ThemeContext';
@@ -24,6 +23,7 @@ export default function MutualFundDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [period, setPeriod] = useState<string>('1Y');
+    const [activeTab, setActiveTab] = useState(0);
 
     // Toast State
     const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -247,39 +247,87 @@ export default function MutualFundDetailsPage() {
                             </Box>
                         </Box>
 
-                        {/* Backtrack Inline Integration */}
-                        {(() => {
-                            if (!details.data || details.data.length === 0) return null;
+                        {/* Tabbed Panel: Fund Info | Backtrack */}
+                        <Box sx={{ mb: 6 }}>
+                            {/* Tab Headers */}
+                            <Box sx={{ display: 'flex', gap: 1, mb: 3, borderBottom: `1px solid ${theme.palette.divider}` }}>
+                                {['Fund Info', 'Backtrack'].map((label, idx) => (
+                                    <Button
+                                        key={label}
+                                        onClick={() => setActiveTab(idx)}
+                                        disableRipple
+                                        sx={{
+                                            pb: 1.5,
+                                            px: 0.5,
+                                            mr: 2,
+                                            fontWeight: activeTab === idx ? 700 : 500,
+                                            fontSize: '0.95rem',
+                                            color: activeTab === idx ? theme.palette.text.primary : theme.palette.text.secondary,
+                                            borderRadius: 0,
+                                            borderBottom: activeTab === idx ? `2px solid ${theme.palette.primary.main}` : '2px solid transparent',
+                                            bgcolor: 'transparent',
+                                            '&:hover': { bgcolor: 'transparent', color: theme.palette.text.primary },
+                                            transition: 'all 0.2s',
+                                        }}
+                                    >
+                                        {label}
+                                    </Button>
+                                ))}
+                            </Box>
 
-                            // Find start price based on period
-                            const reversed = [...details.data].reverse();
-                            const now = new Date();
-                            const cutoff = new Date();
-                            switch (period) {
-                                case '1M': cutoff.setMonth(now.getMonth() - 1); break;
-                                case '6M': cutoff.setMonth(now.getMonth() - 6); break;
-                                case '1Y': cutoff.setFullYear(now.getFullYear() - 1); break;
-                                case '3Y': cutoff.setFullYear(now.getFullYear() - 3); break;
-                                case '5Y': cutoff.setFullYear(now.getFullYear() - 5); break;
-                                default: cutoff.setFullYear(1900); break;
-                            }
-                            const filtered = reversed.filter(item => {
-                                const itemDate = parse(item.date, 'dd-MM-yyyy', new Date());
-                                return itemDate >= cutoff;
-                            });
+                            {/* Tab Content */}
+                            {activeTab === 0 && (
+                                <Box sx={{
+                                    p: 3, borderRadius: 3,
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    bgcolor: mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)',
+                                    display: 'flex', flexDirection: 'column', gap: 1.5
+                                }}>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Fund Details</Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                        <strong style={{ color: theme.palette.text.primary }}>Category:</strong> {details.meta.scheme_category || 'N/A'}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                        <strong style={{ color: theme.palette.text.primary }}>Type:</strong> {details.meta.scheme_type || 'N/A'}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                        <strong style={{ color: theme.palette.text.primary }}>Fund House:</strong> {details.meta.fund_house || 'N/A'}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                        <strong style={{ color: theme.palette.text.primary }}>Scheme Code:</strong> {details.meta.scheme_code}
+                                    </Typography>
+                                </Box>
+                            )}
 
-                            const startPrice = filtered.length > 0 ? parseFloat(filtered[0].nav) : 0;
-                            const currentPrice = parseFloat(details.data[0].nav);
-
-                            return (
-                                <BacktrackInline
-                                    symbol={details.meta.scheme_name}
-                                    startPrice={startPrice}
-                                    currentPrice={currentPrice}
-                                    timeRange={period}
-                                />
-                            );
-                        })()}
+                            {activeTab === 1 && (() => {
+                                if (!details.data || details.data.length === 0) return null;
+                                const reversed = [...details.data].reverse();
+                                const now = new Date();
+                                const cutoff = new Date();
+                                switch (period) {
+                                    case '1M': cutoff.setMonth(now.getMonth() - 1); break;
+                                    case '6M': cutoff.setMonth(now.getMonth() - 6); break;
+                                    case '1Y': cutoff.setFullYear(now.getFullYear() - 1); break;
+                                    case '3Y': cutoff.setFullYear(now.getFullYear() - 3); break;
+                                    case '5Y': cutoff.setFullYear(now.getFullYear() - 5); break;
+                                    default: cutoff.setFullYear(1900); break;
+                                }
+                                const filtered = reversed.filter(item => {
+                                    const itemDate = parse(item.date, 'dd-MM-yyyy', new Date());
+                                    return itemDate >= cutoff;
+                                });
+                                const startPrice = filtered.length > 0 ? parseFloat(filtered[0].nav) : 0;
+                                const currentPrice = parseFloat(details.data[0].nav);
+                                return (
+                                    <BacktrackInline
+                                        symbol={details.meta.scheme_name}
+                                        startPrice={startPrice}
+                                        currentPrice={currentPrice}
+                                        timeRange={period}
+                                    />
+                                );
+                            })()}
+                        </Box>
                     </Grid>
 
                     {/* Right Column: Stats & Actions */}
@@ -381,10 +429,6 @@ export default function MutualFundDetailsPage() {
                     </Grid>
                 </Grid>
 
-                {/* SIP Calculator - Below Grid */}
-                <Box sx={{ mt: 6 }}>
-                    <SIPCalculator navData={details.data || []} />
-                </Box>
 
                 {/* Global Toast */}
                 <Snackbar

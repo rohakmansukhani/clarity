@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Box, List, ListItem, ListItemButton, Tooltip, IconButton, useMediaQuery, useTheme } from '@mui/material';
-import { LayoutDashboard, TrendingUp, PieChart, MessageSquare, LogOut, Menu, X, ChevronRight, ChevronLeft, Eye, RotateCcw, BarChart2, Compass, Moon, Sun, Landmark } from 'lucide-react';
+import { LayoutDashboard, TrendingUp, PieChart, MessageSquare, LogOut, Menu, X, ChevronRight, ChevronLeft, Eye, RotateCcw, BarChart2, Compass, Moon, Sun, Landmark, Calculator } from 'lucide-react';
 import { useUIStore } from '@/lib/ui-store';
 import { useColorMode } from '@/theme/ThemeContext';
 import { usePathname, useRouter } from 'next/navigation';
@@ -15,8 +15,8 @@ const MENU_ITEMS = [
     { label: 'Buy List', icon: Eye, path: '/watchlist' },
     { label: 'Comparison', icon: BarChart2, path: '/analysis' },
     { label: 'Mutual Funds', icon: Landmark, path: '/mutual-funds' },
+    { label: 'SIP Calculator', icon: Calculator, path: '/calculator' },
     { label: 'Advisor', icon: MessageSquare, path: '/advisor' },
-
 ];
 
 export default function Sidebar() {
