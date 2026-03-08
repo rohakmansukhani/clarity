@@ -77,13 +77,16 @@ const formatCurrency = (val: number) =>
 function calcSIP(amount: number, r: number, years: number): Result {
     const mr = r / 12 / 100;
     const n = years * 12;
+    if (mr === 0) {
+        return { totalInvestment: amount * n, wealthGain: 0, maturityValue: amount * n };
+    }
     const mat = amount * (((Math.pow(1 + mr, n) - 1) / mr) * (1 + mr));
-    return { totalInvestment: amount * n, wealthGain: mat - amount * n, maturityValue: mat };
+    return { totalInvestment: amount * n, wealthGain: mat - amount * n, maturityValue: Math.max(0, mat) };
 }
 
 function calcLumpsum(amount: number, r: number, years: number): Result {
     const mat = amount * Math.pow(1 + r / 100, years);
-    return { totalInvestment: amount, wealthGain: mat - amount, maturityValue: mat };
+    return { totalInvestment: amount, wealthGain: mat - amount, maturityValue: Math.max(0, mat) };
 }
 
 export default function CalculatorPage() {
@@ -175,7 +178,7 @@ export default function CalculatorPage() {
         const a = parseFloat(amount);
         const r = parseFloat(returnRate);
         const t = parseFloat(tenure);
-        if (isNaN(a) || isNaN(r) || isNaN(t) || a <= 0 || r <= 0 || t <= 0) return;
+        if (isNaN(a) || isNaN(r) || isNaN(t) || a <= 0 || t <= 0) return;
         setCalcResult(type === 'sip' ? calcSIP(a, r, t) : calcLumpsum(a, r, t));
     };
 

@@ -107,6 +107,10 @@ export default function Sidebar() {
                             border: `1px solid ${theme.palette.divider}`, // Border for visibility
                             borderRadius: 4, // Rounded Corners
                             zIndex: 50,
+                            overflowY: 'auto',
+                            scrollbarWidth: 'none', // Firefox
+                            msOverflowStyle: 'none', // IE and Edge
+                            '&::-webkit-scrollbar': { display: 'none' }, // Chrome/Safari
                         }}
                     >
                         {/* Internal Close Button */}
