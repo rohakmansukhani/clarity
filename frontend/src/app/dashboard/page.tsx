@@ -255,7 +255,8 @@ export default function DashboardPage() {
                                 </Box>
                             ) : (
                                 <Grid container spacing={4}>
-                                    <Grid size={{ xs: 12, sm: 2.4 }}>
+                                    {/* Line 1: Total Value & Invested */}
+                                    <Grid size={{ xs: 6, sm: 6 }}>
                                         <Box>
                                             <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL VALUE</Typography>
                                             <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5, color: theme.palette.text.primary }}>
@@ -263,7 +264,7 @@ export default function DashboardPage() {
                                             </Typography>
                                         </Box>
                                     </Grid>
-                                    <Grid size={{ xs: 12, sm: 2.4 }}>
+                                    <Grid size={{ xs: 6, sm: 6 }}>
                                         <Box>
                                             <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>INVESTED</Typography>
                                             <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
@@ -271,29 +272,33 @@ export default function DashboardPage() {
                                             </Typography>
                                         </Box>
                                     </Grid>
-                                    <Grid size={{ xs: 12, sm: 2.4 }}>
+
+                                    {/* Line 2: Total P&L */}
+                                    <Grid size={{ xs: 12 }}>
                                         <Box>
                                             <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>TOTAL P&L</Typography>
                                             <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5, color: netWorth.gain >= 0 ? theme.palette.success.main : theme.palette.error.main }}>
                                                 ₹{netWorth.gain.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                                <Typography component="span" variant="caption" sx={{ ml: 0.5, fontWeight: 600 }}>
+                                                <Typography component="span" variant="caption" sx={{ ml: 1, fontWeight: 600, fontSize: '1rem' }}>
                                                     ({netWorth.gainPct >= 0 ? '+' : ''}{netWorth.gainPct.toFixed(2)}%)
                                                 </Typography>
                                             </Typography>
                                         </Box>
                                     </Grid>
-                                    <Grid size={{ xs: 12, sm: 2.4 }}>
+
+                                    {/* Line 3: Asset Split */}
+                                    <Grid size={{ xs: 6, sm: 6 }}>
                                         <Box>
                                             <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>STOCKS</Typography>
-                                            <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
+                                            <Typography variant="h5" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
                                                 ₹{netWorth.stocks.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                             </Typography>
                                         </Box>
                                     </Grid>
-                                    <Grid size={{ xs: 12, sm: 2.4 }}>
+                                    <Grid size={{ xs: 6, sm: 6 }}>
                                         <Box>
                                             <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, letterSpacing: '0.05em' }}>MUTUAL FUNDS</Typography>
-                                            <Typography variant="h4" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
+                                            <Typography variant="h5" sx={{ fontWeight: 600, my: 0.5, color: theme.palette.text.primary }}>
                                                 ₹{netWorth.mf.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                             </Typography>
                                         </Box>
