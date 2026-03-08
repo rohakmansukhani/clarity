@@ -203,7 +203,7 @@ export default function CalculatorPage() {
                     px: { xs: 2, md: 4 },
                     pt: { xs: 4, md: 10 },
                     pb: 12,
-                    pl: { xs: 2, md: '140px' },
+                    pl: { xs: 2, md: '120px' },
                 }}
             >
                 {/* Header */}

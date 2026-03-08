@@ -163,7 +163,6 @@ export default function AddToWatchlistModal({ open, onClose, onAdd, initialTicke
                             INVESTMENT THESIS (THE &quot;WHY&quot;)
                         </Typography>
                         <TextField
-                            label="Why are you watching this?"
                             multiline
                             rows={3}
                             fullWidth

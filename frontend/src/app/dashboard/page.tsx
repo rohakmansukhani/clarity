@@ -163,7 +163,7 @@ export default function DashboardPage() {
                 px: { xs: 2, md: 6 },
                 pt: { xs: 4, md: 6 },
                 pb: 4,
-                ml: { md: '140px' }
+                pl: { md: '120px' }
             }}>
                 {/* Header: Minimal Greeting + Search */}
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, mb: { xs: 4, md: 8 }, gap: { xs: 3, md: 0 } }}>

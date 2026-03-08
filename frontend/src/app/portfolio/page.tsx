@@ -279,7 +279,7 @@ export default function PortfolioPage() {
                     pt: 6,
                     minHeight: '100dvh',
                     pr: { xs: 2, md: 6 },
-                    pl: { xs: 2, md: '140px' },
+                    pl: { xs: 2, md: '120px' },
                     position: 'relative',
                     zIndex: 1
                 }}

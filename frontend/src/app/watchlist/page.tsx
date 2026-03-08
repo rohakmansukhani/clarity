@@ -127,7 +127,7 @@ export default function WatchlistPage() {
             <Box sx={{
                 flexGrow: 1,
                 p: { xs: 2, md: 4 },
-                pl: { xs: 2, md: '140px' },
+                pl: { xs: 2, md: '120px' },
                 maxWidth: 1600,
                 mx: 'auto',
                 position: 'relative',

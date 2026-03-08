@@ -284,7 +284,7 @@ export default function AnalysisPage() {
             <Box component="main" sx={{
                 flexGrow: 1,
                 p: { xs: 2, md: 6 },
-                ml: { md: '140px' },
+                ml: { md: '120px' },
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
