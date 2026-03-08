@@ -228,7 +228,7 @@ export default function AnalysisPage() {
                         </Box>
 
                         <Box>
-                            <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.03em', mb: 1 }}>
+                            <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.03em', mb: 1, color: theme.palette.text.primary }}>
                                 Built for Desktop
                             </Typography>
                             <Typography variant="body2" sx={{ color: theme.palette.text.secondary, lineHeight: 1.7 }}>

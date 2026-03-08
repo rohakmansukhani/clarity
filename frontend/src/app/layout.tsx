@@ -10,6 +10,16 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Clarity | The Ease of Stock Research',
   description: 'Uncomplicate the market with AI-powered financial insights.',
+  // Controls the browser chrome color on iOS Safari and Android Chrome
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0B0B0B' },
+  ],
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    viewportFit: 'cover',  // Allows content to extend into safe areas
+  },
 }
 
 export default function RootLayout({

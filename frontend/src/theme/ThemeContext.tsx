@@ -58,11 +58,11 @@ export const ColorModeProvider = ({ children }: { children: React.ReactNode }) =
     const theme = useMemo(() => createTheme(getThemeConfig(mode)), [mode]);
 
     // IMPORTANT: No conditional early return here — that violates the Rules of Hooks (Error #300).
-    // Instead, we use CSS visibility to hide children until mounted, preventing theme flash.
+    // Use display:contents so this wrapper doesn't break any flex/grid layouts (e.g. Sidebar + page).
     return (
         <ColorModeContext.Provider value={{ mode, toggleColorMode }}>
             <ThemeProvider theme={theme}>
-                <div style={mounted ? undefined : { visibility: 'hidden' }}>
+                <div style={mounted ? { display: 'contents' } : { display: 'contents', visibility: 'hidden' }}>
                     {children}
                 </div>
             </ThemeProvider>

@@ -432,7 +432,7 @@ export default function AdvisorClient() {
                     left: 0,
                     right: 0,
                     zIndex: 10,
-                    pl: { xs: '80px', md: '120px' }
+                    pl: { xs: '60px', md: '120px' }
                 }}>
                     <Box sx={{ display: 'flex', gap: 2 }}>
                         <IconButton
@@ -559,7 +559,7 @@ export default function AdvisorClient() {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className="flex flex-col items-center justify-center h-full text-center space-y-8 mt-20"
+                                className="flex flex-col items-center justify-center h-full text-center space-y-8 mt-10 md:mt-20"
                             >
                                 <motion.div
                                     animate={{ y: [0, -10, 0] }}
