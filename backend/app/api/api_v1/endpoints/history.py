@@ -39,10 +39,11 @@ def list_chat_sessions(
 ):
     """List all chat sessions for the current user, optionally filtered by type."""
     try:
-        # Fetch sessions sorted by updated_at desc
+        # Fetch sessions sorted by updated_at desc, ignoring legacy "Quick Chat" transient sessions
         query = supabase.table("chat_sessions")\
             .select("*")\
-            .eq("user_id", user.id)
+            .eq("user_id", user.id)\
+            .neq("title", "Quick Chat")
             
         if type:
             query = query.eq("type", type)

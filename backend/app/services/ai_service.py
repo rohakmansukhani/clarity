@@ -276,11 +276,23 @@ class AIService:
                 )
                 
                 response_text = final_response.choices[0].message.content.strip()
+            else:
+                # Direct response without tools
+                response_text = response_message.content.strip() if response_message.content else ""
                 
-                return {
-                    "response": response_text,
-                    "suggest_switch": None
-                }
+            # Parse suggest_switch if outputted by the LLM
+            suggest_switch = None
+            if "__SUGGEST_SWITCH_TO_ADVISOR__" in response_text:
+                suggest_switch = "advisor"
+                response_text = response_text.replace("__SUGGEST_SWITCH_TO_ADVISOR__", "").strip()
+            elif "__SUGGEST_SWITCH_TO_DISCOVERY_HUB__" in response_text:
+                suggest_switch = "discovery_hub"
+                response_text = response_text.replace("__SUGGEST_SWITCH_TO_DISCOVERY_HUB__", "").strip()
+                
+            return {
+                "response": response_text,
+                "suggest_switch": suggest_switch
+            }
                                     
         except Exception as e:
             logger.error(f"Groq Agent Error: {e}")

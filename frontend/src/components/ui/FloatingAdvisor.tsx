@@ -107,43 +107,24 @@ export default function FloatingAdvisor() {
         incrementInteraction();
 
         try {
-            // HISTORY SAVING LOGIC (Only if NOT on Auth Page)
-            let currentSessionId = quickSessionId;
-
-            if (!isAuthPage) {
-                // 1. Create session if needed
-                if (!currentSessionId) {
-                    try {
-                        const newSession = await marketService.createSession("Quick Chat", []);
-                        currentSessionId = newSession.id;
-                        setQuickSessionId(newSession.id);
-                    } catch (e) {
-                        console.error("Failed to create session", e);
-                    }
-                }
-
-                // 2. Save User Message
-                if (currentSessionId) {
-                    await marketService.addMessageToSession(currentSessionId, 'user', text);
-                }
-            }
-
             // Call Backend AI with Context
             const context = isAuthPage ? { type: 'auth_help' } : { type: 'floating' };
-            const responseData = await marketService.chatWithAI(text, context);
-            const responseText = responseData.response;
+
+            // Pass previous transient messages as history so LLM has context
+            const conversationHistory = quickChatMessages.map(msg => ({
+                role: msg.role,
+                content: msg.content
+            }));
+
+            const responseData = await marketService.chatWithAI(text, context, conversationHistory);
+            const responseText = responseData?.response || "Sorry, I couldn't process that request right now.";
 
             addMessage({
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
                 content: responseText,
-                suggest_switch: responseData.suggest_switch
+                suggest_switch: responseData?.suggest_switch || null
             });
-
-            // 3. Save Assistant Message (Only if NOT on Auth Page)
-            if (!isAuthPage && currentSessionId) {
-                await marketService.addMessageToSession(currentSessionId, 'assistant', responseText);
-            }
 
             // Redirect logic (Only if NOT on auth page)
             if (interactionCount >= 1 && !isAuthPage) {

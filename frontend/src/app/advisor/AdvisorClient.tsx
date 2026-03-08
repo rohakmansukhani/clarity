@@ -335,17 +335,18 @@ export default function AdvisorClient() {
 
             // Get AI Response with History
             const responseData = await marketService.chatWithAI(text, { type: 'advisor_chat' }, conversationHistory);
+            const responseText = responseData?.response || "Sorry, I encountered an issue verifying that response.";
 
             const newAiMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: responseData.response,
+                content: responseText,
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, newAiMsg]);
 
             // Save AI Response to History (only text content)
-            await marketService.addMessageToSession(sessionId!, 'assistant', responseData.response);
+            await marketService.addMessageToSession(sessionId!, 'assistant', responseText);
 
             // Generate Title if it's the first interaction (User + AI = 2 messages in current view, roughly)
             // Or explicitly if we just created the session.
