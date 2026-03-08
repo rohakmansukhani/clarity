@@ -245,7 +245,7 @@ export default function PortfolioPage() {
         return (
             <Box sx={{
                 display: 'flex',
-                height: '100vh',
+                height: '100dvh',
                 justifyContent: 'center',
                 alignItems: 'center',
                 bgcolor: 'background.default'
@@ -264,7 +264,7 @@ export default function PortfolioPage() {
     return (
         <Box sx={{
             bgcolor: 'background.default',
-            minHeight: '100vh',
+            minHeight: '100dvh',
             position: 'relative'
         }}>
             <Sidebar />
@@ -277,7 +277,7 @@ export default function PortfolioPage() {
                     mx: 'auto',
                     pb: 10,
                     pt: 6,
-                    minHeight: '100vh',
+                    minHeight: '100dvh',
                     pr: { xs: 2, md: 6 },
                     pl: { xs: 2, md: '140px' },
                     position: 'relative',

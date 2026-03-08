@@ -53,7 +53,7 @@ export default function AuthCallbackPage() {
 
     return (
         <Box sx={{
-            minHeight: '100vh',
+            minHeight: '100dvh',
             bgcolor: 'background.default',
             display: 'flex',
             flexDirection: 'column',

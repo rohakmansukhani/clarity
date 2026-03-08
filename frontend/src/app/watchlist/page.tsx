@@ -110,7 +110,7 @@ export default function WatchlistPage() {
 
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', bgcolor: 'background.default' }}>
+            <Box sx={{ display: 'flex', height: '100dvh', justifyContent: 'center', alignItems: 'center', bgcolor: 'background.default' }}>
                 <CircularProgress size={24} sx={{ color: 'primary.main' }} />
             </Box>
         );
@@ -120,7 +120,7 @@ export default function WatchlistPage() {
         <Box sx={{
             display: 'flex',
             bgcolor: 'background.default',
-            minHeight: '100vh',
+            minHeight: '100dvh',
             position: 'relative'
         }}>
             <Sidebar />

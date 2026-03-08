@@ -92,7 +92,8 @@ export default function Sidebar() {
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         sx={{
                             width: 80,
-                            height: 'calc(100vh - 48px)', // Floating Height
+                            // dvh correctly scales when Safari bar appears
+                            height: 'calc(100dvh - 48px)',
                             position: 'fixed',
                             left: 24, // Floating Margin
                             top: 24,

@@ -38,7 +38,7 @@ export default function MarketHome() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             sx={{
-                minHeight: '100vh',
+                minHeight: '100dvh',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',

@@ -413,7 +413,7 @@ export default function AdvisorClient() {
 
             <Box sx={{
                 pl: { xs: 0, md: '100px' }, // Main Sidebar width
-                height: '100vh',
+                height: '100dvh',
                 bgcolor: 'background.default',
                 display: 'flex',
                 flexDirection: 'column',

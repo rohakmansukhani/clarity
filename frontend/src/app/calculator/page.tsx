@@ -186,7 +186,7 @@ export default function CalculatorPage() {
     };
 
     return (
-        <Box sx={{ display: 'flex', bgcolor: theme.palette.background.default, minHeight: '100vh', color: theme.palette.text.primary }}>
+        <Box sx={{ display: 'flex', bgcolor: theme.palette.background.default, minHeight: '100dvh', color: theme.palette.text.primary }}>
             <Sidebar />
             <Box
                 component={motion.div}

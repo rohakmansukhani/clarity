@@ -9,7 +9,7 @@ export default function AdvisorPage() {
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
-                height: '100vh',
+                height: '100dvh',
                 width: '100%',
                 bgcolor: 'background.default'
             }}>

@@ -37,7 +37,7 @@ export default function MutualFundHoldingsPage() {
     const totalInvested = holdings.reduce((sum, item) => sum + (item.units * item.avg_nav), 0);
 
     return (
-        <Box sx={{ minHeight: '100vh', pb: 8, pt: { xs: 8, md: 10 }, px: { xs: 2, md: 4 } }}>
+        <Box sx={{ minHeight: '100dvh', pb: 8, pt: { xs: 8, md: 10 }, px: { xs: 2, md: 4 } }}>
             <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>

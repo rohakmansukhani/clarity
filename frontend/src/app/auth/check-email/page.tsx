@@ -11,7 +11,7 @@ export default function CheckEmailPage() {
     return (
         <Box
             sx={{
-                minHeight: '100vh',
+                minHeight: '100dvh',
                 bgcolor: 'background.default',
                 color: 'text.primary',
                 display: 'flex',

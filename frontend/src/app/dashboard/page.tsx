@@ -154,7 +154,7 @@ export default function DashboardPage() {
     const handleCloseToast = () => setToast({ ...toast, open: false });
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+        <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: 'background.default' }}>
             <Sidebar />
             <Box component="main" sx={{
                 flexGrow: 1,

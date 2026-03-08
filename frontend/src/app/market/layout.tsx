@@ -10,7 +10,7 @@ export default function MarketLayout({ children }: { children: React.ReactNode }
     const theme = useTheme();
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: theme.palette.background.default }}>
+        <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: theme.palette.background.default }}>
             <DisclaimerModal />
             <Sidebar />
 

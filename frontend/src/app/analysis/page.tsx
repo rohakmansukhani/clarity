@@ -171,7 +171,7 @@ export default function AnalysisPage() {
     // Mobile Block Screen — rendered after all hooks (Rules of Hooks compliant)
     if (hasMounted && isMobile) {
         return (
-            <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: theme.palette.background.default, overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: theme.palette.background.default, overflow: 'hidden' }}>
                 <Sidebar />
                 <Box sx={{
                     flexGrow: 1,
@@ -276,7 +276,7 @@ export default function AnalysisPage() {
     return (
         <Box sx={{
             display: 'flex',
-            minHeight: '100vh',
+            minHeight: '100dvh',
             bgcolor: 'background.default',
             position: 'relative'
         }}>

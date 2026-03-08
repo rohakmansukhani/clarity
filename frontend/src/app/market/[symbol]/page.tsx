@@ -144,7 +144,7 @@ export default function StockPage() {
     const changePercent = data.market_data?.changePercent || 0;
 
     return (
-        <Box sx={{ display: 'flex', bgcolor: theme.palette.background.default, minHeight: '100vh', color: theme.palette.text.primary }}>
+        <Box sx={{ display: 'flex', bgcolor: theme.palette.background.default, minHeight: '100dvh', color: theme.palette.text.primary }}>
             <Sidebar />
             <Box sx={{ flexGrow: 1, maxWidth: 1600, mx: 'auto', pb: 10, pt: 6, pr: { xs: 2, md: 6 }, pl: { xs: 2, md: '140px' }, minWidth: 0 }}>
                 {/* Back Button */}

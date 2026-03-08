@@ -14,7 +14,7 @@ export default function MutualFundsLayout({ children }: { children: React.ReactN
     return (
         <Box sx={{
             display: 'flex',
-            minHeight: '100vh',
+            minHeight: '100dvh',
             bgcolor: theme.palette.background.default,
             position: 'relative'
         }}>
