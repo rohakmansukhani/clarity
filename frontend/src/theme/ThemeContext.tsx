@@ -48,11 +48,22 @@ export const ColorModeProvider = ({ children }: { children: React.ReactNode }) =
         const root = document.documentElement;
         if (mode === 'dark') {
             root.style.backgroundColor = '#0B0B0B';
+            document.body.style.backgroundColor = '#0B0B0B';
             root.classList.add('dark');
         } else {
             root.style.backgroundColor = '#FFFFFF';
+            document.body.style.backgroundColor = '#FFFFFF';
             root.classList.remove('dark');
         }
+
+        // Dynamically update theme-color meta tag so iOS Safari respects the manual toggle
+        let metaThemeColor = document.querySelector("meta[name='theme-color']");
+        if (!metaThemeColor) {
+            metaThemeColor = document.createElement('meta');
+            metaThemeColor.setAttribute('name', 'theme-color');
+            document.head.appendChild(metaThemeColor);
+        }
+        metaThemeColor.setAttribute('content', mode === 'dark' ? '#0B0B0B' : '#FFFFFF');
     }, [mode, mounted]);
 
     const theme = useMemo(() => createTheme(getThemeConfig(mode)), [mode]);
