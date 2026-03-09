@@ -10,6 +10,9 @@ import { useColorMode } from '@/theme/ThemeContext';
 import { MessageSquare, Send, X, Shrink, Maximize2, RotateCcw } from 'lucide-react';
 import { marketService } from '@/services/marketService';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css'; // `rehype-katex` needs this to render properly
 
 export default function FloatingAdvisor() {
     const router = useRouter();
@@ -186,7 +189,7 @@ export default function FloatingAdvisor() {
                                                 style={msg.role === 'assistant' ? { backgroundColor: mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', color: theme.palette.text.primary } : {}}
                                             >
                                                 <div className={`prose prose-sm max-w-none [&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:pl-4 [&>ul]:list-disc [&>ul]:mb-2 [&>strong]:text-[#00E5FF] [&>strong]:font-bold [&>h2]:text-base [&>h2]:font-bold ${mode === 'dark' ? 'prose-invert' : ''} [&>h2]:mt-3 [&>h2]:mb-1`}>
-                                                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                                    <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.content}</ReactMarkdown>
                                                 </div>
                                             </div>
                                         </div>

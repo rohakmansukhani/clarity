@@ -118,3 +118,8 @@ To connect your local frontend to the live AWS backend:
 ## 8. AWS Specific Tips
 - **Elastic IP**: Recommended to use an Elastic IP to ensure the IP doesn't change on reboot.
 - **T3 Unlimited**: Be careful with "Unlimited" credits on T3 if you are on a strict budget, though t3.micro is usually fine for this load.
+
+
+
+
+ssh-add ~/.ssh/github_personal

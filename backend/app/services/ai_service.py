@@ -295,7 +295,29 @@ class AIService:
             }
                                     
         except Exception as e:
-            logger.error(f"Groq Agent Error: {e}")
+            error_str = str(e)
+            logger.error(f"Groq Agent Error: {error_str}")
+            
+            # Fallback parser for Groq's 400 'tool_use_failed' when Llama 3 hallucinates XML tags
+            if "tool_use_failed" in error_str and "failed_generation" in error_str:
+                import re
+                try:
+                    # Extract the raw string inside failed_generation (single or double quoted)
+                    match = re.search(r"'failed_generation':\s*['\"](.*?)['\"]\s*\}", error_str, re.DOTALL)
+                    if match:
+                        # Decode escaped newlines like \n
+                        failed_gen = match.group(1).encode('utf-8').decode('unicode_escape')
+                        # Remove <function... tags aggressively
+                        clean_text = re.sub(r'<function.*?(?:</function>|>)', '', failed_gen, flags=re.DOTALL | re.IGNORECASE).strip()
+                        
+                        if clean_text:
+                            return {
+                                "response": clean_text + "\n\n*(Note: I encountered a strict formatting issue while fetching live data. Please try your request again—I should get it right on the next try!)*",
+                                "suggest_switch": None
+                            }
+                except Exception as parse_e:
+                    logger.error(f"Failed to parse tool_use_failed fallback: {parse_e}")
+                    
             return {
                 "response": "I encountered a technical error connecting to the AI service. Please try again.",
                 "suggest_switch": None

@@ -10,6 +10,9 @@ import Sidebar from '@/components/layout/Sidebar';
 import ClarityLogo from '@/components/ui/ClarityLogo';
 import { useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { marketService } from '@/services/marketService';
 import { useUIStore } from '@/lib/ui-store';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
@@ -646,7 +649,7 @@ export default function AdvisorClient() {
                                         color: msg.role === 'user' ? '#000' : 'inherit'
                                     }}>
                                         <div className={`prose prose-sm max-w-none ${mode === 'dark' ? 'prose-invert' : ''}`}>
-                                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                                            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.content}</ReactMarkdown>
                                         </div>
 
                                     </Box>

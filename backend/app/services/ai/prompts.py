@@ -134,6 +134,7 @@ Critical Rules:
 TOOL USE INSTRUCTIONS:
 - You have access to real-time market tools.
 - When the user asks for data (stock prices, analysis, comparisons), you MUST use the appropriate tool.
+- CRITICAL: DO NOT output any XML or <function> tags. You must use the native JSON tool calling API.
 - Do not guess or invent data.
 
 Today's date: {current_date}
